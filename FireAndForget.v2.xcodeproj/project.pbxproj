@@ -173,7 +173,7 @@
 				BD28F7011F0A5F5100B07CBD /* Shaders.h */,
 			);
 			name = source;
-			path = MetalTest1;
+			path = source;
 			sourceTree = "<group>";
 		};
 		BD3D1AB11E895BFC00F7311A /* Supporting Files */ = {
@@ -220,7 +220,7 @@
 			dependencies = (
 			);
 			name = FireAndForget.v2;
-			productName = MetalTest1;
+			productName = FireAndForget.v2;
 			productReference = BD3D1AAB1E895BFB00F7311A /* FireAndForget.v2.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -420,7 +420,7 @@
 					"\"$(SRCROOT)/../MeshLoader\"",
 					"\"$(SRCROOT)/../3rdparty/GSL/include\"",
 				);
-				INFOPLIST_FILE = MetalTest1/Info.plist;
+				INFOPLIST_FILE = source/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.FireAndForget.v2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -438,7 +438,7 @@
 					"\"$(SRCROOT)/../MeshLoader\"",
 					"\"$(SRCROOT)/../3rdparty/GSL/include\"",
 				);
-				INFOPLIST_FILE = MetalTest1/Info.plist;
+				INFOPLIST_FILE = source/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.FireAndForget.v2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
