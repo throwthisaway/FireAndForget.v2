@@ -71,7 +71,7 @@ void Assets::Init(RendererWrapper* renderer) {
 	};
 	auto pos = renderer->CreateBuffer(positions, sizeof(positions) * sizeof(positions[0]), sizeof(float) * 4);
 	auto col = renderer->CreateBuffer(colors, sizeof(colors) * sizeof(colors[0]), sizeof(float) * 4);
-	placeholder1_ = {pos, col, sizeof(positions) / sizeof(positions[0]) / 4};
+	staticModels[PLACEHOLDER1] = {pos, col, sizeof(positions) / sizeof(positions[0]) / 4};
 	static const float positions2[] =
 	{
 		0.5,  0.5, 0, 1,
@@ -79,5 +79,5 @@ void Assets::Init(RendererWrapper* renderer) {
 		1., -0.5, 0, 1,
 	};
 	auto pos2 = renderer->CreateBuffer(positions2, sizeof(positions2) * sizeof(positions2[0]), sizeof(float) * 4);
-	placeholder2_ = {pos2, col, sizeof(positions2) / sizeof(positions[0]) / 4};
+	staticModels[PLACEHOLDER2] = {pos2, col, sizeof(positions2) / sizeof(positions[0]) / 4};
 }

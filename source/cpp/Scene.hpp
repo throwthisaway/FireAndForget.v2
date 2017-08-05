@@ -11,9 +11,12 @@ struct Time;
 struct Scene {
 	struct Object {
 		glm::mat4 m;
-		glm::vec4 pos, rot;
-		float scale;
-		size_t assetId;
+		glm::vec3 pos, pivot, rot;
+		float scale = 1.f;
+		const Model& model;
+		Materials::ColPosBuffer uniforms;
+		Object(const Model& model) : model(model) {}
+		void Update(double frame, double total);
 	};
 	void Init(RendererWrapper*);
 	void Render();
@@ -21,8 +24,7 @@ struct Scene {
 	Input input;
 private:
 	RendererWrapper* renderer_;
-	
-	Materials::ColPosBuffer uniforms;
+
 	Assets assets_;
 	std::vector<Object> objects_;
 	Camera camera_;

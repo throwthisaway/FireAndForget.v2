@@ -1,5 +1,5 @@
 #include "Camera.hpp"
-#include <glm/gtc/matrix_transform.hpp>
+#include "MatrixUtils.h"
 #include <iostream>
 void Camera::Perspective(size_t w, size_t h) {
 	proj = glm::perspective(fovy, (float)w / h, near, far);
@@ -7,9 +7,7 @@ void Camera::Perspective(size_t w, size_t h) {
 
 void Camera::Update() {
 	const float pixelToRadRatio = .01f;
-	view = glm::rotate(glm::rotate(glm::rotate(glm::translate({}, pos + center), rot.x * pixelToRadRatio, {1.f, 0.f, 0.f}),
-										 rot.y * pixelToRadRatio, {0.f, 1.f, 0.f}),
-							 rot.z * pixelToRadRatio, {0.f, 0.f, 1.f});
+	view = RotationMatrix(glm::translate({}, pos + center), rot.x * pixelToRadRatio, rot.y * pixelToRadRatio, rot.z * pixelToRadRatio);
 
 	view *= rotMat;
 	rot = {};

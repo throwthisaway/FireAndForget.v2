@@ -1,11 +1,13 @@
 #pragma once
 #include "RendererWrapper.h"
-
+#include <array>
 struct Model {
 	size_t vertices, color, count;
 };
 struct Assets {
 	void Init(RendererWrapper* renderer);
-	// TODO:: cleanup models
-	Model placeholder1_, placeholder2_;
+	static constexpr size_t PLACEHOLDER1 = 0;
+	static constexpr size_t PLACEHOLDER2 = 1;
+	static constexpr size_t STATIC_MODEL_COUNT = 2;
+	std::array<Model, STATIC_MODEL_COUNT> staticModels;
 };
