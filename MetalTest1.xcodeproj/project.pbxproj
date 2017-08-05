@@ -1,0 +1,436 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BD19CC4E1F13A962005781A5 /* Timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD19CC4C1F13A962005781A5 /* Timer.cpp */; };
+		BD1C012F1EA4E6DE0035CD53 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD1C012E1EA4E6DE0035CD53 /* Shaders.metal */; };
+		BD25F9DF1ECD9B4200ACD738 /* Renderer.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD25F9DE1ECD9B4200ACD738 /* Renderer.mm */; };
+		BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD28F6FC1F09753300B07CBD /* Input.cpp */; };
+		BD28F7001F0A5E9B00B07CBD /* Shaders.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD28F6FF1F0A5E9B00B07CBD /* Shaders.mm */; };
+		BD2BB2A41EB4A9F600B82284 /* Sphere.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD2BB2A21EB4A9F600B82284 /* Sphere.cpp */; };
+		BD3D1AB01E895BFC00F7311A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1AAF1E895BFC00F7311A /* AppDelegate.m */; };
+		BD3D1AB31E895BFC00F7311A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1AB21E895BFC00F7311A /* main.m */; };
+		BD3D1AB61E895BFC00F7311A /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1AB51E895BFC00F7311A /* ViewController.mm */; };
+		BD3D1AB81E895BFC00F7311A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BD3D1AB71E895BFC00F7311A /* Assets.xcassets */; };
+		BD3D1ABB1E895BFC00F7311A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BD3D1AB91E895BFC00F7311A /* Main.storyboard */; };
+		BD3D1ACA1E8A682D00F7311A /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD3D1AC91E8A682D00F7311A /* Metal.framework */; };
+		BD3D1ACC1E8A684000F7311A /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD3D1ACB1E8A684000F7311A /* QuartzCore.framework */; };
+		BD3D1ACF1E8A689800F7311A /* MetalView.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1ACE1E8A689800F7311A /* MetalView.mm */; };
+		BD72038C1EEC1A1800B2C914 /* libMeshLoader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BD72038B1EEC1A1800B2C914 /* libMeshLoader.a */; };
+		BD7203921EEC1C5E00B2C914 /* Assets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD7203901EEC1C5E00B2C914 /* Assets.cpp */; };
+		BD7203941EEC1FDA00B2C914 /* BEETHOVE_object.mesh in Resources */ = {isa = PBXBuildFile; fileRef = BD7203931EEC1FDA00B2C914 /* BEETHOVE_object.mesh */; };
+		BD7B0EDA1ECB544300B983E9 /* Scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD7B0ED81ECB544300B983E9 /* Scene.cpp */; };
+		BD9FA6BE1F2E2CBE00978F61 /* checkerboard.mesh in Resources */ = {isa = PBXBuildFile; fileRef = BD9FA6BC1F2E2CBE00978F61 /* checkerboard.mesh */; };
+		BD9FA6BF1F2E2CBE00978F61 /* checkerboard.tga in Resources */ = {isa = PBXBuildFile; fileRef = BD9FA6BD1F2E2CBE00978F61 /* checkerboard.tga */; };
+		BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD9FA6C01F31E8B100978F61 /* Camera.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		BD19CC4C1F13A962005781A5 /* Timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Timer.cpp; path = cpp/Timer.cpp; sourceTree = "<group>"; };
+		BD19CC4D1F13A962005781A5 /* Timer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Timer.hpp; path = cpp/Timer.hpp; sourceTree = "<group>"; };
+		BD1C012E1EA4E6DE0035CD53 /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		BD1C01301EA4F7A80035CD53 /* MetalViewDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MetalViewDelegate.h; sourceTree = "<group>"; };
+		BD25F9DE1ECD9B4200ACD738 /* Renderer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = Renderer.mm; sourceTree = "<group>"; };
+		BD25F9E01ECD9B5C00ACD738 /* Renderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Renderer.h; sourceTree = "<group>"; };
+		BD25F9E41ECDEB4E00ACD738 /* RendererWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RendererWrapper.h; path = cpp/RendererWrapper.h; sourceTree = "<group>"; };
+		BD28F6FC1F09753300B07CBD /* Input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Input.cpp; path = cpp/input/Input.cpp; sourceTree = "<group>"; };
+		BD28F6FD1F09753300B07CBD /* Input.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Input.hpp; path = cpp/input/Input.hpp; sourceTree = "<group>"; };
+		BD28F6FF1F0A5E9B00B07CBD /* Shaders.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = Shaders.mm; sourceTree = "<group>"; };
+		BD28F7011F0A5F5100B07CBD /* Shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Shaders.h; sourceTree = "<group>"; };
+		BD28F7021F0AADE800B07CBD /* Materials.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Materials.h; path = cpp/Materials.h; sourceTree = "<group>"; };
+		BD2BB2A21EB4A9F600B82284 /* Sphere.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Sphere.cpp; path = cpp/Sphere.cpp; sourceTree = "<group>"; };
+		BD2BB2A31EB4A9F600B82284 /* Sphere.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Sphere.hpp; path = cpp/Sphere.hpp; sourceTree = "<group>"; };
+		BD3D1AAB1E895BFB00F7311A /* MetalTest1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetalTest1.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BD3D1AAE1E895BFB00F7311A /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		BD3D1AAF1E895BFC00F7311A /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		BD3D1AB21E895BFC00F7311A /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		BD3D1AB41E895BFC00F7311A /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		BD3D1AB51E895BFC00F7311A /* ViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ViewController.mm; sourceTree = "<group>"; };
+		BD3D1AB71E895BFC00F7311A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BD3D1ABA1E895BFC00F7311A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		BD3D1ABC1E895BFC00F7311A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BD3D1AC91E8A682D00F7311A /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		BD3D1ACB1E8A684000F7311A /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		BD3D1ACD1E8A689800F7311A /* MetalView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalView.h; sourceTree = "<group>"; };
+		BD3D1ACE1E8A689800F7311A /* MetalView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MetalView.mm; sourceTree = "<group>"; };
+		BD72038B1EEC1A1800B2C914 /* libMeshLoader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libMeshLoader.a; path = ../../MeshLoader/MeshLoader/build/Debug/libMeshLoader.a; sourceTree = "<group>"; };
+		BD7203901EEC1C5E00B2C914 /* Assets.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Assets.cpp; path = cpp/Assets.cpp; sourceTree = "<group>"; };
+		BD7203911EEC1C5E00B2C914 /* Assets.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Assets.hpp; path = cpp/Assets.hpp; sourceTree = "<group>"; };
+		BD7203931EEC1FDA00B2C914 /* BEETHOVE_object.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = BEETHOVE_object.mesh; path = assets/BEETHOVE_object.mesh; sourceTree = "<group>"; };
+		BD7B0ED81ECB544300B983E9 /* Scene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Scene.cpp; path = cpp/Scene.cpp; sourceTree = "<group>"; };
+		BD7B0ED91ECB544300B983E9 /* Scene.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Scene.hpp; path = cpp/Scene.hpp; sourceTree = "<group>"; };
+		BD9FA6BC1F2E2CBE00978F61 /* checkerboard.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = checkerboard.mesh; path = assets/checkerboard.mesh; sourceTree = "<group>"; };
+		BD9FA6BD1F2E2CBE00978F61 /* checkerboard.tga */ = {isa = PBXFileReference; lastKnownFileType = file; name = checkerboard.tga; path = assets/checkerboard.tga; sourceTree = "<group>"; };
+		BD9FA6C01F31E8B100978F61 /* Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Camera.cpp; path = cpp/Camera.cpp; sourceTree = "<group>"; };
+		BD9FA6C11F31E8B100978F61 /* Camera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Camera.hpp; path = cpp/Camera.hpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BD3D1AA81E895BFB00F7311A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD72038C1EEC1A1800B2C914 /* libMeshLoader.a in Frameworks */,
+				BD3D1ACC1E8A684000F7311A /* QuartzCore.framework in Frameworks */,
+				BD3D1ACA1E8A682D00F7311A /* Metal.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BD28F6F81F0974D800B07CBD /* input */ = {
+			isa = PBXGroup;
+			children = (
+				BD28F6FC1F09753300B07CBD /* Input.cpp */,
+				BD28F6FD1F09753300B07CBD /* Input.hpp */,
+			);
+			name = input;
+			sourceTree = "<group>";
+		};
+		BD2BB2A11EB4A8CB00B82284 /* cpp */ = {
+			isa = PBXGroup;
+			children = (
+				BD9FA6C01F31E8B100978F61 /* Camera.cpp */,
+				BD9FA6C11F31E8B100978F61 /* Camera.hpp */,
+				BD28F6F81F0974D800B07CBD /* input */,
+				BD25F9E41ECDEB4E00ACD738 /* RendererWrapper.h */,
+				BD2BB2A21EB4A9F600B82284 /* Sphere.cpp */,
+				BD2BB2A31EB4A9F600B82284 /* Sphere.hpp */,
+				BD7B0ED81ECB544300B983E9 /* Scene.cpp */,
+				BD7B0ED91ECB544300B983E9 /* Scene.hpp */,
+				BD7203901EEC1C5E00B2C914 /* Assets.cpp */,
+				BD7203911EEC1C5E00B2C914 /* Assets.hpp */,
+				BD28F7021F0AADE800B07CBD /* Materials.h */,
+				BD19CC4C1F13A962005781A5 /* Timer.cpp */,
+				BD19CC4D1F13A962005781A5 /* Timer.hpp */,
+			);
+			name = cpp;
+			sourceTree = "<group>";
+		};
+		BD3D1AA21E895BFB00F7311A = {
+			isa = PBXGroup;
+			children = (
+				BD3D1AAD1E895BFB00F7311A /* MetalTest1 */,
+				BD3D1AAC1E895BFB00F7311A /* Products */,
+				BD3D1AC81E8A682D00F7311A /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		BD3D1AAC1E895BFB00F7311A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BD3D1AAB1E895BFB00F7311A /* MetalTest1.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BD3D1AAD1E895BFB00F7311A /* MetalTest1 */ = {
+			isa = PBXGroup;
+			children = (
+				BD72038D1EEC1A7400B2C914 /* assets */,
+				BD2BB2A11EB4A8CB00B82284 /* cpp */,
+				BD3D1ACD1E8A689800F7311A /* MetalView.h */,
+				BD3D1ACE1E8A689800F7311A /* MetalView.mm */,
+				BD3D1AAE1E895BFB00F7311A /* AppDelegate.h */,
+				BD3D1AAF1E895BFC00F7311A /* AppDelegate.m */,
+				BD3D1AB41E895BFC00F7311A /* ViewController.h */,
+				BD3D1AB51E895BFC00F7311A /* ViewController.mm */,
+				BD3D1AB71E895BFC00F7311A /* Assets.xcassets */,
+				BD3D1AB91E895BFC00F7311A /* Main.storyboard */,
+				BD3D1ABC1E895BFC00F7311A /* Info.plist */,
+				BD3D1AB11E895BFC00F7311A /* Supporting Files */,
+				BD1C012E1EA4E6DE0035CD53 /* Shaders.metal */,
+				BD1C01301EA4F7A80035CD53 /* MetalViewDelegate.h */,
+				BD25F9DE1ECD9B4200ACD738 /* Renderer.mm */,
+				BD25F9E01ECD9B5C00ACD738 /* Renderer.h */,
+				BD28F6FF1F0A5E9B00B07CBD /* Shaders.mm */,
+				BD28F7011F0A5F5100B07CBD /* Shaders.h */,
+			);
+			path = MetalTest1;
+			sourceTree = "<group>";
+		};
+		BD3D1AB11E895BFC00F7311A /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				BD3D1AB21E895BFC00F7311A /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		BD3D1AC81E8A682D00F7311A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				BD72038B1EEC1A1800B2C914 /* libMeshLoader.a */,
+				BD3D1ACB1E8A684000F7311A /* QuartzCore.framework */,
+				BD3D1AC91E8A682D00F7311A /* Metal.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		BD72038D1EEC1A7400B2C914 /* assets */ = {
+			isa = PBXGroup;
+			children = (
+				BD9FA6BC1F2E2CBE00978F61 /* checkerboard.mesh */,
+				BD9FA6BD1F2E2CBE00978F61 /* checkerboard.tga */,
+				BD7203931EEC1FDA00B2C914 /* BEETHOVE_object.mesh */,
+			);
+			name = assets;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BD3D1AAA1E895BFB00F7311A /* MetalTest1 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BD3D1ABF1E895BFC00F7311A /* Build configuration list for PBXNativeTarget "MetalTest1" */;
+			buildPhases = (
+				BD3D1AA71E895BFB00F7311A /* Sources */,
+				BD3D1AA81E895BFB00F7311A /* Frameworks */,
+				BD3D1AA91E895BFB00F7311A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MetalTest1;
+			productName = MetalTest1;
+			productReference = BD3D1AAB1E895BFB00F7311A /* MetalTest1.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BD3D1AA31E895BFB00F7311A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0820;
+				ORGANIZATIONNAME = "András Kovács";
+				TargetAttributes = {
+					BD3D1AAA1E895BFB00F7311A = {
+						CreatedOnToolsVersion = 8.2.1;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = BD3D1AA61E895BFB00F7311A /* Build configuration list for PBXProject "MetalTest1" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BD3D1AA21E895BFB00F7311A;
+			productRefGroup = BD3D1AAC1E895BFB00F7311A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BD3D1AAA1E895BFB00F7311A /* MetalTest1 */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BD3D1AA91E895BFB00F7311A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD9FA6BF1F2E2CBE00978F61 /* checkerboard.tga in Resources */,
+				BD7203941EEC1FDA00B2C914 /* BEETHOVE_object.mesh in Resources */,
+				BD9FA6BE1F2E2CBE00978F61 /* checkerboard.mesh in Resources */,
+				BD3D1AB81E895BFC00F7311A /* Assets.xcassets in Resources */,
+				BD3D1ABB1E895BFC00F7311A /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BD3D1AA71E895BFB00F7311A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */,
+				BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */,
+				BD28F7001F0A5E9B00B07CBD /* Shaders.mm in Sources */,
+				BD3D1ACF1E8A689800F7311A /* MetalView.mm in Sources */,
+				BD19CC4E1F13A962005781A5 /* Timer.cpp in Sources */,
+				BD7B0EDA1ECB544300B983E9 /* Scene.cpp in Sources */,
+				BD3D1AB61E895BFC00F7311A /* ViewController.mm in Sources */,
+				BD3D1AB31E895BFC00F7311A /* main.m in Sources */,
+				BD7203921EEC1C5E00B2C914 /* Assets.cpp in Sources */,
+				BD25F9DF1ECD9B4200ACD738 /* Renderer.mm in Sources */,
+				BD3D1AB01E895BFC00F7311A /* AppDelegate.m in Sources */,
+				BD2BB2A41EB4A9F600B82284 /* Sphere.cpp in Sources */,
+				BD1C012F1EA4E6DE0035CD53 /* Shaders.metal in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		BD3D1AB91E895BFC00F7311A /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BD3D1ABA1E895BFC00F7311A /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		BD3D1ABD1E895BFC00F7311A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		BD3D1ABE1E895BFC00F7311A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		BD3D1AC01E895BFC00F7311A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = (
+					/Users/throwthisaway/Projects/MeshLoader,
+					"\"$(SRCROOT)/../../3rdparty/GSL/include\"",
+				);
+				INFOPLIST_FILE = MetalTest1/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.MetalTest1;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_HEADER_SEARCH_PATHS = ../../3rdparty/glm;
+			};
+			name = Debug;
+		};
+		BD3D1AC11E895BFC00F7311A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = (
+					/Users/throwthisaway/Projects/MeshLoader,
+					"\"$(SRCROOT)/../../3rdparty/GSL/include\"",
+				);
+				INFOPLIST_FILE = MetalTest1/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.MetalTest1;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_HEADER_SEARCH_PATHS = ../../3rdparty/glm;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BD3D1AA61E895BFB00F7311A /* Build configuration list for PBXProject "MetalTest1" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BD3D1ABD1E895BFC00F7311A /* Debug */,
+				BD3D1ABE1E895BFC00F7311A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BD3D1ABF1E895BFC00F7311A /* Build configuration list for PBXNativeTarget "MetalTest1" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BD3D1AC01E895BFC00F7311A /* Debug */,
+				BD3D1AC11E895BFC00F7311A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BD3D1AA31E895BFB00F7311A /* Project object */;
+}
