@@ -30,6 +30,16 @@
 		BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD9FA6C01F31E8B100978F61 /* Camera.cpp */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		BD33FCA91F35D5F100162D00 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BD33FCA51F35D5F100162D00 /* MeshLoader.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = BD7203511EEC0E0C00B2C914;
+			remoteInfo = MeshLoader;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		BD19CC4C1F13A962005781A5 /* Timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Timer.cpp; path = cpp/Timer.cpp; sourceTree = "<group>"; };
 		BD19CC4D1F13A962005781A5 /* Timer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Timer.hpp; path = cpp/Timer.hpp; sourceTree = "<group>"; };
@@ -45,7 +55,8 @@
 		BD28F7021F0AADE800B07CBD /* Materials.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Materials.h; path = cpp/Materials.h; sourceTree = "<group>"; };
 		BD2BB2A21EB4A9F600B82284 /* Sphere.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Sphere.cpp; path = cpp/Sphere.cpp; sourceTree = "<group>"; };
 		BD2BB2A31EB4A9F600B82284 /* Sphere.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Sphere.hpp; path = cpp/Sphere.hpp; sourceTree = "<group>"; };
-		BD3D1AAB1E895BFB00F7311A /* MetalTest1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetalTest1.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BD33FCA51F35D5F100162D00 /* MeshLoader.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = MeshLoader.xcodeproj; path = ../MeshLoader/MeshLoader/MeshLoader.xcodeproj; sourceTree = "<group>"; };
+		BD3D1AAB1E895BFB00F7311A /* FireAndForget.v2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FireAndForget.v2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD3D1AAE1E895BFB00F7311A /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		BD3D1AAF1E895BFC00F7311A /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		BD3D1AB21E895BFC00F7311A /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -113,10 +124,19 @@
 			name = cpp;
 			sourceTree = "<group>";
 		};
+		BD33FCA61F35D5F100162D00 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BD33FCAA1F35D5F100162D00 /* libMeshLoader.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		BD3D1AA21E895BFB00F7311A = {
 			isa = PBXGroup;
 			children = (
-				BD3D1AAD1E895BFB00F7311A /* MetalTest1 */,
+				BD33FCA51F35D5F100162D00 /* MeshLoader.xcodeproj */,
+				BD3D1AAD1E895BFB00F7311A /* source */,
 				BD3D1AAC1E895BFB00F7311A /* Products */,
 				BD3D1AC81E8A682D00F7311A /* Frameworks */,
 			);
@@ -125,12 +145,12 @@
 		BD3D1AAC1E895BFB00F7311A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				BD3D1AAB1E895BFB00F7311A /* MetalTest1.app */,
+				BD3D1AAB1E895BFB00F7311A /* FireAndForget.v2.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		BD3D1AAD1E895BFB00F7311A /* MetalTest1 */ = {
+		BD3D1AAD1E895BFB00F7311A /* source */ = {
 			isa = PBXGroup;
 			children = (
 				BD72038D1EEC1A7400B2C914 /* assets */,
@@ -152,6 +172,7 @@
 				BD28F6FF1F0A5E9B00B07CBD /* Shaders.mm */,
 				BD28F7011F0A5F5100B07CBD /* Shaders.h */,
 			);
+			name = source;
 			path = MetalTest1;
 			sourceTree = "<group>";
 		};
@@ -186,9 +207,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		BD3D1AAA1E895BFB00F7311A /* MetalTest1 */ = {
+		BD3D1AAA1E895BFB00F7311A /* FireAndForget.v2 */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = BD3D1ABF1E895BFC00F7311A /* Build configuration list for PBXNativeTarget "MetalTest1" */;
+			buildConfigurationList = BD3D1ABF1E895BFC00F7311A /* Build configuration list for PBXNativeTarget "FireAndForget.v2" */;
 			buildPhases = (
 				BD3D1AA71E895BFB00F7311A /* Sources */,
 				BD3D1AA81E895BFB00F7311A /* Frameworks */,
@@ -198,9 +219,9 @@
 			);
 			dependencies = (
 			);
-			name = MetalTest1;
+			name = FireAndForget.v2;
 			productName = MetalTest1;
-			productReference = BD3D1AAB1E895BFB00F7311A /* MetalTest1.app */;
+			productReference = BD3D1AAB1E895BFB00F7311A /* FireAndForget.v2.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -218,7 +239,7 @@
 					};
 				};
 			};
-			buildConfigurationList = BD3D1AA61E895BFB00F7311A /* Build configuration list for PBXProject "MetalTest1" */;
+			buildConfigurationList = BD3D1AA61E895BFB00F7311A /* Build configuration list for PBXProject "FireAndForget.v2" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -229,12 +250,28 @@
 			mainGroup = BD3D1AA21E895BFB00F7311A;
 			productRefGroup = BD3D1AAC1E895BFB00F7311A /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = BD33FCA61F35D5F100162D00 /* Products */;
+					ProjectRef = BD33FCA51F35D5F100162D00 /* MeshLoader.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
-				BD3D1AAA1E895BFB00F7311A /* MetalTest1 */,
+				BD3D1AAA1E895BFB00F7311A /* FireAndForget.v2 */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		BD33FCAA1F35D5F100162D00 /* libMeshLoader.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libMeshLoader.a;
+			remoteRef = BD33FCA91F35D5F100162D00 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		BD3D1AA91E895BFB00F7311A /* Resources */ = {
@@ -380,14 +417,14 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
 				COMBINE_HIDPI_IMAGES = YES;
 				HEADER_SEARCH_PATHS = (
-					/Users/throwthisaway/Projects/MeshLoader,
-					"\"$(SRCROOT)/../../3rdparty/GSL/include\"",
+					"\"$(SRCROOT)/../MeshLoader\"",
+					"\"$(SRCROOT)/../3rdparty/GSL/include\"",
 				);
 				INFOPLIST_FILE = MetalTest1/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.MetalTest1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.FireAndForget.v2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_HEADER_SEARCH_PATHS = ../../3rdparty/glm;
+				SYSTEM_HEADER_SEARCH_PATHS = ../3rdparty/glm;
 			};
 			name = Debug;
 		};
@@ -398,21 +435,21 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
 				COMBINE_HIDPI_IMAGES = YES;
 				HEADER_SEARCH_PATHS = (
-					/Users/throwthisaway/Projects/MeshLoader,
-					"\"$(SRCROOT)/../../3rdparty/GSL/include\"",
+					"\"$(SRCROOT)/../MeshLoader\"",
+					"\"$(SRCROOT)/../3rdparty/GSL/include\"",
 				);
 				INFOPLIST_FILE = MetalTest1/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = org.MetalTest1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.FireAndForget.v2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_HEADER_SEARCH_PATHS = ../../3rdparty/glm;
+				SYSTEM_HEADER_SEARCH_PATHS = ../3rdparty/glm;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		BD3D1AA61E895BFB00F7311A /* Build configuration list for PBXProject "MetalTest1" */ = {
+		BD3D1AA61E895BFB00F7311A /* Build configuration list for PBXProject "FireAndForget.v2" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				BD3D1ABD1E895BFC00F7311A /* Debug */,
@@ -421,7 +458,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		BD3D1ABF1E895BFC00F7311A /* Build configuration list for PBXNativeTarget "MetalTest1" */ = {
+		BD3D1ABF1E895BFC00F7311A /* Build configuration list for PBXNativeTarget "FireAndForget.v2" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				BD3D1AC01E895BFC00F7311A /* Debug */,
