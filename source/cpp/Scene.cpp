@@ -14,9 +14,9 @@ void Scene::Init(RendererWrapper* renderer) {
 	objects_.emplace_back(assets_.staticModels[Assets::PLACEHOLDER1]);
 	objects_.emplace_back(assets_.staticModels[Assets::PLACEHOLDER2]);
 }
-void Scene::Render() {
+void Scene::Render(size_t encoderIndex) {
 	for (const auto& o : objects_)
-	renderer_->SubmitToPipeline(Materials::ColPos, (uint8_t*)&o.uniforms, {{o.model.vertices, o.model.color}, 0, o.model.count});
+		renderer_->SubmitToEncoder(encoderIndex, Materials::ColPos, (uint8_t*)&o.uniforms, {{o.model.vertices, o.model.color}, 0, o.model.count});
 }
 void Scene::Update(double frame, double total) {
 	//mvp_ *= input.mat_;

@@ -21,3 +21,8 @@ void Camera::Update() {
 void Camera::Rotate(float dh, float dp, float db, const glm::vec3& center) {
 	rot.x += dh; rot.y += dp; rot.z += db;
 }
+
+void Camera::Translate(float dx, float dy, float dz) {
+	const float pixelToTrRatio = .01f;
+	pos.x += dx * pixelToTrRatio; pos.y += dy * pixelToTrRatio; pos.z += dz * pixelToTrRatio;
+}

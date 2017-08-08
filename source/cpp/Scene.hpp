@@ -19,7 +19,7 @@ struct Scene {
 		void Update(double frame, double total);
 	};
 	void Init(RendererWrapper*);
-	void Render();
+	void Render(size_t encoderIndex);
 	void Update(double frame, double total);
 	Input input;
 private:

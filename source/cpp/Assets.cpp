@@ -56,6 +56,7 @@ namespace {
 }
 
 void Assets::Init(RendererWrapper* renderer) {
+	LoadFromBundle("dssdsds");
 	static const float positions[] =
 	{
 		0.0,  5., 0, 1,

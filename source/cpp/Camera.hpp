@@ -8,4 +8,5 @@ struct Camera {
 	void Perspective(size_t w, size_t h);
 	void Update();
 	void Rotate(float dh, float dp, float db = 0.f, const glm::vec3& center = {});
+	void Translate(float dx, float dy, float dz);
 };

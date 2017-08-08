@@ -22,6 +22,7 @@
 	RendererWrapper rendererWrapper_;
 	Timer timer_;
 	Scene scene_;
+	bool keys[512];
 }
 - (void)viewDidLoad {
 	[super viewDidLoad];
@@ -102,8 +103,13 @@
 
 	timer_.Tick();
 	scene_.Update(timer_.FrameMs(), timer_.TotalMs());
-	scene_.Render();
-	[renderer_ renderTo: [metalView getMetalLayer]];
+	id<CAMetalDrawable> drawable = [[metalView getMetalLayer] nextDrawable];
+	id<MTLTexture> texture = drawable.texture;
+	size_t commandBufferIndex = [renderer_ beginRender];
+	size_t encoderIndex = [renderer_ startRenderPass: texture withCommandBuffer: commandBufferIndex];
+	scene_.Render(encoderIndex);
+
+	[renderer_ renderTo: drawable withCommandBuffer:commandBufferIndex];
 }
 
 - (void)setRepresentedObject:(id)representedObject {
@@ -122,19 +128,36 @@
 - (void)mouseDown:(NSEvent *)event {
 	scene_.input.Start(event.locationInWindow.x, event.locationInWindow.y);
 }
+- (void)rightMouseDown:(NSEvent *)event {
+	scene_.input.Start(event.locationInWindow.x, event.locationInWindow.y);
+}
 - (void)mouseMoved:(NSEvent *)event {
 	NSLog(@"mouse moved %ld", (long)event.buttonNumber);
 	// TODO:: not fired
 }
 - (void)mouseDragged:(NSEvent *)event {
 	NSLog(@"mouse dragged %f %f", event.locationInWindow.x, event.locationInWindow.y);
-	scene_.input.Rotate(event.locationInWindow.x, event.locationInWindow.y);
+
+	if (event.modifierFlags | NSEventModifierFlagCommand)
+		scene_.input.TranslateXZ(event.locationInWindow.x, event.locationInWindow.y);
+	else
+		scene_.input.Rotate(event.locationInWindow.x, event.locationInWindow.y);
+}
+- (void)rightMouseDragged:(NSEvent *)event {
+	NSLog(@"mouse dragged %f %f", event.locationInWindow.x, event.locationInWindow.y);
+	scene_.input.TranslateY(event.locationInWindow.y);
 }
 - (void)keyDown:(NSEvent *)event {
 	if (event.keyCode == kVK_Escape) {
 		[[[self view] window] close];
 		return;
 	}
+	assert(event.keyCode < sizeof(keys) / sizeof(keys[0]));
+	keys[event.keyCode] = true;
+}
+- (void)keyUp:(NSEvent *) event {
+	assert(event.keyCode < sizeof(keys) / sizeof(keys[0]));
+	keys[event.keyCode] = false;
 }
 
 @end
