@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Scene.hpp"
 #include "MatrixUtils.h"
 

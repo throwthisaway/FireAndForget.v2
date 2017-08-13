@@ -1,11 +1,15 @@
+#include "pch.h"
 #include "Assets.hpp"
 #include <assert.h>
+#ifdef PLATFORM_MAC_OS
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFStream.h>
 #include <CoreFoundation/CFNumber.h>
+#endif
 #include "MeshLoader.h"
 #include "FileReader.h"
 namespace {
+#ifdef PLATFORM_MAC_OS
 	void LoadFromBundle(const char* fname) {
 		CFBundleRef mainBundle;
 		mainBundle = CFBundleGetMainBundle();
@@ -53,10 +57,11 @@ namespace {
 		// ???
 		CFRelease(mainBundle);
 	}
+#endif
 }
 
 void Assets::Init(RendererWrapper* renderer) {
-	LoadFromBundle("dssdsds");
+	//LoadFromBundle("dssdsds");
 	static const float positions[] =
 	{
 		0.0,  5., 0, 1,

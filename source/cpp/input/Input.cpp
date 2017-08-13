@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Input.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -20,4 +21,3 @@ void Input::TranslateY(float y) {
 		camera_->Translate(0.f, y - y_, 0.f);
 	y_ = y;
 }
-

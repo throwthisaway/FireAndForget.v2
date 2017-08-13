@@ -1,0 +1,45 @@
+#pragma once
+#include "..\Common\DeviceResources.h"
+#include "..\Common\DirectXHelper.h"
+#include "..\Common\StepTimer.h"
+#include "ShaderStructures.h"
+#include "..\source\cpp\RendererWrapper.h"
+#include "PipelineState.h"
+
+using namespace FireAndForget_v2;
+
+class Renderer {
+	PipelineStates pipelineStates_;
+public:
+	Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+	~Renderer();
+	void CreateDeviceDependentResources();
+	void CreateWindowSizeDependentResources();
+	void Update(DX::StepTimer const& timer);
+	bool Render();
+	void SaveState();
+private:
+	void Rotate(float radians);
+	// Constant buffers must be 256-byte aligned.
+	static const UINT c_alignedConstantBufferSize = (sizeof(ModelViewProjectionConstantBuffer) + 255) & ~255;
+
+	// Direct3D resources for cube geometry.
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>	m_commandList;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>		m_cbvHeap;
+	Microsoft::WRL::ComPtr<ID3D12Resource>				m_vertexBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource>				m_indexBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource>				m_constantBuffer;
+	ModelViewProjectionConstantBuffer					m_constantBufferData;
+	UINT8*												m_mappedConstantBuffer;
+	UINT												m_cbvDescriptorSize;
+	D3D12_RECT											m_scissorRect;	
+	D3D12_VERTEX_BUFFER_VIEW							m_vertexBufferView;
+	D3D12_INDEX_BUFFER_VIEW								m_indexBufferView;
+
+	std::shared_ptr<DX::DeviceResources> m_deviceResources;
+	bool loadingComplete_ = false;
+
+	float	m_radiansPerSecond;
+	float	m_angle;
+	bool	m_tracking;
+};

@@ -1,0 +1,145 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>2ec8955c-572f-47a1-9f45-d22b2c522ce3</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>410173d4-e063-45fa-8b88-9ad53d3cda30</UniqueIdentifier>
+      <Extensions>bmp;fbx;gif;jpg;jpeg;tga;tiff;tif;png</Extensions>
+    </Filter>
+    <Filter Include="Content">
+      <UniqueIdentifier>42a2be88-3b4c-448d-90c6-9b5566d86cbb</UniqueIdentifier>
+    </Filter>
+    <ClInclude Include="Common\d3dx12.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DirectXHelper.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\StepTimer.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DeviceResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClCompile Include="Common\DeviceResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClInclude Include="Content\Sample3DSceneRenderer.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ShaderStructures.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClCompile Include="Content\Sample3DSceneRenderer.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <FxCompile Include="Content\SamplePixelShader.hlsl">
+      <Filter>Content</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\SampleVertexShader.hlsl">
+      <Filter>Content</Filter>
+    </FxCompile>
+    <Image Include="Assets\LockScreenLogo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\SplashScreen.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square150x150Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square44x44Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\StoreLogo.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Wide310x150Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Filter Include="cpp">
+      <UniqueIdentifier>{19cfab6c-aa94-418a-91ab-7ed62f08ef47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cpp\input">
+      <UniqueIdentifier>{32913a34-0fc4-44f7-91ce-07b261ace278}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="App.cpp" />
+    <ClCompile Include="FireAndForget_v2Main.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="..\source\cpp\Assets.cpp">
+      <Filter>cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\cpp\Camera.cpp">
+      <Filter>cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\cpp\Scene.cpp">
+      <Filter>cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\cpp\Sphere.cpp">
+      <Filter>cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\cpp\Timer.cpp">
+      <Filter>cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\source\cpp\input\Input.cpp">
+      <Filter>cpp\input</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\Renderer.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\PipelineState.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="App.h" />
+    <ClInclude Include="FireAndForget_v2Main.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="..\source\cpp\Assets.hpp">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\Camera.hpp">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\Materials.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\MatrixUtils.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\RendererWrapper.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\Scene.hpp">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\Sphere.hpp">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\Timer.hpp">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\input\Input.hpp">
+      <Filter>cpp\input</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\Renderer.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\PipelineState.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FireAndForget.v2_TemporaryKey.pfx" />
+  </ItemGroup>
+</Project>

@@ -1,6 +1,8 @@
+#include "pch.h"
 #include "Sphere.hpp"
-
+#ifndef ARRAYSIZE
 #define ARRAYSIZE(x) sizeof(x) / sizeof(x[0])
+#endif // !ARRAYSIZE
 
 static float radius/*R*/ = 0.295f,
 X = 0.525731112119133606f,
