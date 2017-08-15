@@ -43,6 +43,21 @@ namespace FireAndForget_v2
 		std::unique_ptr<FireAndForget_v2Main> m_main;
 		bool m_windowClosed;
 		bool m_windowVisible;
+
+		int pointerdown = 0;
+		bool holding = false;
+		Windows::UI::Input::GestureRecognizer^ m_gestureRecognizer;
+		void OnPointerMoved(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args);
+		void OnPointerPressed(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args);
+		void OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args);
+		void OnKeyUp(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args);
+		void OnKeyDown(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args);
+		void ManipulationCompleted(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Windows::UI::Input::ManipulationCompletedEventArgs^ args);
+		void ManipulationInertiaStarting(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Windows::UI::Input::ManipulationInertiaStartingEventArgs^ args);
+		void ManipulationStarted(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Windows::UI::Input::ManipulationStartedEventArgs^ args);
+		void ManipulationUpdated(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Windows::UI::Input::ManipulationUpdatedEventArgs^ args);
+		void Holding(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Windows::UI::Input::HoldingEventArgs^ args);
+
 	};
 }
 

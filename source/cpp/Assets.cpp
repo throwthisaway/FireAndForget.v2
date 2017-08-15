@@ -61,29 +61,90 @@ namespace {
 }
 
 void Assets::Init(RendererWrapper* renderer) {
+	renderer->BeginUploadResources();
 	//LoadFromBundle("dssdsds");
-	static const float positions[] =
+	//static const float positions[] =
+	//{
+	//	0.0,  5., 0, 1,
+	//	-5., -5., 0, 1,
+	//	5., -5., 0, 1,
+	//};
+
+	//static const float colors[] =
+	//{
+	//	1, 0, 0, 1,
+	//	0, 1, 0, 1,
+	//	0, 0, 1, 1,
+	//};
+	//auto pos = renderer->CreateBuffer(positions, sizeof(positions) * sizeof(positions[0]), sizeof(float) * 4);
+	//auto col = renderer->CreateBuffer(colors, sizeof(colors) * sizeof(colors[0]), sizeof(float) * 4);
+	//staticModels[PLACEHOLDER1] = {pos, col, 0, sizeof(positions) / sizeof(positions[0]) / 4};
+	//static const float positions2[] =
+	//{
+	//	0.5,  0.5, 0, 1,
+	//	0., -0.5, 0, 1,
+	//	1., -0.5, 0, 1,
+	//};
+	//auto pos2 = renderer->CreateBuffer(positions2, sizeof(positions2) * sizeof(positions2[0]), sizeof(float) * 4);
+	//staticModels[PLACEHOLDER2] = {pos2, col, 0, sizeof(positions2) / sizeof(positions[0]) / 4};
+	struct VertexPositionColor
 	{
-		0.0,  5., 0, 1,
-		-5., -5., 0, 1,
-		5., -5., 0, 1,
+		DirectX::XMFLOAT3 pos;
+		DirectX::XMFLOAT3 color;
+	};
+	VertexPositionColor cubeVertices[] =
+	{
+		{ XMFLOAT3(-0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(-0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 	};
 
-	static const float colors[] =
+	const UINT vertexBufferSize = sizeof(cubeVertices);
+	auto posCol = renderer->CreateBuffer(cubeVertices, vertexBufferSize, sizeof(VertexPositionColor));
+
+	unsigned short cubeIndices[] =
 	{
-		1, 0, 0, 1,
-		0, 1, 0, 1,
-		0, 0, 1, 1,
+		0, 2, 1, // -x
+		1, 2, 3,
+
+		4, 5, 6, // +x
+		5, 7, 6,
+
+		0, 1, 5, // -y
+		0, 5, 4,
+
+		2, 6, 7, // +y
+		2, 7, 3,
+
+		0, 4, 6, // -z
+		0, 6, 2,
+
+		1, 3, 7, // +z
+		1, 7, 5,
 	};
-	auto pos = renderer->CreateBuffer(positions, sizeof(positions) * sizeof(positions[0]), sizeof(float) * 4);
-	auto col = renderer->CreateBuffer(colors, sizeof(colors) * sizeof(colors[0]), sizeof(float) * 4);
-	staticModels[PLACEHOLDER1] = {pos, col, sizeof(positions) / sizeof(positions[0]) / 4};
-	static const float positions2[] =
+
+	const UINT indexBufferSize = sizeof(cubeIndices);
+	auto index = renderer->CreateBuffer(cubeIndices, indexBufferSize, sizeof(unsigned short));
+
+	staticModels[PLACEHOLDER1] = {posCol, 0, index,  indexBufferSize / sizeof(unsigned short) };
+
+	VertexPositionColor cubeVertices2[] =
 	{
-		0.5,  0.5, 0, 1,
-		0., -0.5, 0, 1,
-		1., -0.5, 0, 1,
+		{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(1.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(1.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(1.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(1.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 	};
-	auto pos2 = renderer->CreateBuffer(positions2, sizeof(positions2) * sizeof(positions2[0]), sizeof(float) * 4);
-	staticModels[PLACEHOLDER2] = {pos2, col, sizeof(positions2) / sizeof(positions[0]) / 4};
+	auto posCol2 = renderer->CreateBuffer(cubeVertices2, vertexBufferSize, sizeof(VertexPositionColor));
+	staticModels[PLACEHOLDER2] = { posCol2, 0, index, indexBufferSize / sizeof(unsigned short) };
+	renderer->EndUploadResources();
 }

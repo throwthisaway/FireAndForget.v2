@@ -126,10 +126,10 @@
 	NSLog(@"mouse exited");
 }
 - (void)mouseDown:(NSEvent *)event {
-	scene_.input.Start(event.locationInWindow.x, event.locationInWindow.y);
+	scene_.input.Start(event.locationInWindow.x, -event.locationInWindow.y);
 }
 - (void)rightMouseDown:(NSEvent *)event {
-	scene_.input.Start(event.locationInWindow.x, event.locationInWindow.y);
+	scene_.input.Start(event.locationInWindow.x, -event.locationInWindow.y);
 }
 - (void)mouseMoved:(NSEvent *)event {
 	NSLog(@"mouse moved %ld", (long)event.buttonNumber);
@@ -138,14 +138,14 @@
 - (void)mouseDragged:(NSEvent *)event {
 	NSLog(@"mouse dragged %f %f", event.locationInWindow.x, event.locationInWindow.y);
 
-	if (event.modifierFlags | NSEventModifierFlagCommand)
-		scene_.input.TranslateXZ(event.locationInWindow.x, event.locationInWindow.y);
+	if (event.modifierFlags & NSEventModifierFlagCommand)
+		scene_.input.TranslateXZ(event.locationInWindow.x, -event.locationInWindow.y);
 	else
-		scene_.input.Rotate(event.locationInWindow.x, event.locationInWindow.y);
+		scene_.input.Rotate(event.locationInWindow.x, -event.locationInWindow.y);
 }
 - (void)rightMouseDragged:(NSEvent *)event {
 	NSLog(@"mouse dragged %f %f", event.locationInWindow.x, event.locationInWindow.y);
-	scene_.input.TranslateY(event.locationInWindow.y);
+	scene_.input.TranslateY(-event.locationInWindow.y);
 }
 - (void)keyDown:(NSEvent *)event {
 	if (event.keyCode == kVK_Escape) {

@@ -25,7 +25,8 @@ void FireAndForget_v2Main::CreateRenderers(const std::shared_ptr<DX::DeviceResou
 {
 	// TODO: Replace this with your app's content initialization.
 	m_sceneRenderer = std::unique_ptr<Renderer>(new Renderer(deviceResources));
-
+	rendererWrapper_.Init((void*)m_sceneRenderer.get());
+	scene_.Init(&rendererWrapper_, deviceResources->GetOutputSize().Width, deviceResources->GetOutputSize().Height);
 	OnWindowSizeChanged();
 }
 
@@ -35,8 +36,8 @@ void FireAndForget_v2Main::Update()
 	// Update scene objects.
 	m_timer.Tick([&]()
 	{
-		// TODO: Replace this with your app's content update functions.
-		m_sceneRenderer->Update(m_timer);
+		scene_.Update(DX::StepTimer::TicksToSeconds(m_timer.GetElapsedTicks()) * 1000.,
+			m_timer.GetElapsedSeconds() * 1000.);
 	});
 }
 
@@ -50,8 +51,9 @@ bool FireAndForget_v2Main::Render()
 		return false;
 	}
 
-	// Render the scene objects.
-	// TODO: Replace this with your app's content rendering functions.
+	m_sceneRenderer->BeginRender();
+	size_t encoderIndex = m_sceneRenderer->StartRenderPass();
+	scene_.Render(encoderIndex);
 	return m_sceneRenderer->Render();
 }
 
@@ -89,4 +91,34 @@ void FireAndForget_v2Main::OnDeviceRemoved()
 	// and its resources which are no longer valid.
 	m_sceneRenderer->SaveState();
 	m_sceneRenderer = nullptr;
+}
+
+void FireAndForget_v2Main::PointerMoved(float x, float y, bool left, bool middle, bool right, size_t modifiers) {
+	const size_t Ctrl = 1, Alt = 2, Shift = 4;
+	if (left) {
+		if (modifiers & Alt)
+			scene_.input.TranslateY(y);
+		else
+			scene_.input.Rotate(x, y);
+	}
+	else if (right) {
+		scene_.input.TranslateXZ(x, y);
+	}
+}
+void FireAndForget_v2Main::PointerPressed(float x, float y, bool left, bool middle, bool right) {
+	scene_.input.Start(x, y);
+}
+void FireAndForget_v2Main::PointerReleased(float x, float y, bool left, bool middle, bool right) {
+}
+void FireAndForget_v2Main::KeyDown(Windows::System::VirtualKey key) {
+	switch (key) {
+	case Windows::System::VirtualKey::Space:
+		break;
+	}
+}
+void FireAndForget_v2Main::KeyUp(Windows::System::VirtualKey) {
+
+}
+void FireAndForget_v2Main::Zoom(float factor) {
+	
 }

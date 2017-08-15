@@ -8,6 +8,8 @@
 
 using namespace FireAndForget_v2;
 
+struct Model;
+
 class Renderer {
 	PipelineStates pipelineStates_;
 public:
@@ -18,28 +20,37 @@ public:
 	void Update(DX::StepTimer const& timer);
 	bool Render();
 	void SaveState();
+
+	void BeginUploadResources();
+	size_t CreateBuffer(const void* buffer, size_t length, size_t elementSize);
+	void EndUploadResources();
+
+	void BeginRender();
+	size_t StartRenderPass();
+	void SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, uint8_t* uniforms, const Model& model);
 private:
-	void Rotate(float radians);
-	// Constant buffers must be 256-byte aligned.
-	static const UINT c_alignedConstantBufferSize = (sizeof(ModelViewProjectionConstantBuffer) + 255) & ~255;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>	commandList_;
+	struct Buffer {
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		D3D12_GPU_VIRTUAL_ADDRESS bufferLocation;
+		size_t size, elementSize;
+	};
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> bufferUploads_;
+	std::vector<Buffer> buffers_;
+	struct CBuffer {
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvHeap;
+		Microsoft::WRL::ComPtr<ID3D12Resource> constantBuffer;
+		UINT8* mappedConstantBuffer = nullptr;
+		UINT cbvDescriptorSize, alignedConstantBufferSize;
+		size_t dataSize;
+		~CBuffer() {
+			constantBuffer->Unmap(0, nullptr);
+		}
+	};
+	std::vector<CBuffer> cbuffers_;
+	CBuffer CreateAndMapConstantBuffers(size_t size);
 
-	// Direct3D resources for cube geometry.
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>	m_commandList;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>		m_cbvHeap;
-	Microsoft::WRL::ComPtr<ID3D12Resource>				m_vertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D12Resource>				m_indexBuffer;
-	Microsoft::WRL::ComPtr<ID3D12Resource>				m_constantBuffer;
-	ModelViewProjectionConstantBuffer					m_constantBufferData;
-	UINT8*												m_mappedConstantBuffer;
-	UINT												m_cbvDescriptorSize;
-	D3D12_RECT											m_scissorRect;	
-	D3D12_VERTEX_BUFFER_VIEW							m_vertexBufferView;
-	D3D12_INDEX_BUFFER_VIEW								m_indexBufferView;
-
+	D3D12_RECT m_scissorRect;
 	std::shared_ptr<DX::DeviceResources> m_deviceResources;
 	bool loadingComplete_ = false;
-
-	float	m_radiansPerSecond;
-	float	m_angle;
-	bool	m_tracking;
 };

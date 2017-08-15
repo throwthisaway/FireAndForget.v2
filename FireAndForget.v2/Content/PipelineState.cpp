@@ -73,7 +73,10 @@ void PipelineStates::CreateDeviceDependentResources() {
 		state.SampleDesc.Count = 1;
 
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-		states_.push_back({ rootSignature, pipelineState });
+
+
+		rootSignatures_.push_back(rootSignature);
+		states_.push_back({ rootSignatures_.size()-1, pipelineState });
 	});
 	completionTask_ = createPipelineStateTask.then([this]() {
 		loadingComplete_ = true;

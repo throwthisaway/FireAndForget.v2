@@ -12,10 +12,12 @@ public:
 	PipelineStates(const DX::DeviceResources*);
 	~PipelineStates();
 	void CreateDeviceDependentResources();
+
 	struct State {
-		Microsoft::WRL::ComPtr<ID3D12RootSignature>	rootSignature;
+		size_t rootSignatureId;
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
 	};
+	std::vector<Microsoft::WRL::ComPtr<ID3D12RootSignature>> rootSignatures_;
 	std::vector<State> states_;
 	Concurrency::task<void> completionTask_;
 };

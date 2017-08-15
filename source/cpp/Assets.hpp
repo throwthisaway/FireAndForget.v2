@@ -2,7 +2,7 @@
 #include "RendererWrapper.h"
 #include <array>
 struct Model {
-	size_t vertices, color, count;
+	size_t vertices, color, index, count;
 };
 struct Assets {
 	void Init(RendererWrapper* renderer);

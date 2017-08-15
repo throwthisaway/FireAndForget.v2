@@ -4,6 +4,7 @@
 #include "Common\DeviceResources.h"
 #include "Content\Sample3DSceneRenderer.h"
 #include "Content\Renderer.h"
+#include "..\source\cpp\Scene.hpp"
 
 // Renders Direct3D content on the screen.
 namespace FireAndForget_v2
@@ -21,11 +22,20 @@ namespace FireAndForget_v2
 		void OnResuming();
 		void OnDeviceRemoved();
 
+		void PointerMoved(float x, float y, bool left, bool middle, bool right, size_t modifiers);
+		void PointerPressed(float x, float y, bool left, bool middle, bool right);
+		void PointerReleased(float x, float y, bool left, bool middle, bool right);
+		void Zoom(float factor);
+		void KeyDown(Windows::System::VirtualKey);
+		void KeyUp(Windows::System::VirtualKey);
+
 	private:
 		// TODO: Replace with your own content renderers.
 		std::unique_ptr<Renderer> m_sceneRenderer;
+		RendererWrapper rendererWrapper_;
 
 		// Rendering loop timer.
 		DX::StepTimer m_timer;
+		Scene scene_;
 	};
 }
