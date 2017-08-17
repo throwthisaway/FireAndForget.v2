@@ -97,6 +97,9 @@
     <ClCompile Include="Content\PipelineState.cpp">
       <Filter>Content</Filter>
     </ClCompile>
+    <ClCompile Include="Content\BundleLoader.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
@@ -135,11 +138,25 @@
     <ClInclude Include="Content\PipelineState.h">
       <Filter>Content</Filter>
     </ClInclude>
+    <ClInclude Include="Content\BundleLoader.h">
+      <Filter>Content</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FireAndForget.v2_TemporaryKey.pfx" />
+    <None Include="..\source\assets\BEETHOVE_object.mesh">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\source\assets\checkerboard.mesh">
+      <Filter>Assets</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\source\assets\checkerboard.tga">
+      <Filter>Assets</Filter>
+    </Image>
   </ItemGroup>
 </Project>

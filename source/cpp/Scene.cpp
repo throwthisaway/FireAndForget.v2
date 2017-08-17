@@ -27,6 +27,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	// TODO:: remove 
 }
 void Scene::Render(size_t encoderIndex) {
+	if (!assets_.loadCompleted) return;
 	for (const auto& o : objects_)
 		renderer_->SubmitToEncoder(encoderIndex, Materials::ColPos, (uint8_t*)&o.uniforms, o.model);
 }

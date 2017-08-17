@@ -1,10 +1,13 @@
 #include "pch.h"
+#include "compatibility.h"
 #include "Assets.hpp"
 #include <assert.h>
 #ifdef PLATFORM_MAC_OS
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFStream.h>
 #include <CoreFoundation/CFNumber.h>
+#elif defined(PLATFORM_WIN)
+#include "Content\BundleLoader.h"
 #endif
 #include "MeshLoader.h"
 #include "FileReader.h"
@@ -59,7 +62,7 @@ namespace {
 	}
 #endif
 }
-
+Assets::~Assets() = default;
 void Assets::Init(RendererWrapper* renderer) {
 	renderer->BeginUploadResources();
 	//LoadFromBundle("dssdsds");
@@ -147,4 +150,14 @@ void Assets::Init(RendererWrapper* renderer) {
 	auto posCol2 = renderer->CreateBuffer(cubeVertices2, vertexBufferSize, sizeof(VertexPositionColor));
 	staticModels[PLACEHOLDER2] = { posCol2, 0, index, indexBufferSize / sizeof(unsigned short) };
 	renderer->EndUploadResources();
+#ifdef PLATFORM_WIN
+	LoadFromBundle("checkerboard.mesh", mesh, [this, renderer](bool success) {
+		renderer->BeginUploadResources();
+		// TODO::
+		renderer->EndUploadResources();
+		loadCompleted = true;
+	});
+#else
+
+#endif
 }

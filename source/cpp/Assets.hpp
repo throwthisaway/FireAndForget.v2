@@ -1,6 +1,8 @@
 #pragma once
 #include "RendererWrapper.h"
 #include <array>
+#include "MeshLoader.h"
+
 struct Model {
 	size_t vertices, color, index, count;
 };
@@ -10,4 +12,7 @@ struct Assets {
 	static constexpr size_t PLACEHOLDER2 = 1;
 	static constexpr size_t STATIC_MODEL_COUNT = 2;
 	std::array<Model, STATIC_MODEL_COUNT> staticModels;
+	MeshLoader::Mesh mesh;
+	bool loadCompleted = false;
+	~Assets();
 };
