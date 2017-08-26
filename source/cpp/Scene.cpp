@@ -19,6 +19,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	assets_.Init(renderer);
 	objects_.emplace_back(assets_.staticModels[Assets::PLACEHOLDER1]);
 	objects_.emplace_back(assets_.staticModels[Assets::PLACEHOLDER2]);
+	objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);
 
 	// TODO:: remove
 	m_radiansPerSecond = glm::quarter_pi<float>();
@@ -28,8 +29,16 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 }
 void Scene::Render(size_t encoderIndex) {
 	if (!assets_.loadCompleted) return;
-	for (const auto& o : objects_)
-		renderer_->SubmitToEncoder(encoderIndex, Materials::ColPos, (uint8_t*)&o.uniforms, o.model);
+	/*for (const auto& o : objects_)
+		renderer_->SubmitToEncoder(encoderIndex, Materials::ColPos, (uint8_t*)&o.uniforms, o.model);*/
+	//{
+	//	const auto& o = objects_[1];
+	//	renderer_->SubmitToEncoder(encoderIndex, Materials::ColPos, (uint8_t*)&os, o.model);
+	//}
+	const auto& o = objects_[2];
+	auto m = glm::translate(o.m, glm::vec3(.5f, .5f, .5f));
+	renderer_->SubmitToEncoder(encoderIndex, Materials::Pos, Materials::ConstantColorRef({ glm::transpose(camera_.vp * m) }, { glm::vec4(0.5f, .8f, .0f, 1.f) }), o.model);
+	renderer_->SubmitToEncoder(encoderIndex, Materials::Pos, Materials::ConstantColorRef({ glm::transpose(camera_.vp * o.m) }, { glm::vec4(0.f, .8f, .8f, 1.f) }), o.model);
 }
 void Scene::Update(double frame, double total) {
 	// TODO:: remove
@@ -40,9 +49,10 @@ void Scene::Update(double frame, double total) {
 	for (auto& o : objects_) {
 		o.Update(frame, total);
 #ifdef PLATFORM_WIN
-		memcpy(&o.uniforms.projection, &glm::transpose(camera_.proj), sizeof(o.uniforms.projection));
+		/*memcpy(&o.uniforms.projection, &glm::transpose(camera_.proj), sizeof(o.uniforms.projection));
 		memcpy(&o.uniforms.view, &glm::transpose(camera_.view), sizeof(o.uniforms.view));
-		DirectX::XMStoreFloat4x4(&o.uniforms.model, DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(m_angle)));
+		DirectX::XMStoreFloat4x4(&o.uniforms.model, DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(m_angle)));*/
+		// TODO::
 #else
 		o.uniforms.mvp =  camera_.vp * o.m;
 #endif

@@ -35,12 +35,6 @@
     <ClCompile Include="Content\Sample3DSceneRenderer.cpp">
       <Filter>Content</Filter>
     </ClCompile>
-    <FxCompile Include="Content\SamplePixelShader.hlsl">
-      <Filter>Content</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\SampleVertexShader.hlsl">
-      <Filter>Content</Filter>
-    </FxCompile>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
       <Filter>Assets</Filter>
     </Image>
@@ -67,6 +61,9 @@
     </Filter>
     <Filter Include="cpp\input">
       <UniqueIdentifier>{32913a34-0fc4-44f7-91ce-07b261ace278}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content\shaders">
+      <UniqueIdentifier>{ef3409c8-a7f0-4471-9cf2-7cd5cb530e12}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -158,5 +155,19 @@
     <Image Include="..\source\assets\checkerboard.tga">
       <Filter>Assets</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Content\shaders\SamplePixelShader.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\SampleVertexShader.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\PosPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\PosVS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

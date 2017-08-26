@@ -19,7 +19,7 @@ struct Scene {
 		float scale = 1.f;
 		const Model& model;
 #ifdef PLATFORM_WIN
-		FireAndForget_v2::ModelViewProjectionConstantBuffer uniforms;
+		//FireAndForget_v2::ModelViewProjectionConstantBuffer perVertexColor;
 #else
 		Materials::ColPosBuffer uniforms;
 #endif

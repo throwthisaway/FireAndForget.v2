@@ -134,7 +134,7 @@ void Assets::Init(RendererWrapper* renderer) {
 	const UINT indexBufferSize = sizeof(cubeIndices);
 	auto index = renderer->CreateBuffer(cubeIndices, indexBufferSize, sizeof(unsigned short));
 
-	staticModels[PLACEHOLDER1] = {posCol, 0, index,  indexBufferSize / sizeof(unsigned short) };
+	staticModels[PLACEHOLDER1] = {posCol, 0, index,  0, indexBufferSize / sizeof(unsigned short) };
 
 	VertexPositionColor cubeVertices2[] =
 	{
@@ -148,16 +148,23 @@ void Assets::Init(RendererWrapper* renderer) {
 		{ XMFLOAT3(1.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 	};
 	auto posCol2 = renderer->CreateBuffer(cubeVertices2, vertexBufferSize, sizeof(VertexPositionColor));
-	staticModels[PLACEHOLDER2] = { posCol2, 0, index, indexBufferSize / sizeof(unsigned short) };
-	renderer->EndUploadResources();
+	staticModels[PLACEHOLDER2] = { posCol2, 0, index, 0, indexBufferSize / sizeof(unsigned short) };
 #ifdef PLATFORM_WIN
 	LoadFromBundle("checkerboard.mesh", mesh, [this, renderer](bool success) {
-		renderer->BeginUploadResources();
-		// TODO::
+		auto vertices = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
+		// TODO:: if (!mesh.polygons.empty()
+		auto indices = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
+		for (const auto& layer : mesh.layers) {
+			for (size_t i = 0; i < layer.poly.count; ++i) {
+				staticModels[CHECKERBOARD] = { vertices, 0, indices, layer.poly.sections[i].offset, layer.poly.sections[i].count * VERTICESPERPOLY };
+				break;
+				// TODO::
+			}
+			break;
+			// TODO::
+		}
 		renderer->EndUploadResources();
 		loadCompleted = true;
 	});
-#else
-
 #endif
 }

@@ -4,6 +4,10 @@
 #include "..\source\cpp\Materials.h"
 #include "..\source\cpp\Assets.hpp"
 
+// Resource Binding Flow of Control - https://msdn.microsoft.com/en-us/library/windows/desktop/mt709154(v=vs.85).aspx
+// Resource Binding - https://msdn.microsoft.com/en-us/library/windows/desktop/dn899206(v=vs.85).aspx
+// Creating Descriptors - https://msdn.microsoft.com/en-us/library/windows/desktop/dn859358(v=vs.85).aspx
+// https://www.braynzarsoft.net/viewtutorial/q16390-04-directx-12-braynzar-soft-tutorials
 void RendererWrapper::Init(void* self) {
 	this->self = self;
 }
@@ -26,7 +30,7 @@ void RendererWrapper::BeginRender() {
 size_t RendererWrapper::StartRenderPass() {
 	return reinterpret_cast<Renderer*>(self)->StartRenderPass();
 }
-void RendererWrapper::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, uint8_t* uniforms, const Model& model) {
+void RendererWrapper::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const Materials::cBuffers& uniforms, const Model& model) {
 	return reinterpret_cast<Renderer*>(self)->SubmitToEncoder(encoderIndex, pipelineIndex, uniforms, model);
 }
 
@@ -47,15 +51,15 @@ Renderer::~Renderer() {}
 
 void Renderer::SaveState() {}
 void Renderer::BeginUploadResources() {
-	DX::ThrowIfFailed(m_deviceResources->GetCommandAllocator()->Reset());
-	DX::ThrowIfFailed(commandList_->Reset(m_deviceResources->GetCommandAllocator(), nullptr));
+	DX::ThrowIfFailed(bufferUpload_.cmdAllocator->Reset());
+	DX::ThrowIfFailed(bufferUpload_.cmdList->Reset(bufferUpload_.cmdAllocator.Get(), nullptr));
 }
 void Renderer::EndUploadResources() {
-	DX::ThrowIfFailed(commandList_->Close());
-	ID3D12CommandList* ppCommandLists[] = { commandList_.Get() };
+	DX::ThrowIfFailed(bufferUpload_.cmdList->Close());
+	ID3D12CommandList* ppCommandLists[] = { bufferUpload_.cmdList.Get() };
 	m_deviceResources->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	m_deviceResources->WaitForGpu();
-	bufferUploads_.clear();
+	bufferUpload_.intermediateResources.clear();
 }
 size_t Renderer::CreateBuffer(const void* buffer, size_t size, size_t elementSize) {
 	auto d3dDevice = m_deviceResources->GetD3DDevice();
@@ -82,7 +86,7 @@ size_t Renderer::CreateBuffer(const void* buffer, size_t size, size_t elementSiz
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&bufferUpload)));
-	bufferUploads_.push_back(bufferUpload);
+	bufferUpload_.intermediateResources.push_back(bufferUpload);
 	NAME_D3D12_OBJECT(resource);
 	{
 		D3D12_SUBRESOURCE_DATA data = {};
@@ -90,68 +94,16 @@ size_t Renderer::CreateBuffer(const void* buffer, size_t size, size_t elementSiz
 		data.RowPitch = size;
 		data.SlicePitch = data.RowPitch;
 
-		UpdateSubresources(commandList_.Get(), resource.Get(), bufferUpload.Get(), 0, 0, 1, &data);
+		UpdateSubresources(bufferUpload_.cmdList.Get(), resource.Get(), bufferUpload.Get(), 0, 0, 1, &data);
 
 		CD3DX12_RESOURCE_BARRIER vertexBufferResourceBarrier =
 			CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-		commandList_->ResourceBarrier(1, &vertexBufferResourceBarrier);
+		bufferUpload_.cmdList->ResourceBarrier(1, &vertexBufferResourceBarrier);
 	}
 	buffers_.push_back({ resource, resource->GetGPUVirtualAddress(), size, elementSize});
 	return buffers_.size() - 1;
 }
-Renderer::CBuffer Renderer::CreateAndMapConstantBuffers(size_t size) {
-	auto d3dDevice = m_deviceResources->GetD3DDevice();
-	// Constant buffers must be 256-byte aligned.
-	const UINT c_alignedConstantBufferSize = (size + 255) & ~255;
-	ComPtr<ID3D12DescriptorHeap>  cbvHeap;
-	// Create a descriptor heap for the constant buffers.
-	{
 
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = DX::c_frameCount;
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		// This flag indicates that this descriptor heap can be bound to the pipeline and that descriptors contained in it can be referenced by a root table.
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		DX::ThrowIfFailed(d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&cbvHeap)));
-
-		NAME_D3D12_OBJECT(cbvHeap);
-	}
-	ComPtr<ID3D12Resource> constantBuffer;
-	CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-	CD3DX12_RESOURCE_DESC constantBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(DX::c_frameCount * c_alignedConstantBufferSize);
-	DX::ThrowIfFailed(d3dDevice->CreateCommittedResource(
-		&uploadHeapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&constantBufferDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&constantBuffer)));
-
-	NAME_D3D12_OBJECT(constantBuffer);
-
-	// Create constant buffer views to access the upload buffer.
-	D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress = constantBuffer->GetGPUVirtualAddress();
-	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvCpuHandle(cbvHeap->GetCPUDescriptorHandleForHeapStart());
-	UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	for (int n = 0; n < DX::c_frameCount; n++)
-	{
-		D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
-		desc.BufferLocation = cbvGpuAddress;
-		desc.SizeInBytes = c_alignedConstantBufferSize;
-		d3dDevice->CreateConstantBufferView(&desc, cbvCpuHandle);
-
-		cbvGpuAddress += desc.SizeInBytes;
-		cbvCpuHandle.Offset(cbvDescriptorSize);
-	}
-
-	// Map the constant buffers.
-	CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
-	UINT8* mappedConstantBuffer = nullptr;
-	DX::ThrowIfFailed(constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mappedConstantBuffer)));
-	ZeroMemory(mappedConstantBuffer, DX::c_frameCount * c_alignedConstantBufferSize);
-	return { cbvHeap, constantBuffer, mappedConstantBuffer, cbvDescriptorSize, c_alignedConstantBufferSize, size};
-}
 void Renderer::CreateDeviceDependentResources() {
 	pipelineStates_.CreateDeviceDependentResources();
 	auto d3dDevice = m_deviceResources->GetD3DDevice();
@@ -159,8 +111,12 @@ void Renderer::CreateDeviceDependentResources() {
 	commandList_->Close();
 	NAME_D3D12_OBJECT(commandList_);
 
-	// Material::ColPos
-	cbuffers_.push_back(CreateAndMapConstantBuffers(sizeof(ModelViewProjectionConstantBuffer)));
+	// Buffer upload...
+	DX::ThrowIfFailed(d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&bufferUpload_.cmdAllocator)));
+	DX::ThrowIfFailed(d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, bufferUpload_.cmdAllocator.Get(), nullptr, IID_PPV_ARGS(&bufferUpload_.cmdList)));
+	bufferUpload_.cmdList->Close();
+	NAME_D3D12_OBJECT(bufferUpload_.cmdList);
+	// Buffer upload...
 
 	pipelineStates_.completionTask_.then([this]() {
 		loadingComplete_ = true;
@@ -202,26 +158,36 @@ size_t Renderer::StartRenderPass() {
 	return 0;
 }
 
-void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, uint8_t* uniforms, const Model& model) {
+void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const Materials::cBuffers& uniforms, const Model& model) {
 	if (!loadingComplete_) return;	
-	const auto& state = pipelineStates_.states_[pipelineIndex];
+	auto& state = pipelineStates_.states_[pipelineIndex];
 	commandList_->SetPipelineState(state.pipelineState.Get());
 
 	PIXBeginEvent(commandList_.Get(), 0, L"Draw the cube");
 	{
-		auto& cbuffer = cbuffers_[pipelineIndex];
-		// Update the constant buffer resource.
-		UINT8* destination = cbuffer.mappedConstantBuffer + (m_deviceResources->GetCurrentFrameIndex() * cbuffer.alignedConstantBufferSize);
-		memcpy(destination, uniforms, cbuffer.dataSize);
-
+		ID3D12DescriptorHeap* ppHeaps[] = { state.cbvHeap.Get() };
+		size_t i = 0;
+		for (auto& cbuffer : state.cbuffers) {
+			// Update the constant buffer resource.
+			UINT8* mappedConstantBuffer = cbuffer.Map();
+			UINT8* destination = mappedConstantBuffer + (m_deviceResources->GetCurrentFrameIndex() * cbuffer.alignedConstantBufferSize);
+			memcpy(destination, uniforms.data[i].first, uniforms.data[i].second/*cbuffer.dataSize*/);
+			cbuffer.Unmap();
+			++i;
+		}
 		// Set the graphics root signature and descriptor heaps to be used by this frame.
 		commandList_->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].Get());
-		ID3D12DescriptorHeap* ppHeaps[] = { cbuffer.cbvHeap.Get() };
 		commandList_->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
 		// Bind the current frame's constant buffer to the pipeline.
-		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(cbuffer.cbvHeap->GetGPUDescriptorHandleForHeapStart(), m_deviceResources->GetCurrentFrameIndex(), cbuffer.cbvDescriptorSize);
-		commandList_->SetGraphicsRootDescriptorTable(0, gpuHandle);
+		size_t rootParameterIndex = 0;
+		auto d3dDevice = m_deviceResources->GetD3DDevice();
+		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(state.cbvHeap->GetGPUDescriptorHandleForHeapStart(), m_deviceResources->GetCurrentFrameIndex(), cbvDescriptorSize * state.cbuffers.size());
+		for (auto& cbuffer : state.cbuffers) {
+			commandList_->SetGraphicsRootDescriptorTable(rootParameterIndex++, gpuHandle);
+			gpuHandle.Offset(cbvDescriptorSize);
+		}
 		commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
