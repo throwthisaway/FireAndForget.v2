@@ -42,7 +42,7 @@ namespace {
 		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvCpuHandle(cbvHeap->GetCPUDescriptorHandleForHeapStart());
 		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		cbvCpuHandle.Offset(cbvDescriptorSize * indexOffset);
-		for (int n = 0; n < DX::c_frameCount; n++)
+		for (int n = 0; n < DX::c_frameCount; ++n)
 		{
 			D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
 			desc.BufferLocation = cbvGpuAddress;

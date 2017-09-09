@@ -107,9 +107,10 @@ size_t Renderer::CreateBuffer(const void* buffer, size_t size, size_t elementSiz
 void Renderer::CreateDeviceDependentResources() {
 	pipelineStates_.CreateDeviceDependentResources();
 	auto d3dDevice = m_deviceResources->GetD3DDevice();
-	DX::ThrowIfFailed(d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_deviceResources->GetCommandAllocator(), nullptr, IID_PPV_ARGS(&commandList_)));
-	commandList_->Close();
-	NAME_D3D12_OBJECT(commandList_);
+	// 1 command list for each pipeline state, and 1 for frame commands
+	DX::ThrowIfFailed(d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_deviceResources->GetCommandAllocator(), nullptr, IID_PPV_ARGS(&frameCommandList_)));
+	frameCommandList_->Close();
+	NAME_D3D12_OBJECT(frameCommandList_);
 
 	// Buffer upload...
 	DX::ThrowIfFailed(d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&bufferUpload_.cmdAllocator)));
@@ -119,6 +120,22 @@ void Renderer::CreateDeviceDependentResources() {
 	// Buffer upload...
 
 	pipelineStates_.completionTask_.then([this]() {
+		auto d3dDevice = m_deviceResources->GetD3DDevice();
+		for (size_t i = 0; i < pipelineStates_.states_.size(); ++i) {
+			Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
+			DX::ThrowIfFailed(d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_deviceResources->GetCommandAllocator(), nullptr, IID_PPV_ARGS(&commandList)));
+			commandList->Close();
+			NAME_D3D12_OBJECT(commandList);
+			commandLists_.push_back(commandList);
+		}
+		for (UINT n = 0; n < DX::c_frameCount * commandLists_.size(); n++)
+		{
+			Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
+			DX::ThrowIfFailed(
+				d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator))
+			);
+			commandAllocators_.push_back(commandAllocator);
+		}
 		loadingComplete_ = true;
 	});
 }
@@ -137,35 +154,57 @@ void Renderer::Update(DX::StepTimer const& timer) {
 void Renderer::BeginRender() {
 	if (!loadingComplete_) return;
 	DX::ThrowIfFailed(m_deviceResources->GetCommandAllocator()->Reset());
-	DX::ThrowIfFailed(commandList_->Reset(m_deviceResources->GetCommandAllocator(), nullptr));
+	DX::ThrowIfFailed(frameCommandList_->Reset(m_deviceResources->GetCommandAllocator(), nullptr));
+
+	size_t i = 0;
+	for (auto& commandList : commandLists_) {
+		auto* commandAllocator = commandAllocators_[m_deviceResources->GetCurrentFrameIndex() + i * DX::c_frameCount].Get();
+		DX::ThrowIfFailed(commandAllocator->Reset());
+		DX::ThrowIfFailed(commandList->Reset(commandAllocator, nullptr));
+		++i;
+	}
 }
 size_t Renderer::StartRenderPass() {
 	if (!loadingComplete_) return 0;
 	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
-	commandList_->RSSetViewports(1, &viewport);
-	commandList_->RSSetScissorRects(1, &m_scissorRect);
+	frameCommandList_->RSSetViewports(1, &viewport);
+	frameCommandList_->RSSetScissorRects(1, &m_scissorRect);
 
 	// Indicate this resource will be in use as a render target.
 	CD3DX12_RESOURCE_BARRIER renderTargetResourceBarrier =
 		CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	commandList_->ResourceBarrier(1, &renderTargetResourceBarrier);
+	frameCommandList_->ResourceBarrier(1, &renderTargetResourceBarrier);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetView = m_deviceResources->GetRenderTargetView();
 	D3D12_CPU_DESCRIPTOR_HANDLE depthStencilView = m_deviceResources->GetDepthStencilView();
-	commandList_->ClearRenderTargetView(renderTargetView, DirectX::Colors::CornflowerBlue, 0, nullptr);
-	commandList_->ClearDepthStencilView(depthStencilView, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-	commandList_->OMSetRenderTargets(1, &renderTargetView, false, &depthStencilView);
+	frameCommandList_->ClearRenderTargetView(renderTargetView, DirectX::Colors::CornflowerBlue, 0, nullptr);
+	frameCommandList_->ClearDepthStencilView(depthStencilView, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	frameCommandList_->OMSetRenderTargets(1, &renderTargetView, false, &depthStencilView);
+
+	// assign pipelinestates with command lists
+	for (size_t i = 0; i < pipelineStates_.states_.size(); ++i) {
+		auto& state = pipelineStates_.states_[i];
+		auto* commandList = commandLists_[i].Get();
+		commandList->RSSetViewports(1, &viewport);
+		commandList->RSSetScissorRects(1, &m_scissorRect);
+		commandList->ResourceBarrier(1, &renderTargetResourceBarrier);
+		commandList->OMSetRenderTargets(1, &renderTargetView, false, &depthStencilView);
+		commandList->SetPipelineState(state.pipelineState.Get());
+		ID3D12DescriptorHeap* ppHeaps[] = { state.cbvHeap.Get() };
+		// Set the graphics root signature and descriptor heaps to be used by this frame.
+		commandList->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].Get());
+		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	}
 	return 0;
 }
 
 void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const Materials::cBuffers& uniforms, const Model& model) {
-	if (!loadingComplete_) return;	
-	auto& state = pipelineStates_.states_[pipelineIndex];
-	commandList_->SetPipelineState(state.pipelineState.Get());
+	if (!loadingComplete_) return;
 
-	PIXBeginEvent(commandList_.Get(), 0, L"Draw the cube");
+	auto& state = pipelineStates_.states_[pipelineIndex];
+	auto* commandList = commandLists_[pipelineIndex].Get();
+	PIXBeginEvent(commandList, 0, L"SubmitToEncoder");
 	{
-		ID3D12DescriptorHeap* ppHeaps[] = { state.cbvHeap.Get() };
 		size_t i = 0;
 		for (auto& cbuffer : state.cbuffers) {
 			// Update the constant buffer resource.
@@ -175,20 +214,17 @@ void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const 
 			cbuffer.Unmap();
 			++i;
 		}
-		// Set the graphics root signature and descriptor heaps to be used by this frame.
-		commandList_->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].Get());
-		commandList_->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
+		
 		// Bind the current frame's constant buffer to the pipeline.
 		size_t rootParameterIndex = 0;
 		auto d3dDevice = m_deviceResources->GetD3DDevice();
 		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(state.cbvHeap->GetGPUDescriptorHandleForHeapStart(), m_deviceResources->GetCurrentFrameIndex(), cbvDescriptorSize * state.cbuffers.size());
 		for (auto& cbuffer : state.cbuffers) {
-			commandList_->SetGraphicsRootDescriptorTable(rootParameterIndex++, gpuHandle);
+			commandList->SetGraphicsRootDescriptorTable(rootParameterIndex++, gpuHandle);
 			gpuHandle.Offset(cbvDescriptorSize);
 		}
-		commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 		{
@@ -204,24 +240,31 @@ void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const 
 			indexBufferView.SizeInBytes = (UINT)buffer.size;
 			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
 		}
-		commandList_->IASetVertexBuffers(0, 1, &vertexBufferView);
-		commandList_->IASetIndexBuffer(&indexBufferView);
-		commandList_->DrawIndexedInstanced(model.count, 1, 0, 0, 0);
+		commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+		commandList->IASetIndexBuffer(&indexBufferView);
+		commandList->DrawIndexedInstanced(model.count, 1, 0, 0, 0);
 	}
-	PIXEndEvent(commandList_.Get());
+	PIXEndEvent(commandList);
 }
 bool Renderer::Render() {
 	if (!loadingComplete_) return false;
 
+	std::vector<ID3D12CommandList*> ppCommandLists;
 	// Indicate that the render target will now be used to present when the command list is done executing.
 	CD3DX12_RESOURCE_BARRIER presentResourceBarrier =
 		CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-	commandList_->ResourceBarrier(1, &presentResourceBarrier);
-	DX::ThrowIfFailed(commandList_->Close());
+	frameCommandList_->ResourceBarrier(1, &presentResourceBarrier);
+	DX::ThrowIfFailed(frameCommandList_->Close());
+	ppCommandLists.push_back(frameCommandList_.Get());
+	
+	for (auto& commandList : commandLists_) {
+		commandList->ResourceBarrier(1, &presentResourceBarrier);
+		commandList->Close();
+		ppCommandLists.push_back(commandList.Get());
+	}
 
 	// Execute the command list.
-	ID3D12CommandList* ppCommandLists[] = { commandList_.Get() };
-	m_deviceResources->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	m_deviceResources->GetCommandQueue()->ExecuteCommandLists(ppCommandLists.size(), &ppCommandLists.front());
 
 	return true;
 }

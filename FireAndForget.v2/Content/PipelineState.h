@@ -30,8 +30,8 @@ public:
 	};
 	static const size_t ROOT_VS_1CB = 0;
 	static const size_t ROOT_VS_1CB_PS_1CB = 1;
+	static const size_t ROOT_SIG_COUNT = 2;
 	std::vector<Microsoft::WRL::ComPtr<ID3D12RootSignature>> rootSignatures_;
 	std::vector<State> states_;
 	Concurrency::task<void> completionTask_;
 };
-

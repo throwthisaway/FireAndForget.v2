@@ -35,7 +35,11 @@ private:
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
 	}bufferUpload_;
 
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> frameCommandList_;
+
+	std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>> commandAllocators_;
+	std::vector<Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>> commandLists_;
+
 	struct Buffer {
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 		D3D12_GPU_VIRTUAL_ADDRESS bufferLocation;
