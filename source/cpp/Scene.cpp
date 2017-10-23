@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Scene.hpp"
 #include "MatrixUtils.h"
+#include "../Content/DescriptorHeapAllocator.h"
+#include "../Common/DeviceResources.h"
 
 void Scene::Object::Update(double frame, double total) {
 	m = glm::translate(RotationMatrix(glm::translate(glm::mat4{}, pivot), rot.x, rot.y, rot.z), pos);
@@ -17,9 +19,25 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	input.camera_ = &camera_;
 
 	assets_.Init(renderer);
-	objects_.emplace_back(assets_.staticModels[Assets::PLACEHOLDER1]);
-	objects_.emplace_back(assets_.staticModels[Assets::PLACEHOLDER2]);
-	objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);
+	/*objects_.emplace_back(assets_.staticModels[Assets::PLACEHOLDER1]);
+	objects_.emplace_back(assets_.staticModels[Assets::PLACEHOLDER2]);*/
+	{
+		objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);
+		objects_.back().color = glm::vec4(0.5f, .8f, .0f, 1.f);
+		//objects_.back().m = {};
+		objects_.back().material.id = Material::Pos;
+		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.Push<Material::cMVP>(DX::c_frameCount);
+		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.Push<Material::cColor>(DX::c_frameCount);
+	}
+	{
+		objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);
+		//objects_.back().m = glm::translate(glm::mat4{}, 
+		objects_.back().pos = glm::vec3(.5f, .5f, .5f);
+		objects_.back().color = glm::vec4(0.f, .8f, .8f, 1.f);
+		objects_.back().material.id = Material::Pos;
+		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.Push<Material::cMVP>(DX::c_frameCount);
+		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.Push<Material::cColor>(DX::c_frameCount);
+	}
 
 	// TODO:: remove
 	m_radiansPerSecond = glm::quarter_pi<float>();
@@ -27,7 +45,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	m_tracking = false;
 	// TODO:: remove 
 }
-void Scene::Render(size_t encoderIndex) {
+void Scene::Render( size_t encoderIndex) {
 	if (!assets_.loadCompleted) return;
 	/*for (const auto& o : objects_)
 		renderer_->SubmitToEncoder(encoderIndex, Materials::ColPos, (uint8_t*)&o.uniforms, o.model);*/
@@ -35,10 +53,16 @@ void Scene::Render(size_t encoderIndex) {
 	//	const auto& o = objects_[1];
 	//	renderer_->SubmitToEncoder(encoderIndex, Materials::ColPos, (uint8_t*)&os, o.model);
 	//}
-	const auto& o = objects_[2];
-	auto m = glm::translate(o.m, glm::vec3(.5f, .5f, .5f));
-	renderer_->SubmitToEncoder(encoderIndex, Materials::Pos, Materials::ConstantColorRef({ glm::transpose(camera_.vp * m) }, { glm::vec4(0.5f, .8f, .0f, 1.f) }), o.model);
-	renderer_->SubmitToEncoder(encoderIndex, Materials::Pos, Materials::ConstantColorRef({ glm::transpose(camera_.vp * o.m) }, { glm::vec4(0.f, .8f, .8f, 1.f) }), o.model);
+	for (const auto& o : objects_) {
+		// Update resources
+		auto& mvpResource = renderer_->GetShaderResources().staticResources_.Get(o.material.mvpStartIndex + renderer_->GetCurrenFrameIndex());
+		auto mvp = glm::transpose(camera_.vp * o.m);
+		memcpy(mvpResource.destination, &mvp, sizeof(Material::cMVP));
+		auto& colorResource = renderer_->GetShaderResources().staticResources_.Get(o.material.colorStartIndex + renderer_->GetCurrenFrameIndex());
+		memcpy(colorResource.destination, &o.color, sizeof(Material::cColor));
+
+		renderer_->SubmitToEncoder(encoderIndex, Material::Pos, { o.material.mvpStartIndex, o.material.colorStartIndex}, o.mesh);
+	}
 }
 void Scene::Update(double frame, double total) {
 	// TODO:: remove
@@ -49,6 +73,7 @@ void Scene::Update(double frame, double total) {
 	for (auto& o : objects_) {
 		o.Update(frame, total);
 #ifdef PLATFORM_WIN
+
 		/*memcpy(&o.uniforms.projection, &glm::transpose(camera_.proj), sizeof(o.uniforms.projection));
 		memcpy(&o.uniforms.view, &glm::transpose(camera_.view), sizeof(o.uniforms.view));
 		DirectX::XMStoreFloat4x4(&o.uniforms.model, DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationY(m_angle)));*/

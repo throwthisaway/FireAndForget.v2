@@ -6,7 +6,8 @@ namespace Materials {
 	struct cBuffers;
 }
 
-struct Model;
+struct Mesh;
+struct ShaderResources;
 
 class RendererWrapper {
 public:
@@ -14,9 +15,11 @@ public:
 	size_t CreateBuffer(const void* buffer, size_t length, size_t elementSize);
 	void BeginRender();
 	size_t StartRenderPass();
-	void SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const Materials::cBuffers& uniforms, const Model&);
+	void SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const std::vector<size_t>& bufferIndices, const Mesh&);
 	void BeginUploadResources();
 	void EndUploadResources();
+	ShaderResources& GetShaderResources();
+	uint32_t GetCurrenFrameIndex();
 private:
 	void* self;
 };

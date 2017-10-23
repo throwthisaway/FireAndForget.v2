@@ -1,10 +1,11 @@
 #pragma once
 #include <glm/glm.hpp>
 
-namespace Materials {
-const size_t ColPos = 0;
-const size_t Pos = 1;
-const size_t Count = 2;
+namespace Material {
+	using Id = size_t;
+const Id ColPos = 0;
+const Id Pos = 1;
+const Id Count = 2;
 
 struct ColPosBuffer {
 	glm::mat4 mvp;

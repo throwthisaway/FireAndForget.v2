@@ -8,53 +8,27 @@ using namespace Microsoft::WRL;
 using namespace concurrency;
 
 namespace {
-	auto CreateDescriptorHeapForCBuffer(ID3D12Device* d3dDevice, size_t numDesc) {
-		ComPtr<ID3D12DescriptorHeap> cbvHeap;
-		// Create a descriptor heap for the constant buffers.
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = DX::c_frameCount * numDesc;
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		// This flag indicates that this descriptor heap can be bound to the pipeline and that descriptors contained in it can be referenced by a root table.
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		DX::ThrowIfFailed(d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&cbvHeap)));
+	//PipelineStates::CBuffer SetupDescriptorHeap(ID3D12Device* d3dDevice, ID3D12DescriptorHeap* cbvHeap, ID3D12Resource* constantBuffer, size_t size, size_t numDesc, size_t repeatCount, size_t indexOffset) {
+	//	const UINT c_alignedConstantBufferSize = (size + 255) & ~255;
+	//	// Create constant buffer views to access the upload buffer.
+	//	D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress = constantBuffer->GetGPUVirtualAddress();
+	//	CD3DX12_CPU_DESCRIPTOR_HANDLE cbvCpuHandle(cbvHeap->GetCPUDescriptorHandleForHeapStart());
+	//	UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//	cbvCpuHandle.Offset(cbvDescriptorSize * indexOffset);
+	//	for (int n = 0; n < repeatCount; ++n)
+	//	{
+	//		D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
+	//		desc.BufferLocation = cbvGpuAddress;
+	//		desc.SizeInBytes = c_alignedConstantBufferSize;
+	//		d3dDevice->CreateConstantBufferView(&desc, cbvCpuHandle);
 
-		NAME_D3D12_OBJECT(cbvHeap);
-		return cbvHeap;
-	}
-	PipelineStates::CBuffer CreateConstantBuffers(ID3D12Device* d3dDevice, ID3D12DescriptorHeap* cbvHeap, size_t size, size_t numDesc, size_t indexOffset) {
-		// Constant buffers must be 256-byte aligned.
-		const UINT c_alignedConstantBufferSize = (size + 255) & ~255;
-		ComPtr<ID3D12Resource> constantBuffer;
-		CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-		CD3DX12_RESOURCE_DESC constantBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(DX::c_frameCount * c_alignedConstantBufferSize);
-		DX::ThrowIfFailed(d3dDevice->CreateCommittedResource(
-			&uploadHeapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&constantBufferDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&constantBuffer)));
+	//		cbvGpuAddress += desc.SizeInBytes;
+	//		cbvCpuHandle.Offset(cbvDescriptorSize * numDesc);
+	//	}
 
-		NAME_D3D12_OBJECT(constantBuffer);
+	//	return { constantBuffer, cbvDescriptorSize, c_alignedConstantBufferSize, size };
+	//}
 
-		// Create constant buffer views to access the upload buffer.
-		D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress = constantBuffer->GetGPUVirtualAddress();
-		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvCpuHandle(cbvHeap->GetCPUDescriptorHandleForHeapStart());
-		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		cbvCpuHandle.Offset(cbvDescriptorSize * indexOffset);
-		for (int n = 0; n < DX::c_frameCount; ++n)
-		{
-			D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
-			desc.BufferLocation = cbvGpuAddress;
-			desc.SizeInBytes = c_alignedConstantBufferSize;
-			d3dDevice->CreateConstantBufferView(&desc, cbvCpuHandle);
-
-			cbvGpuAddress += desc.SizeInBytes;
-			cbvCpuHandle.Offset(cbvDescriptorSize * numDesc);
-		}
-
-		return { constantBuffer, cbvDescriptorSize, c_alignedConstantBufferSize, size };
-	}
 }
 UINT8* PipelineStates::CBuffer::Map() {
 	// Map the constant buffers.
@@ -77,6 +51,8 @@ PipelineStates::~PipelineStates() {}
 
 void PipelineStates::CreateDeviceDependentResources() {
 
+	rootSignatures_.resize(ROOT_SIG_COUNT);
+	states_.resize(Material::Count);
 	auto d3dDevice = deviceResources_->GetD3DDevice();
 	{
 		//ROOT_VS_1CB
@@ -102,7 +78,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
-		rootSignatures_.push_back(rootSignature);
+		rootSignatures_[ROOT_VS_1CB] = rootSignature;
 	}
 
 	{
@@ -131,7 +107,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
-		rootSignatures_.push_back(rootSignature);
+		rootSignatures_[ROOT_VS_1CB_PS_1CB] = rootSignature;
 	}
 	
 	task<void> createColPosPipelineStateTask;
@@ -168,10 +144,10 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.RTVFormats[0] = deviceResources_->GetBackBufferFormat();
 			state.DSVFormat = deviceResources_->GetDepthBufferFormat();
 			state.SampleDesc.Count = 1;
-			
+
 			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-			auto cbvHeap = CreateDescriptorHeapForCBuffer(d3dDevice, 1);
-			states_.push_back({ rootSignatureIndex, pipelineState, cbvHeap, { CreateConstantBuffers(d3dDevice, cbvHeap.Get(), sizeof(FireAndForget_v2::ModelViewProjectionConstantBuffer), 1, 0) } });
+			states_[Material::ColPos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
+				return CreateShaderResources<FireAndForget_v2::ModelViewProjectionConstantBuffer>(device, repeat); } */};
 		});
 	}
 
@@ -207,15 +183,12 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.DSVFormat = deviceResources_->GetDepthBufferFormat();
 			state.SampleDesc.Count = 1;
 
-			const size_t cbufferCount = 2;
 			DX::ThrowIfFailed(d3dDevice->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-			auto cbvHeap = CreateDescriptorHeapForCBuffer(d3dDevice, cbufferCount);
-			auto cbufferVS = CreateConstantBuffers(d3dDevice, cbvHeap.Get(), sizeof(Materials::cMVP), cbufferCount, 0);
-			auto cbufferPS = CreateConstantBuffers(d3dDevice, cbvHeap.Get(), sizeof(Materials::cColor), cbufferCount, 1);
-			states_.push_back({ rootSignatureIndex, pipelineState, cbvHeap, {cbufferVS, cbufferPS } });
+			states_[Material::Pos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
+				return CreateShaderResources<Materials::cMVP, Materials::cColor>(device, repeat); }*/ };
+			//pos_.pipelineIndex = states_.size() - 1;
 		});
 	}
-
 	completionTask_ = (createColPosPipelineStateTask && createPosPipelineStateTask).then([this]() {
 		loadingComplete_ = true;
 	});

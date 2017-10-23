@@ -217,6 +217,7 @@
     <ClInclude Include="Common\d3dx12.h" />
     <ClInclude Include="Common\DeviceResources.h" />
     <ClInclude Include="Content\BundleLoader.h" />
+    <ClInclude Include="Content\DescriptorHeapAllocator.h" />
     <ClInclude Include="Content\PipelineState.h" />
     <ClInclude Include="Content\Renderer.h" />
     <ClInclude Include="FireAndForget_v2Main.h" />
@@ -236,6 +237,7 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Content\BundleLoader.cpp" />
+    <ClCompile Include="Content\DescriptorHeapAllocator.cpp" />
     <ClCompile Include="Content\PipelineState.cpp" />
     <ClCompile Include="Content\Renderer.cpp" />
     <ClCompile Include="FireAndForget_v2Main.cpp" />

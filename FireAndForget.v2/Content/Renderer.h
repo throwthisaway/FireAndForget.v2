@@ -5,10 +5,11 @@
 #include "ShaderStructures.h"
 #include "..\source\cpp\RendererWrapper.h"
 #include "PipelineState.h"
+#include "DescriptorHeapAllocator.h"
 
 using namespace FireAndForget_v2;
 
-struct Model;
+struct Mesh;
 
 class Renderer {
 	PipelineStates pipelineStates_;
@@ -27,7 +28,9 @@ public:
 
 	void BeginRender();
 	size_t StartRenderPass();
-	void SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const Materials::cBuffers& uniforms, const Model& model);
+	void SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const std::vector<size_t>& bufferIndices, const Mesh& model);
+	ShaderResources shaderResources_;
+	std::shared_ptr<DX::DeviceResources> m_deviceResources;
 private:
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
@@ -47,8 +50,6 @@ private:
 	};
 	
 	std::vector<Buffer> buffers_;
-
 	D3D12_RECT m_scissorRect;
-	std::shared_ptr<DX::DeviceResources> m_deviceResources;
 	bool loadingComplete_ = false;
 };

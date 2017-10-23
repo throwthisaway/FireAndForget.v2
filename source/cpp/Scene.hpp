@@ -15,15 +15,20 @@ struct Time;
 struct Scene {
 	struct Object {
 		glm::mat4 m;
+		glm::vec4 color;
 		glm::vec3 pos, pivot, rot;
 		float scale = 1.f;
-		const Model& model;
+		const Mesh& mesh;
+		struct {
+			Material::Id id;
+			size_t mvpStartIndex, colorStartIndex;
+		}material;
 #ifdef PLATFORM_WIN
 		//FireAndForget_v2::ModelViewProjectionConstantBuffer perVertexColor;
 #else
 		Materials::ColPosBuffer uniforms;
 #endif
-		Object(const Model& model) : model(model) {}
+		Object(const Mesh& mesh) : mesh(mesh) {}
 		void Update(double frame, double total);
 	};
 	void Init(RendererWrapper*, int, int);

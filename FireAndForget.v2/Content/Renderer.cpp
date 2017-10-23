@@ -30,10 +30,16 @@ void RendererWrapper::BeginRender() {
 size_t RendererWrapper::StartRenderPass() {
 	return reinterpret_cast<Renderer*>(self)->StartRenderPass();
 }
-void RendererWrapper::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const Materials::cBuffers& uniforms, const Model& model) {
-	return reinterpret_cast<Renderer*>(self)->SubmitToEncoder(encoderIndex, pipelineIndex, uniforms, model);
+void RendererWrapper::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const std::vector<size_t>& bufferIndices, const Mesh& model) {
+	return reinterpret_cast<Renderer*>(self)->SubmitToEncoder(encoderIndex, pipelineIndex, bufferIndices, model);
 }
 
+ShaderResources& RendererWrapper::GetShaderResources() {
+	return reinterpret_cast<Renderer*>(self)->shaderResources_;
+}
+uint32_t RendererWrapper::GetCurrenFrameIndex() {
+	return reinterpret_cast<Renderer*>(self)->m_deviceResources->GetCurrentFrameIndex();
+}
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
@@ -41,6 +47,7 @@ using namespace Windows::Foundation;
 
 Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
 	pipelineStates_(deviceResources.get()),
+	shaderResources_(deviceResources->GetD3DDevice()),
 	m_deviceResources(deviceResources) {
 
 	CreateDeviceDependentResources();
@@ -190,39 +197,30 @@ size_t Renderer::StartRenderPass() {
 		commandList->ResourceBarrier(1, &renderTargetResourceBarrier);
 		commandList->OMSetRenderTargets(1, &renderTargetView, false, &depthStencilView);
 		commandList->SetPipelineState(state.pipelineState.Get());
-		ID3D12DescriptorHeap* ppHeaps[] = { state.cbvHeap.Get() };
 		// Set the graphics root signature and descriptor heaps to be used by this frame.
 		commandList->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].Get());
-		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	}
 	return 0;
 }
 
-void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const Materials::cBuffers& uniforms, const Model& model) {
+void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const std::vector<size_t>& bufferIndices, const Mesh& model) {
 	if (!loadingComplete_) return;
 
 	auto& state = pipelineStates_.states_[pipelineIndex];
 	auto* commandList = commandLists_[pipelineIndex].Get();
 	PIXBeginEvent(commandList, 0, L"SubmitToEncoder");
 	{
-		size_t i = 0;
-		for (auto& cbuffer : state.cbuffers) {
-			// Update the constant buffer resource.
-			UINT8* mappedConstantBuffer = cbuffer.Map();
-			UINT8* destination = mappedConstantBuffer + (m_deviceResources->GetCurrentFrameIndex() * cbuffer.alignedConstantBufferSize);
-			memcpy(destination, uniforms.data[i].first, uniforms.data[i].second/*cbuffer.dataSize*/);
-			cbuffer.Unmap();
-			++i;
-		}
-		
+		ID3D12DescriptorHeap* ppHeaps[] = { shaderResources_.staticResources_.resource_.cbvHeap.Get() };
+		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 		// Bind the current frame's constant buffer to the pipeline.
 		size_t rootParameterIndex = 0;
 		auto d3dDevice = m_deviceResources->GetD3DDevice();
 		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(state.cbvHeap->GetGPUDescriptorHandleForHeapStart(), m_deviceResources->GetCurrentFrameIndex(), cbvDescriptorSize * state.cbuffers.size());
-		for (auto& cbuffer : state.cbuffers) {
+		for (size_t index : bufferIndices) {
+			auto& resource = shaderResources_.staticResources_.Get(index);
+			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = resource.gpuHandle;
+			gpuHandle.Offset(m_deviceResources->GetCurrentFrameIndex(), cbvDescriptorSize);
 			commandList->SetGraphicsRootDescriptorTable(rootParameterIndex++, gpuHandle);
-			gpuHandle.Offset(cbvDescriptorSize);
 		}
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

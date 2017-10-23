@@ -97,6 +97,9 @@
     <ClCompile Include="Content\BundleLoader.cpp">
       <Filter>Content</Filter>
     </ClCompile>
+    <ClCompile Include="Content\DescriptorHeapAllocator.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
@@ -136,6 +139,9 @@
       <Filter>Content</Filter>
     </ClInclude>
     <ClInclude Include="Content\BundleLoader.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\DescriptorHeapAllocator.h">
       <Filter>Content</Filter>
     </ClInclude>
   </ItemGroup>

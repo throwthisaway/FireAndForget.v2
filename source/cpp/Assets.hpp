@@ -3,7 +3,7 @@
 #include <array>
 #include "MeshLoader.h"
 
-struct Model {
+struct Mesh {
 	size_t vertices, color, index, offset, count;
 };
 struct Assets {
@@ -12,7 +12,7 @@ struct Assets {
 	static constexpr size_t PLACEHOLDER2 = 1;
 	static constexpr size_t CHECKERBOARD = 2;
 	static constexpr size_t STATIC_MODEL_COUNT = 3;
-	std::array<Model, STATIC_MODEL_COUNT> staticModels;
+	std::array<Mesh, STATIC_MODEL_COUNT> staticModels;
 	MeshLoader::Mesh mesh;
 	bool loadCompleted = false;
 	~Assets();
