@@ -64,6 +64,7 @@ void Renderer::BeginUploadResources() {
 void Renderer::EndUploadResources() {
 	DX::ThrowIfFailed(bufferUpload_.cmdList->Close());
 	ID3D12CommandList* ppCommandLists[] = { bufferUpload_.cmdList.Get() };
+	
 	m_deviceResources->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	m_deviceResources->WaitForGpu();
 	bufferUpload_.intermediateResources.clear();
@@ -226,21 +227,23 @@ void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const 
 
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 		{
-			const auto& buffer = buffers_[model.vertices];
+			const auto& buffer = buffers_[model.vb];
 			vertexBufferView.BufferLocation = buffer.bufferLocation;
 			vertexBufferView.StrideInBytes = (UINT)buffer.elementSize;
 			vertexBufferView.SizeInBytes = (UINT)buffer.size;
 		}
 		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
 		{
-			const auto& buffer = buffers_[model.index];
+			const auto& buffer = buffers_[model.ib];
 			indexBufferView.BufferLocation = buffer.bufferLocation;
 			indexBufferView.SizeInBytes = (UINT)buffer.size;
 			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
 		}
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
 		commandList->IASetIndexBuffer(&indexBufferView);
-		commandList->DrawIndexedInstanced(model.count, 1, 0, 0, 0);
+		for (auto layer : model.layers)
+			for (auto submesh : layer.submeshes)
+				commandList->DrawIndexedInstanced(submesh.count, 1, submesh.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
 	}
 	PIXEndEvent(commandList);
 }

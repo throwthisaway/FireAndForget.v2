@@ -1,9 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.27004.2009
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FireAndForget.v2", "FireAndForget.v2.vcxproj", "{2EC8955C-572F-47A1-9F45-D22B2C522CE3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC} = {2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshLoader", "..\..\MeshLoader\MeshLoader\MeshLoader.vcxproj", "{2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC}"
 EndProject
@@ -48,5 +51,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7E2D049A-74E8-4E84-956A-DAFE4E911150}
 	EndGlobalSection
 EndGlobal

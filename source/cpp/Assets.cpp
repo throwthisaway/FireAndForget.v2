@@ -7,7 +7,7 @@
 #include <CoreFoundation/CFStream.h>
 #include <CoreFoundation/CFNumber.h>
 #elif defined(PLATFORM_WIN)
-#include "Content\BundleLoader.h"
+#include "Common\DirectXHelper.h"
 #endif
 #include "MeshLoader.h"
 #include "FileReader.h"
@@ -61,6 +61,21 @@ namespace {
 		CFRelease(mainBundle);
 	}
 #endif
+	void CreateModel(RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh) {
+		auto vertices = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
+		// TODO:: if (!mesh.polygons.empty()
+		auto indices = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
+		model.vb = vertices;
+		model.colb = 0;
+		model.ib = indices;
+		for (const auto& layer : mesh.layers) {
+			Mesh::Layer modelLayer = { glm::vec3(layer.pivot.x, layer.pivot.y, layer.pivot.z) };
+			for (size_t i = 0; i < layer.poly.count; ++i)
+				modelLayer.submeshes.push_back({ layer.poly.sections[i].offset, layer.poly.sections[i].count * VERTICESPERPOLY });
+			// TODO:: surface index
+			model.layers.push_back(modelLayer);
+		}
+	}
 }
 Assets::~Assets() = default;
 void Assets::Init(RendererWrapper* renderer) {
@@ -134,7 +149,7 @@ void Assets::Init(RendererWrapper* renderer) {
 	const UINT indexBufferSize = sizeof(cubeIndices);
 	auto index = renderer->CreateBuffer(cubeIndices, indexBufferSize, sizeof(unsigned short));
 
-	staticModels[PLACEHOLDER1] = {posCol, 0, index,  0, indexBufferSize / sizeof(unsigned short) };
+	staticModels[PLACEHOLDER1] = { posCol, 0, index, {{{/*pivot*/}, {{ 0, indexBufferSize / sizeof(unsigned short)}}}} };
 
 	VertexPositionColor cubeVertices2[] =
 	{
@@ -148,23 +163,24 @@ void Assets::Init(RendererWrapper* renderer) {
 		{ XMFLOAT3(1.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 	};
 	auto posCol2 = renderer->CreateBuffer(cubeVertices2, vertexBufferSize, sizeof(VertexPositionColor));
-	staticModels[PLACEHOLDER2] = { posCol2, 0, index, 0, indexBufferSize / sizeof(unsigned short) };
+	staticModels[PLACEHOLDER2] = { posCol2, 0, index, { { {/*pivot*/ },{ { 0, indexBufferSize / sizeof(unsigned short) } } } } };
 #ifdef PLATFORM_WIN
-	LoadFromBundle("checkerboard.mesh", mesh, [this, renderer](bool success) {
-		auto vertices = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
-		// TODO:: if (!mesh.polygons.empty()
-		auto indices = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
-		for (const auto& layer : mesh.layers) {
-			for (size_t i = 0; i < layer.poly.count; ++i) {
-				staticModels[CHECKERBOARD] = { vertices, 0, indices, layer.poly.sections[i].offset, layer.poly.sections[i].count * VERTICESPERPOLY };
-				break;
-				// TODO::
-			}
-			break;
-			// TODO::
-		}
+	auto loadCheckerboardTask = DX::ReadDataAsync(L"checkerboard.mesh").then([this, renderer](std::vector<byte>& data) {
+		MeshLoader::Mesh mesh;
+		mesh.data = std::move(data);
+		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
+		CreateModel(renderer, staticModels[CHECKERBOARD], mesh);
+	});
+	auto loadBeethoven = DX::ReadDataAsync(L"BEETHOVE_object.mesh").then([this, renderer](std::vector<byte>& data) {
+		MeshLoader::Mesh mesh;
+		mesh.data = std::move(data);
+		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
+		CreateModel(renderer, staticModels[BEETHOVEN], mesh);
+	});
+	completionTask = (loadCheckerboardTask && loadBeethoven).then([this, renderer]() {
 		renderer->EndUploadResources();
 		loadCompleted = true;
 	});
+
 #endif
 }
