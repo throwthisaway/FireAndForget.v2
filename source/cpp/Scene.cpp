@@ -39,6 +39,15 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.Push<Material::cColor>(DX::c_frameCount);
 	}
 
+	{
+		objects_.emplace_back(assets_.staticModels[Assets::BEETHOVEN]);
+		objects_.back().pos = glm::vec3(.5f, 1.f, .5f);
+		objects_.back().color = glm::vec4(.9f, .4f, .8f, 1.f);
+		objects_.back().material.id = Material::Pos;
+		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.Push<Material::cMVP>(DX::c_frameCount);
+		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.Push<Material::cColor>(DX::c_frameCount);
+	}
+
 	// TODO:: remove
 	m_radiansPerSecond = glm::quarter_pi<float>();
 	m_angle = 0;

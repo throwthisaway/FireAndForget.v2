@@ -64,6 +64,10 @@ namespace {
 	void CreateModel(RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh) {
 		auto vertices = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
 		// TODO:: if (!mesh.polygons.empty()
+		for (auto& p : mesh.polygons) {
+			auto& temp = const_cast<MeshLoader::Polygon&>(p);
+			std::swap(temp.v1, temp.v3);
+		}
 		auto indices = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
 		model.vb = vertices;
 		model.colb = 0;
@@ -71,7 +75,7 @@ namespace {
 		for (const auto& layer : mesh.layers) {
 			Mesh::Layer modelLayer = { glm::vec3(layer.pivot.x, layer.pivot.y, layer.pivot.z) };
 			for (size_t i = 0; i < layer.poly.count; ++i)
-				modelLayer.submeshes.push_back({ layer.poly.sections[i].offset, layer.poly.sections[i].count * VERTICESPERPOLY });
+				modelLayer.submeshes.push_back({ layer.poly.sections[i].offset * VERTICESPERPOLY, layer.poly.sections[i].count * VERTICESPERPOLY });
 			// TODO:: surface index
 			model.layers.push_back(modelLayer);
 		}
