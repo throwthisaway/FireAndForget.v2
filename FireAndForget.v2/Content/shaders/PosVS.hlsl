@@ -1,4 +1,4 @@
-// A constant buffer that stores the three basic column-major matrices for composing geometry.
+
 cbuffer cMVP : register(b0) {
 	matrix mvp;
 };

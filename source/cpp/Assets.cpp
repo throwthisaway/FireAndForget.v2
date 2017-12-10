@@ -76,6 +76,7 @@ namespace {
 			Mesh::Layer modelLayer = { glm::vec3(layer.pivot.x, layer.pivot.y, layer.pivot.z) };
 			for (size_t i = 0; i < layer.poly.count; ++i)
 				modelLayer.submeshes.push_back({ layer.poly.sections[i].offset * VERTICESPERPOLY, layer.poly.sections[i].count * VERTICESPERPOLY });
+			//mesh.surfaces[i]
 			// TODO:: surface index
 			model.layers.push_back(modelLayer);
 		}

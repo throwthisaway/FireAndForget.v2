@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+/FireAndForget.v2/.vs/FireAndForget.v2/v15
+/FireAndForget.v2/x64/Debug/FireAndForget.v2.tlog
+/FireAndForget.v2/x64/Debug

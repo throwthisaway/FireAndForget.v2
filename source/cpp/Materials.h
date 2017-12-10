@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-namespace Material {
+namespace GPUMaterials {
 	using Id = size_t;
 const Id ColPos = 0;
 const Id Pos = 1;

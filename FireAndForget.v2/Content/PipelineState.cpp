@@ -52,7 +52,7 @@ PipelineStates::~PipelineStates() {}
 void PipelineStates::CreateDeviceDependentResources() {
 
 	rootSignatures_.resize(ROOT_SIG_COUNT);
-	states_.resize(Material::Count);
+	states_.resize(GPUMaterials::Count);
 	auto d3dDevice = deviceResources_->GetD3DDevice();
 	{
 		//ROOT_VS_1CB
@@ -110,6 +110,34 @@ void PipelineStates::CreateDeviceDependentResources() {
 		rootSignatures_[ROOT_VS_1CB_PS_1CB] = rootSignature;
 	}
 	
+	{
+		// ROOT_VS_1CB_PS_1TX_2CB
+		CD3DX12_ROOT_PARAMETER parameter[2];
+		CD3DX12_DESCRIPTOR_RANGE range[3];
+		range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		parameter[0].InitAsDescriptorTable(1, range, D3D12_SHADER_VISIBILITY_VERTEX);
+		range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+		range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0);
+		parameter[1].InitAsDescriptorTable(2, range + 1, D3D12_SHADER_VISIBILITY_PIXEL);
+
+		D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
+
+		CD3DX12_ROOT_SIGNATURE_DESC descRootSignature;
+		descRootSignature.Init(_ARRAYSIZE(parameter), parameter, 0, nullptr, rootSignatureFlags);
+
+		ComPtr<ID3DBlob> pSignature;
+		ComPtr<ID3DBlob> pError;
+		DX::ThrowIfFailed(D3D12SerializeRootSignature(&descRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, pSignature.GetAddressOf(), pError.GetAddressOf()));
+		ComPtr<ID3D12RootSignature>	rootSignature;
+		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+		NAME_D3D12_OBJECT(rootSignature);
+		rootSignatures_[ROOT_VS_1CB_PS_1TX_2CB] = rootSignature;
+	}
+
 	task<void> createColPosPipelineStateTask;
 	{
 		std::shared_ptr<std::vector<byte>> vertexShader = std::make_shared<std::vector<byte>>(),
@@ -124,7 +152,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 		createColPosPipelineStateTask = (createPSTask && createVSTask).then([this, d3dDevice, vertexShader, pixelShader]() mutable {
 			ComPtr<ID3D12PipelineState> pipelineState;
 			auto rootSignatureIndex = ROOT_VS_1CB;
-			 const D3D12_INPUT_ELEMENT_DESC inputLayout[] =
+			const D3D12_INPUT_ELEMENT_DESC inputLayout[] =
 			{
 				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 				{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -146,7 +174,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.SampleDesc.Count = 1;
 
 			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-			states_[Material::ColPos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
+			states_[GPUMaterials::ColPos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
 				return CreateShaderResources<FireAndForget_v2::ModelViewProjectionConstantBuffer>(device, repeat); } */};
 		});
 	}
@@ -184,12 +212,52 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.SampleDesc.Count = 1;
 
 			DX::ThrowIfFailed(d3dDevice->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-			states_[Material::Pos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
+			states_[GPUMaterials::Pos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
 				return CreateShaderResources<Materials::cMVP, Materials::cColor>(device, repeat); }*/ };
 			//pos_.pipelineIndex = states_.size() - 1;
 		});
 	}
-	completionTask_ = (createColPosPipelineStateTask && createPosPipelineStateTask).then([this]() {
+
+	task<void> createTexPipelineStateTask;
+	{
+		std::shared_ptr<std::vector<byte>> vertexShader = std::make_shared<std::vector<byte>>(),
+			pixelShader = std::make_shared<std::vector<byte>>();
+		auto createVSTask = DX::ReadDataAsync(L"TexVS.cso").then([this, vertexShader](std::vector<byte>& fileData) mutable {
+			*vertexShader = std::move(fileData);
+		});
+		auto createPSTask = DX::ReadDataAsync(L"TexPS.cso").then([this, pixelShader](std::vector<byte>& fileData) mutable {
+			*pixelShader = std::move(fileData);
+		});
+
+		createTexPipelineStateTask = (createPSTask && createVSTask).then([this, d3dDevice, vertexShader, pixelShader]() mutable {
+			ComPtr<ID3D12PipelineState> pipelineState;
+			auto rootSignatureIndex = ROOT_VS_1CB_PS_1TX_2CB;
+			const D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, 
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, 
+			};
+
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.InputLayout = { inputLayout, _countof(inputLayout) };
+			state.pRootSignature = rootSignatures_[rootSignatureIndex].Get();
+			state.VS = CD3DX12_SHADER_BYTECODE(&vertexShader->front(), vertexShader->size());
+			state.PS = CD3DX12_SHADER_BYTECODE(&pixelShader->front(), pixelShader->size());
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 1;
+			state.RTVFormats[0] = deviceResources_->GetBackBufferFormat();
+			state.DSVFormat = deviceResources_->GetDepthBufferFormat();
+			state.SampleDesc.Count = 1;
+
+			DX::ThrowIfFailed(d3dDevice->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
+			states_[GPUMaterials::Pos] = { rootSignatureIndex, pipelineState };
+		});
+	}
+	completionTask_ = (createColPosPipelineStateTask && createPosPipelineStateTask && createTexPipelineStateTask).then([this]() {
 		loadingComplete_ = true;
 	});
 }

@@ -1,14 +1,16 @@
 #pragma once
 #include "RendererWrapper.h"
 #include <array>
-#include "MeshLoader.h"
 #include <glm\glm.hpp>
+#include "MeshLoader.h"
+#include "Img.h"
 #if defined(PLATFORM_WIN)
 #include <ppltasks.h>
 #endif
 struct SubMesh {
 	// TOD:: uint16_t is not enough
 	MeshLoader::index_t offset, count;
+	uint16_t material;
 };
 struct Mesh {
 	size_t vb, colb, ib;
@@ -17,6 +19,11 @@ struct Mesh {
 		std::vector<SubMesh> submeshes;
 	};
 	std::vector<Layer> layers;
+};
+struct Material {
+	glm::vec3 diffuse;
+	Img::ImgData* diffuse_image = nullptr;
+	float specular, power, alpha;
 };
 struct Assets {
 	~Assets();
@@ -27,6 +34,8 @@ struct Assets {
 	static constexpr size_t BEETHOVEN = 3;
 	static constexpr size_t STATIC_MODEL_COUNT = 4;
 	std::array<Mesh, STATIC_MODEL_COUNT> staticModels;
+	std::vector<Img::ImgData> images;
+	std::vector<Material> materials;
 	bool loadCompleted = false;
 #if defined(PLATFORM_WIN)
 	Concurrency::task<void> completionTask;

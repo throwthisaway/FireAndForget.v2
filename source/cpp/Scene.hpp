@@ -20,7 +20,7 @@ struct Scene {
 		float scale = 1.f;
 		const Mesh& mesh;
 		struct {
-			Material::Id id;
+			GPUMaterials::Id id;
 			size_t mvpStartIndex, colorStartIndex;
 		}material;
 #ifdef PLATFORM_WIN
