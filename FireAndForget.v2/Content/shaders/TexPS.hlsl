@@ -23,7 +23,7 @@ cbuffer cFrame : register(b1) {
 	float4 eyePos;
 };
 
-SamplerState smp {
+SamplerState smp : register(s0) {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;

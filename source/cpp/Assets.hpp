@@ -8,7 +8,7 @@
 #include <ppltasks.h>
 #endif
 struct SubMesh {
-	// TOD:: uint16_t is not enough
+	// TODO:: uint16_t is not enough
 	MeshLoader::index_t offset, count;
 	uint16_t material;
 };
@@ -21,8 +21,8 @@ struct Mesh {
 	std::vector<Layer> layers;
 };
 struct Material {
-	glm::vec3 diffuse;
-	Img::ImgData* diffuse_image = nullptr;
+	glm::vec3 color;
+	Img::ImgData* color_image = nullptr;
 	float specular, power, alpha;
 };
 struct Assets {
@@ -38,6 +38,8 @@ struct Assets {
 	std::vector<Material> materials;
 	bool loadCompleted = false;
 #if defined(PLATFORM_WIN)
-	Concurrency::task<void> completionTask;
+	std::vector<Concurrency::task<void>> loadTasks;
 #endif
+private:
+	void CreateModel(RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh);
 };

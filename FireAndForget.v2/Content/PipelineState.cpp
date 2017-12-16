@@ -111,7 +111,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	}
 	
 	{
-		// ROOT_VS_1CB_PS_1TX_2CB
+		// ROOT_VS_1CB_PS_1TX_2CB_1SSMP
 		CD3DX12_ROOT_PARAMETER parameter[2];
 		CD3DX12_DESCRIPTOR_RANGE range[3];
 		range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
@@ -126,8 +126,23 @@ void PipelineStates::CreateDeviceDependentResources() {
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
 
+		D3D12_STATIC_SAMPLER_DESC sampler = {};
+		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.MipLODBias = 0;
+		sampler.MaxAnisotropy = 0;
+		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		sampler.MinLOD = 0.0f;
+		sampler.MaxLOD = D3D12_FLOAT32_MAX;
+		sampler.ShaderRegister = 0;
+		sampler.RegisterSpace = 0;
+		sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 		CD3DX12_ROOT_SIGNATURE_DESC descRootSignature;
-		descRootSignature.Init(_ARRAYSIZE(parameter), parameter, 0, nullptr, rootSignatureFlags);
+		descRootSignature.Init(_ARRAYSIZE(parameter), parameter, 1/*1 static sampler*/, &sampler, rootSignatureFlags);
 
 		ComPtr<ID3DBlob> pSignature;
 		ComPtr<ID3DBlob> pError;
@@ -135,7 +150,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
-		rootSignatures_[ROOT_VS_1CB_PS_1TX_2CB] = rootSignature;
+		rootSignatures_[ROOT_VS_1CB_PS_1TX_2CB_1SSMP] = rootSignature;
 	}
 
 	task<void> createColPosPipelineStateTask;
@@ -231,7 +246,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 
 		createTexPipelineStateTask = (createPSTask && createVSTask).then([this, d3dDevice, vertexShader, pixelShader]() mutable {
 			ComPtr<ID3D12PipelineState> pipelineState;
-			auto rootSignatureIndex = ROOT_VS_1CB_PS_1TX_2CB;
+			auto rootSignatureIndex = ROOT_VS_1CB_PS_1TX_2CB_1SSMP;
 			const D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, 
@@ -254,7 +269,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.SampleDesc.Count = 1;
 
 			DX::ThrowIfFailed(d3dDevice->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-			states_[GPUMaterials::Pos] = { rootSignatureIndex, pipelineState };
+			states_[GPUMaterials::Tex] = { rootSignatureIndex, pipelineState };
 		});
 	}
 	completionTask_ = (createColPosPipelineStateTask && createPosPipelineStateTask && createTexPipelineStateTask).then([this]() {

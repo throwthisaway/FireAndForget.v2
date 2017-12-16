@@ -5,7 +5,8 @@ namespace GPUMaterials {
 	using Id = size_t;
 const Id ColPos = 0;
 const Id Pos = 1;
-const Id Count = 2;
+const Id Tex = 2;
+const Id Count = 3;
 
 struct ColPosBuffer {
 	glm::mat4 mvp;
