@@ -8,8 +8,8 @@ struct ShaderResource {
 };
 
 class StackAlloc {
-	size_t mappedConstantBufferOffset_ = 0;
 	ID3D12Device* device_;
+	size_t mappedConstantBufferOffset_ = 0;
 public:
 	ShaderResource resource_;
 	D3D12_GPU_VIRTUAL_ADDRESS cbvGpuAddress_;
@@ -19,17 +19,16 @@ public:
 	struct FrameDesc;
 private:
 	std::vector<FrameDesc> frames_;
-	unsigned short Push(UINT size, unsigned short count);
 public:
 	struct FrameDesc {
 		size_t alignedConstantBufferSize;
 		UINT8* destination;
 		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle;
 	};
-	StackAlloc(ID3D12Device* device, size_t count, size_t size);
+	StackAlloc(ID3D12Device* device, size_t max, size_t size);
 	~StackAlloc();
-	template<typename T>
-	unsigned short Push(unsigned short count) { return Push(UINT(sizeof(T)), count); }
+	unsigned short PushPerFrameCBV(UINT size, unsigned short count);
+	unsigned short PushSRV(ID3D12Resource* textureBuffer, DXGI_FORMAT format);
 	const FrameDesc& Get(size_t index);
 	void Pop(size_t count) { /* TODO:: cbvCpuHandle.Offset(count * -cbvDescriptorSize_);*/}
 };

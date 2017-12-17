@@ -203,8 +203,14 @@ void Assets::CreateModel(RendererWrapper* renderer, Mesh& model, MeshLoader::Mes
 					images.push_back({});
 					material.color_image = &images.back();
 					auto load = DX::ReadDataAsync(path).then([this, material, renderer](std::vector<byte>& data) {
-						auto err = Img::CTga::Decode(data.data(), data.size(), *material.color_image);
-						// TODO:: log
+						auto err = DecodeTGA(data.data(), data.size(), *material.color_image);
+						if (err != Img::TgaDecodeResult::Ok) {
+							// TODO::
+						}
+						else {
+							// TODO::
+							//renderer->CreateTexture
+						}
 					});
 					loadTasks.push_back(load);
 				}

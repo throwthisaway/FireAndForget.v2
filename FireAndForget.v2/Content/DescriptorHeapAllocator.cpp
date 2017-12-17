@@ -90,18 +90,20 @@ namespace {
 ShaderResource CreateShaderResource(ID3D12Device* device, UINT count, size_t size) {
 	return { CreateDescriptorHeapForCBuffer(device, count), CreateConstantBuffer(device, size), count, size };
 }
-StackAlloc::StackAlloc(ID3D12Device* device, size_t count, size_t size) :
+StackAlloc::StackAlloc(ID3D12Device* device, size_t max, size_t size) :
 	device_(device),
 	resource_(CreateShaderResource(device, staticDescCount, staticBufferSize)),
 	cbvGpuAddress_(resource_.cbuffer->GetGPUVirtualAddress()),
 	cbvCpuHandle_(resource_.cbvHeap->GetCPUDescriptorHandleForHeapStart()),
 	cbvDescriptorSize_(device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)) {
+	frames_.reserve(max);
 	CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
 	DX::ThrowIfFailed(resource_.cbuffer->Map(0, &readRange, reinterpret_cast<void**>(&mappedConstantBuffer_)));
 }
-unsigned short StackAlloc::Push(UINT size, unsigned short count) {
-	auto alignedSize = AlignTo256(size);
+unsigned short StackAlloc::PushPerFrameCBV(UINT size, unsigned short count) {
 #undef max
+	if (frames_.size() + count >= frames_.capacity()) return std::numeric_limits<unsigned short>::max();
+	auto alignedSize = AlignTo256(size);
 	if (alignedSize * count > resource_.size) return std::numeric_limits<unsigned short>::max();
 	size_t index = frames_.size();
 	for (size_t i = 0; i < count; ++i) {
@@ -119,6 +121,19 @@ unsigned short StackAlloc::Push(UINT size, unsigned short count) {
 		cbvCpuHandle_.Offset(cbvDescriptorSize_);
 	}
 	return unsigned short(index);
+}
+unsigned short StackAlloc::PushSRV(ID3D12Resource* textureBuffer, DXGI_FORMAT format) {
+	if (frames_.size() >= frames_.capacity()) return std::numeric_limits<unsigned short>::max();
+	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
+	desc.Format = format;
+	desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	desc.Texture2D.MipLevels = 1;
+	device_->CreateShaderResourceView(textureBuffer, &desc, cbvCpuHandle_);
+	cbvCpuHandle_.Offset(cbvDescriptorSize_);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(resource_.cbvHeap->GetGPUDescriptorHandleForHeapStart(), INT(frames_.size()), cbvDescriptorSize_);
+	frames_.push_back({ 0, nullptr, gpuHandle });
+	return frames_.size() - 1;
 }
 StackAlloc::~StackAlloc() {
 	resource_.cbuffer->Unmap(0, nullptr);

@@ -24,6 +24,7 @@ public:
 
 	void BeginUploadResources();
 	size_t CreateBuffer(const void* buffer, size_t length, size_t elementSize);
+	size_t CreateTexture(const void* buffer, UINT width, UINT height, UINT bytesPerPixel, DXGI_FORMAT format);
 	void EndUploadResources();
 
 	void BeginRender();
@@ -49,7 +50,12 @@ private:
 		size_t size, elementSize;
 	};
 	
+	struct Texture {
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		DXGI_FORMAT format;
+	};
 	std::vector<Buffer> buffers_;
+	std::vector<Texture> textures_;
 	D3D12_RECT m_scissorRect;
 	bool loadingComplete_ = false;
 };

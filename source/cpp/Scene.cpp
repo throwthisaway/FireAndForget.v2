@@ -26,8 +26,8 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 		objects_.back().color = glm::vec4(0.5f, .8f, .0f, 1.f);
 		//objects_.back().m = {};
 		objects_.back().material.id = GPUMaterials::Pos;
-		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.Push<GPUMaterials::cMVP>(DX::c_frameCount);
-		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.Push<GPUMaterials::cColor>(DX::c_frameCount);
+		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cMVP), DX::c_frameCount);
+		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cColor), DX::c_frameCount);
 	}
 	{
 		objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);
@@ -35,8 +35,8 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 		objects_.back().pos = glm::vec3(.5f, .5f, .5f);
 		objects_.back().color = glm::vec4(0.f, .8f, .8f, 1.f);
 		objects_.back().material.id = GPUMaterials::Pos;
-		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.Push<GPUMaterials::cMVP>(DX::c_frameCount);
-		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.Push<GPUMaterials::cColor>(DX::c_frameCount);
+		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cMVP), DX::c_frameCount);
+		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cColor), DX::c_frameCount);
 	}
 
 	{
@@ -44,8 +44,8 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 		objects_.back().pos = glm::vec3(.5f, 1.f, .5f);
 		objects_.back().color = glm::vec4(.9f, .4f, .8f, 1.f);
 		objects_.back().material.id = GPUMaterials::Pos;
-		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.Push<GPUMaterials::cMVP>(DX::c_frameCount);
-		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.Push<GPUMaterials::cColor>(DX::c_frameCount);
+		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cMVP), DX::c_frameCount);
+		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cColor), DX::c_frameCount);
 	}
 
 	// TODO:: remove

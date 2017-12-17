@@ -69,15 +69,53 @@ void Renderer::EndUploadResources() {
 	m_deviceResources->WaitForGpu();
 	bufferUpload_.intermediateResources.clear();
 }
-size_t Renderer::CreateBuffer(const void* buffer, size_t size, size_t elementSize) {
+size_t Renderer::CreateTexture(const void* buffer, UINT width, UINT height, UINT bytesPerPixel, DXGI_FORMAT format) {
+	CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
+
 	auto d3dDevice = m_deviceResources->GetD3DDevice();
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-	// Create the vertex buffer resource in the GPU's default heap and copy vertex data into it using the upload heap.
-	// The upload resource must not be released until after the GPU has finished using it.
-	Microsoft::WRL::ComPtr<ID3D12Resource> bufferUpload;
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource, bufferUpload;
 
 	CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
+	DX::ThrowIfFailed(d3dDevice->CreateCommittedResource(
+		&defaultHeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&bufferDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&resource)));
+
+	CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
+	DX::ThrowIfFailed(d3dDevice->CreateCommittedResource(
+		&uploadHeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&bufferDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&bufferUpload)));
+	bufferUpload_.intermediateResources.push_back(bufferUpload);
+	NAME_D3D12_OBJECT(resource);
+	{
+		D3D12_SUBRESOURCE_DATA data = {};
+		data.pData = buffer;
+		data.RowPitch = width *  bytesPerPixel;
+		data.SlicePitch = data.RowPitch * height;
+
+		UpdateSubresources(bufferUpload_.cmdList.Get(), resource.Get(), bufferUpload.Get(), 0, 0, 1, &data);
+
+		CD3DX12_RESOURCE_BARRIER vertexBufferResourceBarrier =
+			CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+		bufferUpload_.cmdList->ResourceBarrier(1, &vertexBufferResourceBarrier);
+	}
+	textures_.push_back({ resource, format });
+	return textures_.size() - 1;
+}
+size_t Renderer::CreateBuffer(const void* buffer, size_t size, size_t elementSize) {
 	CD3DX12_RESOURCE_DESC vertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size);
+
+	auto d3dDevice = m_deviceResources->GetD3DDevice();
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource, bufferUpload;
+
+	CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
 	DX::ThrowIfFailed(d3dDevice->CreateCommittedResource(
 		&defaultHeapProperties,
 		D3D12_HEAP_FLAG_NONE,
