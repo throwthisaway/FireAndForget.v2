@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Scene.hpp"
 #include "MatrixUtils.h"
-#include "../Content/DescriptorHeapAllocator.h"
+#include "CreateShaderParams.h"
 #include "../Common/DeviceResources.h"
 
 void Scene::Object::Update(double frame, double total) {
@@ -25,27 +25,45 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 		objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);
 		objects_.back().color = glm::vec4(0.5f, .8f, .0f, 1.f);
 		//objects_.back().m = {};
-		objects_.back().material.id = GPUMaterials::Pos;
-		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cMVP), DX::c_frameCount);
-		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cColor), DX::c_frameCount);
+		objects_.back().shaderParams.id = ShaderStructures::Pos;
+		auto heapHandle = renderer->GetStaticShaderResourceHeap(2 * DX::c_frameCount);
+		objects_.back().shaderParams.heapHandle = heapHandle;
+		auto a = CreateShaderParams<ShaderStructures::PosShaderParams>(renderer, heapHandle);
+		objects_.back().shaderParams.mvpStartIndex = renderer->GetShaderResourceIndex(heapHandle, sizeof(ShaderStructures::cMVP), DX::c_frameCount);
+		objects_.back().shaderParams.colorStartIndex = renderer->GetShaderResourceIndex(heapHandle, sizeof(ShaderStructures::cColor), DX::c_frameCount);
 	}
 	{
 		objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);
 		//objects_.back().m = glm::translate(glm::mat4{}, 
 		objects_.back().pos = glm::vec3(.5f, .5f, .5f);
 		objects_.back().color = glm::vec4(0.f, .8f, .8f, 1.f);
-		objects_.back().material.id = GPUMaterials::Pos;
-		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cMVP), DX::c_frameCount);
-		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cColor), DX::c_frameCount);
+		objects_.back().shaderParams.id = ShaderStructures::Tex;
+		auto heapHandle = renderer->GetStaticShaderResourceHeap(3 * DX::c_frameCount + 1);
+		objects_.back().shaderParams.heapHandle = heapHandle;
+		objects_.back().shaderParams.mvpStartIndex = renderer->GetShaderResourceIndex(heapHandle, sizeof(ShaderStructures::cMVP), DX::c_frameCount);
+		objects_.back().shaderParams.colorStartIndex = renderer->GetShaderResourceIndex(heapHandle, sizeof(ShaderStructures::cColor), DX::c_frameCount);
+		bool first = true;
+		for (auto& layer : objects_.back().mesh.layers) {
+			for (auto& submesh : layer.submeshes) {
+				if (submesh.material.color_tex_index != std::numeric_limits<size_t>::max()) {
+					objects_.back().shaderParams.colorTexSRVIndex = renderer->GetShaderResourceIndex(heapHandle, submesh.material.color_tex_index);
+					first = false;
+					break;
+				}
+			}
+			if (!first) break;
+		}
 	}
 
 	{
 		objects_.emplace_back(assets_.staticModels[Assets::BEETHOVEN]);
 		objects_.back().pos = glm::vec3(.5f, 1.f, .5f);
 		objects_.back().color = glm::vec4(.9f, .4f, .8f, 1.f);
-		objects_.back().material.id = GPUMaterials::Pos;
-		objects_.back().material.mvpStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cMVP), DX::c_frameCount);
-		objects_.back().material.colorStartIndex = renderer->GetShaderResources().staticResources_.PushPerFrameCBV(sizeof(GPUMaterials::cColor), DX::c_frameCount);
+		objects_.back().shaderParams.id = ShaderStructures::Pos;
+		auto heapHandle = renderer->GetStaticShaderResourceHeap(2 * DX::c_frameCount);
+		objects_.back().shaderParams.heapHandle = heapHandle;
+		objects_.back().shaderParams.mvpStartIndex = renderer->GetShaderResourceIndex(heapHandle, sizeof(ShaderStructures::cMVP), DX::c_frameCount);
+		objects_.back().shaderParams.colorStartIndex = renderer->GetShaderResourceIndex(heapHandle, sizeof(ShaderStructures::cColor), DX::c_frameCount);
 	}
 
 	// TODO:: remove
@@ -63,14 +81,11 @@ void Scene::Render( size_t encoderIndex) {
 	//	renderer_->SubmitToEncoder(encoderIndex, Materials::ColPos, (uint8_t*)&os, o.model);
 	//}
 	for (const auto& o : objects_) {
-		// Update resources
-		auto& mvpResource = renderer_->GetShaderResources().staticResources_.Get(o.material.mvpStartIndex + renderer_->GetCurrenFrameIndex());
 		auto mvp = glm::transpose(camera_.vp * o.m);
-		memcpy(mvpResource.destination, &mvp, sizeof(GPUMaterials::cMVP));
-		auto& colorResource = renderer_->GetShaderResources().staticResources_.Get(o.material.colorStartIndex + renderer_->GetCurrenFrameIndex());
-		memcpy(colorResource.destination, &o.color, sizeof(GPUMaterials::cColor));
-
-		renderer_->SubmitToEncoder(encoderIndex, GPUMaterials::Pos, { o.material.mvpStartIndex, o.material.colorStartIndex}, o.mesh);
+		// TODO:: update resources according to selected encoderIndex/shaderid
+		renderer_->UpdateShaderResource(o.shaderParams.mvpStartIndex + renderer_->GetCurrenFrameIndex(), &mvp, sizeof(ShaderStructures::cMVP));
+		renderer_->UpdateShaderResource(o.shaderParams.colorStartIndex + renderer_->GetCurrenFrameIndex(), &o.color, sizeof(ShaderStructures::cColor));
+		renderer_->SubmitToEncoder(encoderIndex, o.shaderParams.id, o.shaderParams.heapHandle, { o.shaderParams.mvpStartIndex, o.shaderParams.colorStartIndex}, o.mesh);
 	}
 }
 void Scene::Update(double frame, double total) {

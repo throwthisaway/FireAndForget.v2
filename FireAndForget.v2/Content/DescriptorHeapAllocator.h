@@ -1,5 +1,6 @@
 #pragma once
 #include <wrl.h>
+#include "../source/cpp/RendererTypes.h"
 
 struct ShaderResource {
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> cbvHeap;
@@ -20,6 +21,7 @@ public:
 private:
 	std::vector<FrameDesc> frames_;
 public:
+	using Index = unsigned short;
 	struct FrameDesc {
 		size_t alignedConstantBufferSize;
 		UINT8* destination;
@@ -27,12 +29,15 @@ public:
 	};
 	StackAlloc(ID3D12Device* device, size_t max, size_t size);
 	~StackAlloc();
-	unsigned short PushPerFrameCBV(UINT size, unsigned short count);
-	unsigned short PushSRV(ID3D12Resource* textureBuffer, DXGI_FORMAT format);
+	Index PushPerFrameCBV(UINT size, unsigned short count);
+	Index PushSRV(ID3D12Resource* textureBuffer, DXGI_FORMAT format);
 	const FrameDesc& Get(size_t index);
 	void Pop(size_t count) { /* TODO:: cbvCpuHandle.Offset(count * -cbvDescriptorSize_);*/}
 };
-struct ShaderResources {
+class ShaderResources {
 	StackAlloc staticResources_;
+public:
+	ResourceHeapHandle GetCurrentShaderResourceHeap(unsigned short descCountNeeded);
+	StackAlloc& GetShaderResourceHeap(ResourceHeapHandle);
 	ShaderResources(ID3D12Device* device);
 };

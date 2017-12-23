@@ -100,7 +100,7 @@ StackAlloc::StackAlloc(ID3D12Device* device, size_t max, size_t size) :
 	CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
 	DX::ThrowIfFailed(resource_.cbuffer->Map(0, &readRange, reinterpret_cast<void**>(&mappedConstantBuffer_)));
 }
-unsigned short StackAlloc::PushPerFrameCBV(UINT size, unsigned short count) {
+StackAlloc::Index StackAlloc::PushPerFrameCBV(UINT size, unsigned short count) {
 #undef max
 	if (frames_.size() + count >= frames_.capacity()) return std::numeric_limits<unsigned short>::max();
 	auto alignedSize = AlignTo256(size);
@@ -122,7 +122,7 @@ unsigned short StackAlloc::PushPerFrameCBV(UINT size, unsigned short count) {
 	}
 	return unsigned short(index);
 }
-unsigned short StackAlloc::PushSRV(ID3D12Resource* textureBuffer, DXGI_FORMAT format) {
+StackAlloc::Index StackAlloc::PushSRV(ID3D12Resource* textureBuffer, DXGI_FORMAT format) {
 	if (frames_.size() >= frames_.capacity()) return std::numeric_limits<unsigned short>::max();
 	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
 	desc.Format = format;
@@ -144,3 +144,11 @@ const StackAlloc::FrameDesc& StackAlloc::Get(size_t index) {
 }
 
 ShaderResources::ShaderResources(ID3D12Device* device) : staticResources_(device, staticDescCount, staticBufferSize) {}
+
+StackAlloc& ShaderResources::GetShaderResourceHeap(ResourceHeapHandle) {
+	return staticResources_; // TODO::
+}
+
+ResourceHeapHandle ShaderResources::GetCurrentShaderResourceHeap(unsigned short descCountNeeded) {
+	return 0; // TODO:: check for available free resources, create new heap if necessary
+}

@@ -111,9 +111,6 @@
     <ClInclude Include="..\source\cpp\Camera.hpp">
       <Filter>cpp</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\cpp\Materials.h">
-      <Filter>cpp</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\cpp\MatrixUtils.h">
       <Filter>cpp</Filter>
     </ClInclude>
@@ -143,6 +140,15 @@
     </ClInclude>
     <ClInclude Include="Content\DescriptorHeapAllocator.h">
       <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\RendererTypes.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\ShaderStructures.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\CreateShaderParams.h">
+      <Filter>cpp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

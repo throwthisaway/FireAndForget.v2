@@ -3,7 +3,7 @@
 #include "..\Common\DeviceResources.h"
 #include "..\Common\DirectXHelper.h"
 #include "..\Content\ShaderStructures.h"
-#include "..\source\cpp\Materials.h"
+#include "..\source\cpp\ShaderStructures.h"
 using namespace Microsoft::WRL;
 using namespace concurrency;
 
@@ -52,7 +52,7 @@ PipelineStates::~PipelineStates() {}
 void PipelineStates::CreateDeviceDependentResources() {
 
 	rootSignatures_.resize(ROOT_SIG_COUNT);
-	states_.resize(GPUMaterials::Count);
+	states_.resize(ShaderStructures::Count);
 	auto d3dDevice = deviceResources_->GetD3DDevice();
 	{
 		//ROOT_VS_1CB
@@ -111,7 +111,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	}
 	
 	{
-		// ROOT_VS_1CB_PS_1TX_2CB_1SSMP
+		// ROOT_VS_1CB_PS_1TX_2CB
 		CD3DX12_ROOT_PARAMETER parameter[2];
 		CD3DX12_DESCRIPTOR_RANGE range[3];
 		range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
@@ -150,7 +150,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
-		rootSignatures_[ROOT_VS_1CB_PS_1TX_2CB_1SSMP] = rootSignature;
+		rootSignatures_[ROOT_VS_1CB_PS_1TX_2CB] = rootSignature;
 	}
 
 	task<void> createColPosPipelineStateTask;
@@ -189,7 +189,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.SampleDesc.Count = 1;
 
 			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-			states_[GPUMaterials::ColPos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
+			states_[ShaderStructures::ColPos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
 				return CreateShaderResources<FireAndForget_v2::ModelViewProjectionConstantBuffer>(device, repeat); } */};
 		});
 	}
@@ -227,7 +227,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.SampleDesc.Count = 1;
 
 			DX::ThrowIfFailed(d3dDevice->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-			states_[GPUMaterials::Pos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
+			states_[ShaderStructures::Pos] = { rootSignatureIndex, pipelineState/*, [](ID3D12Device* device, unsigned short repeat) {
 				return CreateShaderResources<Materials::cMVP, Materials::cColor>(device, repeat); }*/ };
 			//pos_.pipelineIndex = states_.size() - 1;
 		});
@@ -246,7 +246,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 
 		createTexPipelineStateTask = (createPSTask && createVSTask).then([this, d3dDevice, vertexShader, pixelShader]() mutable {
 			ComPtr<ID3D12PipelineState> pipelineState;
-			auto rootSignatureIndex = ROOT_VS_1CB_PS_1TX_2CB_1SSMP;
+			auto rootSignatureIndex = ROOT_VS_1CB_PS_1TX_2CB;
 			const D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, 
@@ -269,7 +269,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.SampleDesc.Count = 1;
 
 			DX::ThrowIfFailed(d3dDevice->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-			states_[GPUMaterials::Tex] = { rootSignatureIndex, pipelineState };
+			states_[ShaderStructures::Tex] = { rootSignatureIndex, pipelineState };
 		});
 	}
 	completionTask_ = (createColPosPipelineStateTask && createPosPipelineStateTask && createTexPipelineStateTask).then([this]() {

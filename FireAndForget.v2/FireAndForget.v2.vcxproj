@@ -206,9 +206,11 @@
   <ItemGroup>
     <ClInclude Include="..\source\cpp\Assets.hpp" />
     <ClInclude Include="..\source\cpp\Camera.hpp" />
+    <ClInclude Include="..\source\cpp\CreateShaderParams.h" />
     <ClInclude Include="..\source\cpp\input\Input.hpp" />
-    <ClInclude Include="..\source\cpp\Materials.h" />
+    <ClInclude Include="..\source\cpp\ShaderStructures.h" />
     <ClInclude Include="..\source\cpp\MatrixUtils.h" />
+    <ClInclude Include="..\source\cpp\RendererTypes.h" />
     <ClInclude Include="..\source\cpp\RendererWrapper.h" />
     <ClInclude Include="..\source\cpp\Scene.hpp" />
     <ClInclude Include="..\source\cpp\Sphere.hpp" />

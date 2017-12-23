@@ -9,6 +9,7 @@
 #elif defined(PLATFORM_WIN)
 #include "Common\DirectXHelper.h"
 #endif
+#include "Content\DescriptorHeapAllocator.h"
 #include "MeshLoader.h"
 #include "Tga.h"
 #include "StringUtil.h"
@@ -92,6 +93,12 @@ void Assets::Init(RendererWrapper* renderer) {
 	//};
 	//auto pos2 = renderer->CreateBuffer(positions2, sizeof(positions2) * sizeof(positions2[0]), sizeof(float) * 4);
 	//staticModels[PLACEHOLDER2] = {pos2, col, 0, sizeof(positions2) / sizeof(positions[0]) / 4};
+
+	auto res = materials.emplace(L"default", Material{ { 1.f, 1.f, 1.f },
+		InvalidBufferIndex,
+		InvalidBufferIndex,
+		1.f, 128.f, 1.f });
+	auto& defaultMaterial = res.first->second;
 	struct VertexPositionColor
 	{
 		DirectX::XMFLOAT3 pos;
@@ -136,7 +143,7 @@ void Assets::Init(RendererWrapper* renderer) {
 	const UINT indexBufferSize = sizeof(cubeIndices);
 	auto index = renderer->CreateBuffer(cubeIndices, indexBufferSize, sizeof(unsigned short));
 
-	staticModels[PLACEHOLDER1] = { posCol, 0, index, {{{/*pivot*/}, {{ 0, indexBufferSize / sizeof(unsigned short)}}}} };
+	staticModels[PLACEHOLDER1] = { posCol, InvalidBufferIndex, index, InvalidBufferIndex, {{{/*pivot*/}, {{ 0, indexBufferSize / sizeof(unsigned short), defaultMaterial }}}} };
 
 	VertexPositionColor cubeVertices2[] =
 	{
@@ -150,19 +157,19 @@ void Assets::Init(RendererWrapper* renderer) {
 		{ XMFLOAT3(1.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 	};
 	auto posCol2 = renderer->CreateBuffer(cubeVertices2, vertexBufferSize, sizeof(VertexPositionColor));
-	staticModels[PLACEHOLDER2] = { posCol2, 0, index, { { {/*pivot*/ },{ { 0, indexBufferSize / sizeof(unsigned short) } } } } };
+	staticModels[PLACEHOLDER2] = { posCol2, InvalidBufferIndex, index, InvalidBufferIndex, { { {/*pivot*/ },{ { 0, indexBufferSize / sizeof(unsigned short), defaultMaterial } } } } };
 #ifdef PLATFORM_WIN
 	auto checkerboardTask = DX::ReadDataAsync(L"checkerboard.mesh").then([this, renderer](std::vector<byte>& data) {
 		MeshLoader::Mesh mesh;
 		mesh.data = std::move(data);
 		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-		CreateModel(renderer, staticModels[CHECKERBOARD], mesh);
+		CreateModel(L"checkerboard.mesh", renderer, staticModels[CHECKERBOARD], mesh);
 	});
 	auto beethovenTask = DX::ReadDataAsync(L"BEETHOVE_object.mesh").then([this, renderer](std::vector<byte>& data) {
 		MeshLoader::Mesh mesh;
 		mesh.data = std::move(data);
 		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-		CreateModel(renderer, staticModels[BEETHOVEN], mesh);
+		CreateModel(L"BEETHOVE_object.mesh", renderer, staticModels[BEETHOVEN], mesh);
 	});
 	(checkerboardTask && beethovenTask).then([this, renderer]() {
 		Concurrency::when_all(std::begin(loadTasks), std::end(loadTasks)).then([this, renderer]() {
@@ -174,7 +181,7 @@ void Assets::Init(RendererWrapper* renderer) {
 #endif
 }
 
-void Assets::CreateModel(RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh) {
+void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh) {
 	auto vertices = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
 	// TODO:: if (!mesh.polygons.empty()
 	for (auto& p : mesh.polygons) {
@@ -183,41 +190,61 @@ void Assets::CreateModel(RendererWrapper* renderer, Mesh& model, MeshLoader::Mes
 	}
 	auto indices = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
 	model.vb = vertices;
-	model.colb = 0;
+	model.colb = InvalidBufferIndex;
 	model.ib = indices;
+	model.nb = renderer->CreateBuffer(mesh.normalsP.data(), mesh.normalsP.size() * sizeof(mesh.normalsP.front()), sizeof(mesh.normalsP.front()));
+	// TODO:: uvmaps
 	for (const auto& layer : mesh.layers) {
 		Mesh::Layer modelLayer = { glm::vec3(layer.pivot.x, layer.pivot.y, layer.pivot.z) };
+		model.layers.push_back(modelLayer);
+		//submeshes
 		for (size_t i = 0; i < layer.poly.count; ++i) {
-			auto surf = mesh.surfaces[layer.poly.sections[i].index];
+			// Surface properties
+			auto surfaceIndex = layer.poly.sections[i].index;
+			auto surf = mesh.surfaces[surfaceIndex];
+			
 			auto colLayers = surf.surface_infos[MeshLoader::COLOR_MAP].layers;
-			materials.push_back({ { surf.color[0], surf.color[1], surf.color[2] },
-				nullptr,
+
+			// material id: <object_name>_<surface_name>
+			auto res = materials.emplace(std::wstring{ name } + L'_' + std::wstring{ s2ws(surf.name) }, Material{ { surf.color[0], surf.color[1], surf.color[2] },
+				InvalidBufferIndex /* texture data*/,
+				InvalidBufferIndex /* uv */,
 				surf.surface_infos[MeshLoader::SPECULARITY_MAP].val,
 				surf.surface_infos[MeshLoader::GLOSSINESS_MAP].val,
 				surf.surface_infos[MeshLoader::TRANSPARENCY_MAP].val });
-			Material& material = materials.back();
-			if (colLayers && colLayers->image && colLayers->image->path) {
+			modelLayer.submeshes.push_back({ layer.poly.sections[i].offset * VERTICESPERPOLY, layer.poly.sections[i].count * VERTICESPERPOLY, res.first->second });
+			/* currently, insertion always succeeds because of material id */
+			if (res.second &&
+				// extract only the color info's first layer with image now
+				colLayers && colLayers->image && colLayers->image->path) {
+				Material& material = res.first->second;
+				const auto& uv = mesh.uvs.uvmaps[surfaceIndex][colLayers->uvmap];
+				auto elementSize = UVCOORDS * sizeof(*uv.uv);
+				material.color_uvb = renderer->CreateBuffer(uv.uv, uv.n * elementSize, elementSize);
 				auto path = s2ws(colLayers->image->path);
 				if (!istrcmp(path, path.size() - 3, std::wstring{ L"tga" })) {
 					path = extractFilename(path);
-					images.push_back({});
-					material.color_image = &images.back();
-					auto load = DX::ReadDataAsync(path).then([this, material, renderer](std::vector<byte>& data) {
-						auto err = DecodeTGA(data.data(), data.size(), *material.color_image);
-						if (err != Img::TgaDecodeResult::Ok) {
-							// TODO::
-						}
-						else {
-							// TODO::
-							//renderer->CreateTexture
-						}
-					});
-					loadTasks.push_back(load);
+					auto res = images.emplace(path, Img::ImgData{});
+					if (res.second) {
+						Img::ImgData& color_image = res.first->second;
+						auto load = DX::ReadDataAsync(path).then([this, &material, &color_image, renderer](std::vector<byte>& data) {
+							auto err = DecodeTGA(data.data(), data.size(), color_image, true);
+							if (err != Img::TgaDecodeResult::Ok) {
+								// TODO::
+								assert(false);
+							}
+							else {
+								material.color_tex_index = renderer->CreateTexture(color_image.data.get(),
+									color_image.width,
+									color_image.height,
+									color_image.bytesPerPixel,
+									color_image.pf);
+							}
+						});
+						loadTasks.push_back(load);
+					}
 				}
 			}
-			modelLayer.submeshes.push_back({ layer.poly.sections[i].offset * VERTICESPERPOLY, layer.poly.sections[i].count * VERTICESPERPOLY, (uint16_t)(materials.size() - 1) });
 		}
-
-		model.layers.push_back(modelLayer);
 	}
 }

@@ -1,5 +1,16 @@
 Texture2D diffuse : register(t0);
 
+struct PointLight;
+struct Material;
+#define MAX_LIGHTS 2
+cbuffer cObject : register(b0) {
+	Material mat;
+};
+cbuffer cFrame : register(b1) {
+	PointLight light[MAX_LIGHTS];
+	float4 eyePos;
+};
+
 struct PointLight {
 	float4 diffuse;
 	float4 ambient;
@@ -12,15 +23,6 @@ struct PointLight {
 struct Material {
 	float3 diffuse;
 	float specular, power;
-};
-
-#define MAX_LIGHTS 2
-cbuffer cObject : register(b0) {
-	Material mat;
-};
-cbuffer cFrame : register(b1) {
-	PointLight light[MAX_LIGHTS];
-	float4 eyePos;
 };
 
 SamplerState smp : register(s0) {

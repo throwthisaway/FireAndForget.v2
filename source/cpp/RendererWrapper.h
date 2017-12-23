@@ -1,26 +1,27 @@
-#ifndef RendererInterface_h
-#define RendererInterface_h
+#pragma once
 #include <vector>
+#include "Img.h"
+#include "RendererTypes.h"
 
-namespace Materials {
-	struct cBuffers;
-}
-
+class Renderer;
 struct Mesh;
-struct ShaderResources;
 
 class RendererWrapper {
 public:
-	void Init(void* self);
-	size_t CreateBuffer(const void* buffer, size_t length, size_t elementSize);
+	void Init(Renderer* self);
+	BufferIndex CreateBuffer(const void* buffer, size_t sizeInBytes, size_t elementSize);
+	BufferIndex CreateTexture(const void* buffer, UINT width, UINT height, UINT bytesPerPixel, Img::PixelFormat format);
 	void BeginRender();
 	size_t StartRenderPass();
-	void SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const std::vector<size_t>& bufferIndices, const Mesh&);
+	void SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& bufferIndices, const Mesh&);
 	void BeginUploadResources();
 	void EndUploadResources();
-	ShaderResources& GetShaderResources();
 	uint32_t GetCurrenFrameIndex();
+
+	ResourceHeapHandle GetStaticShaderResourceHeap(unsigned short descCountNeeded);
+	ShaderResourceIndex GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count);
+	void UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size);
+	ShaderResourceIndex GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex);
 private:
-	void* self;
+	Renderer* renderer;
 };
-#endif /* RendererInterface_h */

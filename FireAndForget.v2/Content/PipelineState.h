@@ -1,7 +1,6 @@
 #pragma once
 #include <wrl.h>
 #include <ppltasks.h>
-#include "..\source\cpp\Materials.h"
 
 namespace DX {
 	class DeviceResources;
@@ -31,7 +30,7 @@ public:
 	};
 	static const size_t ROOT_VS_1CB = 0;
 	static const size_t ROOT_VS_1CB_PS_1CB = 1;
-	static const size_t ROOT_VS_1CB_PS_1TX_2CB_1SSMP = 2;
+	static const size_t ROOT_VS_1CB_PS_1TX_2CB = 2;
 	static const size_t ROOT_SIG_COUNT = 3;
 	std::vector<Microsoft::WRL::ComPtr<ID3D12RootSignature>> rootSignatures_;
 	std::vector<State> states_;

@@ -8,37 +8,63 @@
 // Resource Binding - https://msdn.microsoft.com/en-us/library/windows/desktop/dn899206(v=vs.85).aspx
 // Creating Descriptors - https://msdn.microsoft.com/en-us/library/windows/desktop/dn859358(v=vs.85).aspx
 // https://www.braynzarsoft.net/viewtutorial/q16390-04-directx-12-braynzar-soft-tutorials
-void RendererWrapper::Init(void* self) {
-	this->self = self;
+void RendererWrapper::Init(Renderer* renderer) {
+	this->renderer = renderer;
 }
 
 void RendererWrapper::BeginUploadResources() {
-	reinterpret_cast<Renderer*>(self)->BeginUploadResources();
+	renderer->BeginUploadResources();
 }
 
-size_t RendererWrapper::CreateBuffer(const void* buffer, size_t length, size_t elementSize) {
-	return reinterpret_cast<Renderer*>(self)->CreateBuffer(buffer, length, elementSize);
+BufferIndex RendererWrapper::CreateBuffer(const void* buffer, size_t sizeInBytes, size_t elementSize) {
+	return renderer->CreateBuffer(buffer, sizeInBytes, elementSize);
 }
 
+namespace {
+	DXGI_FORMAT PixelFormatToDXGIFormat(Img::PixelFormat format) {
+		switch (format) {
+			case Img::PixelFormat::RGBA8:
+				return DXGI_FORMAT_R8G8B8A8_UNORM;
+			case Img::PixelFormat::BGRA8:
+				return DXGI_FORMAT_B8G8R8A8_UNORM;
+			default:
+				assert(false);
+		}
+		return DXGI_FORMAT_UNKNOWN;
+	}
+}
+BufferIndex RendererWrapper::CreateTexture(const void* buffer, UINT width, UINT height, UINT bytesPerPixel, Img::PixelFormat format) {
+	return renderer->CreateTexture(buffer, width, height, bytesPerPixel, PixelFormatToDXGIFormat(format));
+}
 void RendererWrapper::EndUploadResources() {
-	reinterpret_cast<Renderer*>(self)->EndUploadResources();
+	renderer->EndUploadResources();
 }
 
 void RendererWrapper::BeginRender() {
-	reinterpret_cast<Renderer*>(self)->BeginRender();
+	renderer->BeginRender();
 }
 size_t RendererWrapper::StartRenderPass() {
-	return reinterpret_cast<Renderer*>(self)->StartRenderPass();
+	return renderer->StartRenderPass();
 }
-void RendererWrapper::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const std::vector<size_t>& bufferIndices, const Mesh& model) {
-	return reinterpret_cast<Renderer*>(self)->SubmitToEncoder(encoderIndex, pipelineIndex, bufferIndices, model);
+void RendererWrapper::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& bufferIndices, const Mesh& model) {
+	renderer->SubmitToEncoder(encoderIndex, pipelineIndex, shaderResourceHeap, bufferIndices, model);
 }
 
-ShaderResources& RendererWrapper::GetShaderResources() {
-	return reinterpret_cast<Renderer*>(self)->shaderResources_;
-}
 uint32_t RendererWrapper::GetCurrenFrameIndex() {
-	return reinterpret_cast<Renderer*>(self)->m_deviceResources->GetCurrentFrameIndex();
+	return renderer->m_deviceResources->GetCurrentFrameIndex();
+}
+
+ResourceHeapHandle RendererWrapper::GetStaticShaderResourceHeap(unsigned short descCountNeeded) {
+	return renderer->GetStaticShaderResourceHeap(descCountNeeded);
+}
+ShaderResourceIndex RendererWrapper::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count) {
+	return renderer->GetShaderResourceIndex(shaderResourceHeap, size, count);
+}
+void RendererWrapper::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size) {
+	renderer->UpdateShaderResource(shaderResourceIndex, data, size);
+}
+ShaderResourceIndex RendererWrapper::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex) {
+	return renderer->GetShaderResourceIndex(shaderResourceHeap, textureIndex);
 }
 
 using namespace Microsoft::WRL;
@@ -69,14 +95,14 @@ void Renderer::EndUploadResources() {
 	m_deviceResources->WaitForGpu();
 	bufferUpload_.intermediateResources.clear();
 }
-size_t Renderer::CreateTexture(const void* buffer, UINT width, UINT height, UINT bytesPerPixel, DXGI_FORMAT format) {
+BufferIndex Renderer::CreateTexture(const void* buffer, UINT width, UINT height, UINT bytesPerPixel, DXGI_FORMAT format) {
 	CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
 
-	auto d3dDevice = m_deviceResources->GetD3DDevice();
+	auto device = m_deviceResources->GetD3DDevice();
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource, bufferUpload;
 
 	CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
-	DX::ThrowIfFailed(d3dDevice->CreateCommittedResource(
+	DX::ThrowIfFailed(device->CreateCommittedResource(
 		&defaultHeapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&bufferDesc,
@@ -85,7 +111,7 @@ size_t Renderer::CreateTexture(const void* buffer, UINT width, UINT height, UINT
 		IID_PPV_ARGS(&resource)));
 
 	CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-	DX::ThrowIfFailed(d3dDevice->CreateCommittedResource(
+	DX::ThrowIfFailed(device->CreateCommittedResource(
 		&uploadHeapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&bufferDesc,
@@ -106,11 +132,11 @@ size_t Renderer::CreateTexture(const void* buffer, UINT width, UINT height, UINT
 			CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		bufferUpload_.cmdList->ResourceBarrier(1, &vertexBufferResourceBarrier);
 	}
-	textures_.push_back({ resource, format });
-	return textures_.size() - 1;
+	buffers_.push_back({ resource, 0, 0, 0, format });
+	return buffers_.size() - 1;
 }
-size_t Renderer::CreateBuffer(const void* buffer, size_t size, size_t elementSize) {
-	CD3DX12_RESOURCE_DESC vertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size);
+BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes, size_t elementSize) {
+	CD3DX12_RESOURCE_DESC vertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes);
 
 	auto d3dDevice = m_deviceResources->GetD3DDevice();
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource, bufferUpload;
@@ -242,21 +268,22 @@ size_t Renderer::StartRenderPass() {
 	return 0;
 }
 
-void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, const std::vector<size_t>& bufferIndices, const Mesh& model) {
+void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& bufferIndices, const Mesh& model) {
 	if (!loadingComplete_) return;
 
 	auto& state = pipelineStates_.states_[pipelineIndex];
 	auto* commandList = commandLists_[pipelineIndex].Get();
 	PIXBeginEvent(commandList, 0, L"SubmitToEncoder");
 	{
-		ID3D12DescriptorHeap* ppHeaps[] = { shaderResources_.staticResources_.resource_.cbvHeap.Get() };
+		auto& resources = shaderResources_.GetShaderResourceHeap(shaderResourceHeap);
+		ID3D12DescriptorHeap* ppHeaps[] = { resources.resource_.cbvHeap.Get() };
 		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 		// Bind the current frame's constant buffer to the pipeline.
 		size_t rootParameterIndex = 0;
 		auto d3dDevice = m_deviceResources->GetD3DDevice();
 		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		for (size_t index : bufferIndices) {
-			auto& resource = shaderResources_.staticResources_.Get(index);
+			auto& resource = resources.Get(index);
 			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = resource.gpuHandle;
 			gpuHandle.Offset(m_deviceResources->GetCurrentFrameIndex(), cbvDescriptorSize);
 			commandList->SetGraphicsRootDescriptorTable(rootParameterIndex++, gpuHandle);
@@ -306,4 +333,27 @@ bool Renderer::Render() {
 	m_deviceResources->GetCommandQueue()->ExecuteCommandLists(ppCommandLists.size(), &ppCommandLists.front());
 
 	return true;
+}
+
+ResourceHeapHandle Renderer::GetStaticShaderResourceHeap(unsigned short descCountNeeded) {
+	return shaderResources_.GetCurrentShaderResourceHeap(descCountNeeded);
+}
+size_t Renderer::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count) {
+	auto& resources = shaderResources_.GetShaderResourceHeap(shaderResourceHeap);
+	auto index = resources.PushPerFrameCBV(size, count);
+	size_t startIndex = shaderResourceDescriptors_.size();
+	for (unsigned short i = 0; i < count; ++i, ++index)
+		shaderResourceDescriptors_.emplace_back(resources.Get(index));
+	return startIndex;
+}
+void Renderer::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size) {
+	assert(shaderResourceDescriptors_.size() > shaderResourceIndex);
+	StackAlloc::FrameDesc& frameDesc = shaderResourceDescriptors_[shaderResourceIndex];
+	memcpy(frameDesc.destination, data, sizeof(size));
+}
+ShaderResourceIndex Renderer::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex) {
+	auto& resources = shaderResources_.GetShaderResourceHeap(shaderResourceHeap);
+	auto index = resources.PushSRV(buffers_[textureIndex].resource.Get(), buffers_[textureIndex].format);
+	shaderResourceDescriptors_.emplace_back(resources.Get(index));
+	return shaderResourceDescriptors_.size() - 1;
 }
