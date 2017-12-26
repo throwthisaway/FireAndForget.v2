@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BD0E83601FF010D9005A2F8A /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD0E835E1FF010D9005A2F8A /* Shaders.metal */; };
+		BD0E83611FF010D9005A2F8A /* Pos.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD0E835F1FF010D9005A2F8A /* Pos.metal */; };
+		BD0E83631FF010FA005A2F8A /* Tex.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD0E83621FF010FA005A2F8A /* Tex.metal */; };
 		BD19CC4E1F13A962005781A5 /* Timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD19CC4C1F13A962005781A5 /* Timer.cpp */; };
-		BD1C012F1EA4E6DE0035CD53 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD1C012E1EA4E6DE0035CD53 /* Shaders.metal */; };
 		BD25F9DF1ECD9B4200ACD738 /* Renderer.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD25F9DE1ECD9B4200ACD738 /* Renderer.mm */; };
 		BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD28F6FC1F09753300B07CBD /* Input.cpp */; };
 		BD28F7001F0A5E9B00B07CBD /* Shaders.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD28F6FF1F0A5E9B00B07CBD /* Shaders.mm */; };
@@ -41,9 +43,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BD0E83521FEFF7D8005A2F8A /* ShaderStructures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ShaderStructures.h; path = cpp/ShaderStructures.h; sourceTree = "<group>"; };
+		BD0E83531FEFF7D8005A2F8A /* RendererTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RendererTypes.h; path = cpp/RendererTypes.h; sourceTree = "<group>"; };
+		BD0E83541FEFF7D8005A2F8A /* CreateShaderParams.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CreateShaderParams.h; path = cpp/CreateShaderParams.h; sourceTree = "<group>"; };
+		BD0E835E1FF010D9005A2F8A /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Shaders.metal; path = shaders/Shaders.metal; sourceTree = "<group>"; };
+		BD0E835F1FF010D9005A2F8A /* Pos.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Pos.metal; path = shaders/Pos.metal; sourceTree = "<group>"; };
+		BD0E83621FF010FA005A2F8A /* Tex.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Tex.metal; path = shaders/Tex.metal; sourceTree = "<group>"; };
 		BD19CC4C1F13A962005781A5 /* Timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Timer.cpp; path = cpp/Timer.cpp; sourceTree = "<group>"; };
 		BD19CC4D1F13A962005781A5 /* Timer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Timer.hpp; path = cpp/Timer.hpp; sourceTree = "<group>"; };
-		BD1C012E1EA4E6DE0035CD53 /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		BD1C01301EA4F7A80035CD53 /* MetalViewDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MetalViewDelegate.h; sourceTree = "<group>"; };
 		BD25F9DE1ECD9B4200ACD738 /* Renderer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = Renderer.mm; sourceTree = "<group>"; };
 		BD25F9E01ECD9B5C00ACD738 /* Renderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Renderer.h; sourceTree = "<group>"; };
@@ -52,7 +59,6 @@
 		BD28F6FD1F09753300B07CBD /* Input.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Input.hpp; path = cpp/input/Input.hpp; sourceTree = "<group>"; };
 		BD28F6FF1F0A5E9B00B07CBD /* Shaders.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = Shaders.mm; sourceTree = "<group>"; };
 		BD28F7011F0A5F5100B07CBD /* Shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Shaders.h; sourceTree = "<group>"; };
-		BD28F7021F0AADE800B07CBD /* Materials.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Materials.h; path = cpp/Materials.h; sourceTree = "<group>"; };
 		BD2BB2A21EB4A9F600B82284 /* Sphere.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Sphere.cpp; path = cpp/Sphere.cpp; sourceTree = "<group>"; };
 		BD2BB2A31EB4A9F600B82284 /* Sphere.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Sphere.hpp; path = cpp/Sphere.hpp; sourceTree = "<group>"; };
 		BD33FCA51F35D5F100162D00 /* MeshLoader.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = MeshLoader.xcodeproj; path = ../MeshLoader/MeshLoader/MeshLoader.xcodeproj; sourceTree = "<group>"; };
@@ -96,6 +102,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		BD0E835D1FF00F21005A2F8A /* shaders */ = {
+			isa = PBXGroup;
+			children = (
+				BD0E835F1FF010D9005A2F8A /* Pos.metal */,
+				BD0E835E1FF010D9005A2F8A /* Shaders.metal */,
+				BD0E83621FF010FA005A2F8A /* Tex.metal */,
+			);
+			name = shaders;
+			sourceTree = "<group>";
+		};
 		BD28F6F81F0974D800B07CBD /* input */ = {
 			isa = PBXGroup;
 			children = (
@@ -108,6 +124,9 @@
 		BD2BB2A11EB4A8CB00B82284 /* cpp */ = {
 			isa = PBXGroup;
 			children = (
+				BD0E83541FEFF7D8005A2F8A /* CreateShaderParams.h */,
+				BD0E83531FEFF7D8005A2F8A /* RendererTypes.h */,
+				BD0E83521FEFF7D8005A2F8A /* ShaderStructures.h */,
 				BD9FA6C01F31E8B100978F61 /* Camera.cpp */,
 				BD9FA6C11F31E8B100978F61 /* Camera.hpp */,
 				BD28F6F81F0974D800B07CBD /* input */,
@@ -118,7 +137,6 @@
 				BD7B0ED91ECB544300B983E9 /* Scene.hpp */,
 				BD7203901EEC1C5E00B2C914 /* Assets.cpp */,
 				BD7203911EEC1C5E00B2C914 /* Assets.hpp */,
-				BD28F7021F0AADE800B07CBD /* Materials.h */,
 				BD19CC4C1F13A962005781A5 /* Timer.cpp */,
 				BD19CC4D1F13A962005781A5 /* Timer.hpp */,
 				BD33FCAE1F35E4E800162D00 /* MatrixUtils.h */,
@@ -155,6 +173,7 @@
 		BD3D1AAD1E895BFB00F7311A /* source */ = {
 			isa = PBXGroup;
 			children = (
+				BD0E835D1FF00F21005A2F8A /* shaders */,
 				BD72038D1EEC1A7400B2C914 /* assets */,
 				BD2BB2A11EB4A8CB00B82284 /* cpp */,
 				BD3D1ACD1E8A689800F7311A /* MetalView.h */,
@@ -167,7 +186,6 @@
 				BD3D1AB91E895BFC00F7311A /* Main.storyboard */,
 				BD3D1ABC1E895BFC00F7311A /* Info.plist */,
 				BD3D1AB11E895BFC00F7311A /* Supporting Files */,
-				BD1C012E1EA4E6DE0035CD53 /* Shaders.metal */,
 				BD1C01301EA4F7A80035CD53 /* MetalViewDelegate.h */,
 				BD25F9DE1ECD9B4200ACD738 /* Renderer.mm */,
 				BD25F9E01ECD9B5C00ACD738 /* Renderer.h */,
@@ -294,11 +312,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BD0E83631FF010FA005A2F8A /* Tex.metal in Sources */,
 				BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */,
 				BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */,
+				BD0E83601FF010D9005A2F8A /* Shaders.metal in Sources */,
 				BD28F7001F0A5E9B00B07CBD /* Shaders.mm in Sources */,
 				BD3D1ACF1E8A689800F7311A /* MetalView.mm in Sources */,
 				BD19CC4E1F13A962005781A5 /* Timer.cpp in Sources */,
+				BD0E83611FF010D9005A2F8A /* Pos.metal in Sources */,
 				BD7B0EDA1ECB544300B983E9 /* Scene.cpp in Sources */,
 				BD3D1AB61E895BFC00F7311A /* ViewController.mm in Sources */,
 				BD3D1AB31E895BFC00F7311A /* main.m in Sources */,
@@ -306,7 +327,6 @@
 				BD25F9DF1ECD9B4200ACD738 /* Renderer.mm in Sources */,
 				BD3D1AB01E895BFC00F7311A /* AppDelegate.m in Sources */,
 				BD2BB2A41EB4A9F600B82284 /* Sphere.cpp in Sources */,
-				BD1C012F1EA4E6DE0035CD53 /* Shaders.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -420,6 +440,7 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../MeshLoader\"",
 					"\"$(SRCROOT)/../3rdparty/GSL/include\"",
+					"\"$(SRCROOT)/../3rdparty/glm\"",
 				);
 				INFOPLIST_FILE = source/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
@@ -438,6 +459,7 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../MeshLoader\"",
 					"\"$(SRCROOT)/../3rdparty/GSL/include\"",
+					"\"$(SRCROOT)/../3rdparty/glm\"",
 				);
 				INFOPLIST_FILE = source/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";

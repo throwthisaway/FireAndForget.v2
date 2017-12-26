@@ -2,7 +2,7 @@
 #include "RendererWrapper.h"
 #include <array>
 #include <unordered_map>
-#include <glm\glm.hpp>
+#include <glm/glm.hpp>
 #include "MeshLoader.h"
 #include "Img.h"
 #if defined(PLATFORM_WIN)

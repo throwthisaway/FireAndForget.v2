@@ -6,22 +6,32 @@
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFStream.h>
 #include <CoreFoundation/CFNumber.h>
+#include <CoreFoundation/CFByteOrder.h>
 #elif defined(PLATFORM_WIN)
 #include "Common\DirectXHelper.h"
-#endif
 #include "Content\DescriptorHeapAllocator.h"
+#endif
 #include "MeshLoader.h"
 #include "Tga.h"
 #include "StringUtil.h"
 
 namespace {
 #ifdef PLATFORM_MAC_OS
-	void LoadFromBundle(const char* fname) {
-		CFBundleRef mainBundle;
-		mainBundle = CFBundleGetMainBundle();
+	std::vector<uint8_t> LoadFromBundle(const wchar_t* fname) {
+		std::vector<uint8_t> data;
+		CFBundleRef mainBundle = CFBundleGetMainBundle();
 		assert(mainBundle);
+		CFStringEncoding encoding = (CFByteOrderLittleEndian == CFByteOrderGetCurrent()) ? kCFStringEncodingUTF32LE : kCFStringEncodingUTF32BE;
 
-		CFURLRef url = CFBundleCopyResourceURL(mainBundle,  CFSTR("BEETHOVE_object.mesh"), NULL, NULL);
+		auto widecharvarLen = wcslen(fname);
+
+		CFStringRef string = CFStringCreateWithBytes(NULL,
+													 reinterpret_cast<const uint8_t*>(fname),
+													 (widecharvarLen * sizeof(wchar_t)),
+													 encoding,
+													 false);
+		CFURLRef url = CFBundleCopyResourceURL(mainBundle, string, NULL, NULL);
+		CFRelease(string);
 		//	CFUrlRef --> const char*
 		//	CFStringRef pathURL = CFURLCopyFileSystemPath(url, kCFURLPOSIXPathStyle);
 		//
@@ -30,8 +40,8 @@ namespace {
 		//	CFRelease(pathURL);
 		//	CFRelease(url);
 
-		CFErrorRef error;
-		CFNumberRef fileSizeRef;
+		CFErrorRef error = 0;
+		CFNumberRef fileSizeRef = 0;
 		signed long long int fileSize = 0;
 		if (CFURLCopyResourcePropertyForKey(url, kCFURLFileSizeKey, &fileSizeRef, &error) && fileSizeRef) {
 			CFNumberGetValue(fileSizeRef, kCFNumberLongLongType, &fileSize);
@@ -40,16 +50,15 @@ namespace {
 		if (!fileSize) {
 			CFRelease(url);
 			CFRelease(error);
-			return;
+			return data;
 		}
 		CFReadStreamRef rs = CFReadStreamCreateWithFile(kCFAllocatorDefault, url);
 		Boolean res = CFReadStreamOpen(rs);
 		if (res) {
-			std::unique_ptr<UInt8[]> buffer(new UInt8[fileSize]);
-			CFIndex read = CFReadStreamRead(rs, (UInt8*)buffer.get(), fileSize);
+			data.resize(fileSize);
+			CFIndex read = CFReadStreamRead(rs, data.data(), fileSize);
 			if (read == fileSize) {
-				MeshLoader::Mesh mesh;
-				LoadMesh(buffer.get(), fileSize, mesh);
+				// all good
 			} else {
 				// error read != filesize
 			}
@@ -59,9 +68,9 @@ namespace {
 		}
 		CFRelease(rs);
 		CFRelease(url);
-		CFRelease(error);
-		// ???
-		CFRelease(mainBundle);
+		if (error) CFRelease(error);
+		//TODO:: ??? CFRelease(mainBundle);
+		return data;
 	}
 #endif
 }
@@ -93,7 +102,7 @@ void Assets::Init(RendererWrapper* renderer) {
 	//};
 	//auto pos2 = renderer->CreateBuffer(positions2, sizeof(positions2) * sizeof(positions2[0]), sizeof(float) * 4);
 	//staticModels[PLACEHOLDER2] = {pos2, col, 0, sizeof(positions2) / sizeof(positions[0]) / 4};
-
+#ifdef PLATFORM_WIN
 	auto res = materials.emplace(L"default", Material{ { 1.f, 1.f, 1.f },
 		InvalidBufferIndex,
 		InvalidBufferIndex,
@@ -158,7 +167,7 @@ void Assets::Init(RendererWrapper* renderer) {
 	};
 	auto posCol2 = renderer->CreateBuffer(cubeVertices2, vertexBufferSize, sizeof(VertexPositionColor));
 	staticModels[PLACEHOLDER2] = { posCol2, InvalidBufferIndex, index, InvalidBufferIndex, { { {/*pivot*/ },{ { 0, indexBufferSize / sizeof(unsigned short), defaultMaterial } } } } };
-#ifdef PLATFORM_WIN
+
 	auto checkerboardTask = DX::ReadDataAsync(L"checkerboard.mesh").then([this, renderer](std::vector<byte>& data) {
 		MeshLoader::Mesh mesh;
 		mesh.data = std::move(data);
@@ -177,17 +186,35 @@ void Assets::Init(RendererWrapper* renderer) {
 			renderer->EndUploadResources();
 			loadCompleted = true;
 		}); });
-
+#elif defined(PLATFORM_MAC_OS)
+	{
+		auto data = LoadFromBundle(L"checkerboard.mesh");
+		MeshLoader::Mesh mesh;
+		mesh.data = std::move(data);
+		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
+		CreateModel(L"checkerboard.mesh", renderer, staticModels[CHECKERBOARD], mesh);
+	}
+	{
+		auto data = LoadFromBundle(L"BEETHOVE_object.mesh");
+		MeshLoader::Mesh mesh;
+		mesh.data = std::move(data);
+		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
+		CreateModel(L"BEETHOVE_object.mesh", renderer, staticModels[BEETHOVEN], mesh);
+	}
+	renderer->EndUploadResources();
+	loadCompleted = true;
 #endif
 }
 
 void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh) {
 	auto vertices = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
 	// TODO:: if (!mesh.polygons.empty()
+#ifdef PLATFORM_WIN
 	for (auto& p : mesh.polygons) {
 		auto& temp = const_cast<MeshLoader::Polygon&>(p);
 		std::swap(temp.v1, temp.v3);
 	}
+#endif
 	auto indices = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
 	model.vb = vertices;
 	model.colb = InvalidBufferIndex;
@@ -195,14 +222,13 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 	model.nb = renderer->CreateBuffer(mesh.normalsP.data(), mesh.normalsP.size() * sizeof(mesh.normalsP.front()), sizeof(mesh.normalsP.front()));
 	// TODO:: uvmaps
 	for (const auto& layer : mesh.layers) {
-		Mesh::Layer modelLayer = { glm::vec3(layer.pivot.x, layer.pivot.y, layer.pivot.z) };
-		model.layers.push_back(modelLayer);
+		model.layers.emplace_back(Mesh::Layer{});
+		Mesh::Layer& modelLayer =model.layers.back();
 		//submeshes
 		for (size_t i = 0; i < layer.poly.count; ++i) {
 			// Surface properties
 			auto surfaceIndex = layer.poly.sections[i].index;
 			auto surf = mesh.surfaces[surfaceIndex];
-			
 			auto colLayers = surf.surface_infos[MeshLoader::COLOR_MAP].layers;
 
 			// material id: <object_name>_<surface_name>
@@ -219,7 +245,7 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 				colLayers && colLayers->image && colLayers->image->path) {
 				Material& material = res.first->second;
 				const auto& uv = mesh.uvs.uvmaps[surfaceIndex][colLayers->uvmap];
-				auto elementSize = UVCOORDS * sizeof(*uv.uv);
+				auto elementSize = UVCOORDS * VERTICESPERPOLY * sizeof(*uv.uv);
 				material.color_uvb = renderer->CreateBuffer(uv.uv, uv.n * elementSize, elementSize);
 				auto path = s2ws(colLayers->image->path);
 				if (!istrcmp(path, path.size() - 3, std::wstring{ L"tga" })) {
@@ -227,6 +253,10 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 					auto res = images.emplace(path, Img::ImgData{});
 					if (res.second) {
 						Img::ImgData& color_image = res.first->second;
+#ifdef PLATFORM_MAC_OS
+						auto res = LoadFromBundle(path.c_str());
+						// TODO::
+#elif defined(PLATFORM_WIN)
 						auto load = DX::ReadDataAsync(path).then([this, &material, &color_image, renderer](std::vector<byte>& data) {
 							auto err = DecodeTGA(data.data(), data.size(), color_image, true);
 							if (err != Img::TgaDecodeResult::Ok) {
@@ -242,6 +272,7 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 							}
 						});
 						loadTasks.push_back(load);
+#endif
 					}
 				}
 			}

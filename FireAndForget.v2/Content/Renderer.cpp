@@ -8,6 +8,9 @@
 // Resource Binding - https://msdn.microsoft.com/en-us/library/windows/desktop/dn899206(v=vs.85).aspx
 // Creating Descriptors - https://msdn.microsoft.com/en-us/library/windows/desktop/dn859358(v=vs.85).aspx
 // https://www.braynzarsoft.net/viewtutorial/q16390-04-directx-12-braynzar-soft-tutorials
+
+const int RendererWrapper::frameCount_ = DX::c_frameCount;
+
 void RendererWrapper::Init(Renderer* renderer) {
 	this->renderer = renderer;
 }
@@ -46,8 +49,8 @@ void RendererWrapper::BeginRender() {
 size_t RendererWrapper::StartRenderPass() {
 	return renderer->StartRenderPass();
 }
-void RendererWrapper::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& bufferIndices, const Mesh& model) {
-	renderer->SubmitToEncoder(encoderIndex, pipelineIndex, shaderResourceHeap, bufferIndices, model);
+void RendererWrapper::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& cBufferIndices, const Mesh& model) {
+	renderer->SubmitToEncoder(encoderIndex, pipelineIndex, shaderResourceHeap, cBufferIndices, model);
 }
 
 uint32_t RendererWrapper::GetCurrenFrameIndex() {
@@ -268,7 +271,7 @@ size_t Renderer::StartRenderPass() {
 	return 0;
 }
 
-void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& bufferIndices, const Mesh& model) {
+void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& cBufferIndices, const Mesh& model) {
 	if (!loadingComplete_) return;
 
 	auto& state = pipelineStates_.states_[pipelineIndex];
@@ -304,10 +307,11 @@ void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, Resour
 			indexBufferView.SizeInBytes = (UINT)buffer.size;
 			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
 		}
+		// TODO:: nb and uvb
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
 		commandList->IASetIndexBuffer(&indexBufferView);
-		for (auto layer : model.layers)
-			for (auto submesh : layer.submeshes)
+		for (const auto& layer : model.layers)
+			for (const auto& submesh : layer.submeshes)
 				commandList->DrawIndexedInstanced(submesh.count, 1, submesh.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
 	}
 	PIXEndEvent(commandList);

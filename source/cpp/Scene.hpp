@@ -24,16 +24,11 @@ struct Scene {
 			ResourceHeapHandle heapHandle = InvalidResourceHeap;
 			ShaderResourceIndex mvpStartIndex, colorStartIndex, colorTexSRVIndex;
 		}shaderParams;
-#ifdef PLATFORM_WIN
-		//FireAndForget_v2::ModelViewProjectionConstantBuffer perVertexColor;
-#else
-		Materials::ColPosBuffer uniforms;
-#endif
 		Object(const Mesh& mesh) : mesh(mesh) {}
 		void Update(double frame, double total);
 	};
 	void Init(RendererWrapper*, int, int);
-	void Render(size_t encoderIndex);
+	void Render();
 	void Update(double frame, double total);
 	Input input;
 private:

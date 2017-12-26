@@ -41,12 +41,22 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 }
 
 -(void)renderForTime: (CVTimeStamp)time {
-	[delegate render];
+	dispatch_async(dispatch_get_main_queue(), ^{
+		//[self setNeedsDisplay:YES];
+		[delegate render];
+	});
+}
+- (BOOL) wantsLayer {
+	return YES;
 }
 
 - (BOOL)wantsUpdateLayer {
 	return TRUE;
 }
+
+//- (void) displayLayer:(CALayer *)layer {
+//	[delegate render];
+//}
 
 - (nullable instancetype)initWithCoder:(NSCoder *)aDecoder {
 	if (self = [super initWithCoder:aDecoder]) {

@@ -31,9 +31,6 @@
 	//[self setupVBO];
 	//[self setupShader];
 	//[self setupPipeline];
-	renderer_ = [[Renderer alloc] initWithDevice: device andPixelFormat: pixelformat_];
-	rendererWrapper_.Init((__bridge void*)renderer_);
-	scene_.Init(&rendererWrapper_);
 }
 -(void)setupLayer {
 	device = MTLCreateSystemDefaultDevice();
@@ -43,6 +40,9 @@
 
 	metalLayer.device = device;
 	metalLayer.pixelFormat = pixelformat_;
+	renderer_ = [[Renderer alloc] initWithDevice: device andPixelFormat: pixelformat_];
+	rendererWrapper_.Init((__bridge void*)renderer_);
+	scene_.Init(&rendererWrapper_, metalLayer.bounds.size.width, metalLayer.bounds.size.height);
 	////[metalLayer setNeedsDisplay];
 	//commandQueue = [[metalView getMetalLayer].device newCommandQueue];
 }
@@ -100,16 +100,14 @@
 	[commandEncoder endEncoding];
 	[commandBuffer presentDrawable: drawable];
 	[commandBuffer commit];*/
-
 	timer_.Tick();
 	scene_.Update(timer_.FrameMs(), timer_.TotalMs());
 	id<CAMetalDrawable> drawable = [[metalView getMetalLayer] nextDrawable];
 	id<MTLTexture> texture = drawable.texture;
-	size_t commandBufferIndex = [renderer_ beginRender];
-	size_t encoderIndex = [renderer_ startRenderPass: texture withCommandBuffer: commandBufferIndex];
-	scene_.Render(encoderIndex);
-
-	[renderer_ renderTo: drawable withCommandBuffer:commandBufferIndex];
+	[renderer_ beginRender];
+	[renderer_ startRenderPass: texture];
+	scene_.Render();
+	[renderer_ renderTo: drawable];
 }
 
 - (void)setRepresentedObject:(id)representedObject {

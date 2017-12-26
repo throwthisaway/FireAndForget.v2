@@ -13,7 +13,8 @@ using float3 = float[3];
 using matrix = float[16];
 
 // template order corresponds root parameter order of root signature
-template<typename... T> class ShaderParamTraits { using types = T...; };
+template<typename... T> struct pack {};
+template<typename... T> struct ShaderParamTraits { using types = pack<T...>; };
 
 // Pos
 struct cMVP {
@@ -23,7 +24,8 @@ struct cColor {
 	float4 color;
 };
 
-using PosShaderParams = ShaderParamTraits<cMVP, cColor>;
+using PosVSParams = ShaderParamTraits<cMVP>;
+using PosPSParams = ShaderParamTraits<cColor>;
 
 // Tex
 struct cObjectVS {
@@ -53,7 +55,8 @@ struct cFrame {
 	PointLight light[MAX_LIGHTS];
 	float4 eyePos;
 };
-using TexShaderParams = ShaderParamTraits<cObjectVS, tDiffuse, cObjectPS, cFrame>;
+using TexVSShaderParams = ShaderParamTraits<cObjectVS>;
+using TexPSShaderParams = ShaderParamTraits<tDiffuse, cObjectPS, cFrame>;
 
 struct cBuffers {
 	using buf_size_t = uint16_t;
