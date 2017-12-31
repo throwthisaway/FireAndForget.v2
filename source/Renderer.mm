@@ -138,8 +138,8 @@ struct Buffer {
 	size_t i = 0;
 	for (auto commandBuffer : commandBuffers_) {
 		if (i == 1) {
-		[commandBuffer presentDrawable: drawable];
-		[commandBuffer commit];
+			[commandBuffer presentDrawable: drawable];
+			[commandBuffer commit];
 		}
 		++i;
 	}

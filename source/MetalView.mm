@@ -41,17 +41,21 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 }
 
 -(void)renderForTime: (CVTimeStamp)time {
-	dispatch_async(dispatch_get_main_queue(), ^{
-		//[self setNeedsDisplay:YES];
-		[delegate render];
-	});
+	// TODO:: causes choppy framerate,  but main thread checker doesn't complain
+//	dispatch_async(dispatch_get_main_queue(), ^{
+//		//[self setNeedsDisplay:YES];
+//		[delegate render];
+//	});
+	static int i = 0;
+	NSLog(@"@@@ %d", ++i);
+	[delegate render];
 }
 - (BOOL) wantsLayer {
 	return YES;
 }
 
 - (BOOL)wantsUpdateLayer {
-	return TRUE;
+	return YES;
 }
 
 //- (void) displayLayer:(CALayer *)layer {
@@ -60,7 +64,7 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 
 - (nullable instancetype)initWithCoder:(NSCoder *)aDecoder {
 	if (self = [super initWithCoder:aDecoder]) {
-		self.wantsLayer = TRUE;
+		//self.wantsLayer = TRUE;
 		//self.layerContentsRedrawPolicy =  NSViewLayerContentsRedrawOnSetNeedsDisplay;
 		self.layerContentsRedrawPolicy =  NSViewLayerContentsRedrawNever;
 	}
@@ -94,5 +98,10 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 - (BOOL)acceptsFirstResponder {
 	// keyevents handled in ViewController
 	return YES;
+}
+
+-(void) dealloc {
+	CVDisplayLinkStop(displayLink);
+	CVDisplayLinkRelease(displayLink);
 }
 @end

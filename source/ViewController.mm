@@ -102,12 +102,14 @@
 	[commandBuffer commit];*/
 	timer_.Tick();
 	scene_.Update(timer_.FrameMs(), timer_.TotalMs());
-	id<CAMetalDrawable> drawable = [[metalView getMetalLayer] nextDrawable];
-	id<MTLTexture> texture = drawable.texture;
-	[renderer_ beginRender];
-	[renderer_ startRenderPass: texture];
-	scene_.Render();
-	[renderer_ renderTo: drawable];
+	@autoreleasepool {
+		id<CAMetalDrawable> drawable = [[metalView getMetalLayer] nextDrawable];
+		id<MTLTexture> texture = drawable.texture;
+		[renderer_ beginRender];
+		[renderer_ startRenderPass: texture];
+		scene_.Render();
+		[renderer_ renderTo: drawable];
+	}
 }
 
 - (void)setRepresentedObject:(id)representedObject {
