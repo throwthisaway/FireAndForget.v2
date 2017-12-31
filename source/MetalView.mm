@@ -46,8 +46,6 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 //		//[self setNeedsDisplay:YES];
 //		[delegate render];
 //	});
-	static int i = 0;
-	NSLog(@"@@@ %d", ++i);
 	[delegate render];
 }
 - (BOOL) wantsLayer {
@@ -87,6 +85,7 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 
 -(void)windowWillClose:(NSNotification*)note {
 	[self removeTrackingRect: trackingRect_];
+	CVDisplayLinkStop(displayLink);
 	CVDisplayLinkRelease(displayLink);
 	[[NSApplication sharedApplication] terminate:self];
 }
@@ -100,8 +99,4 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 	return YES;
 }
 
--(void) dealloc {
-	CVDisplayLinkStop(displayLink);
-	CVDisplayLinkRelease(displayLink);
-}
 @end

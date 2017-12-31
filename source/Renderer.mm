@@ -94,14 +94,19 @@ struct Buffer {
 		commandBuffers_.push_back([commandQueue_ commandBuffer]);
 }
 - (void) startRenderPass: (id<MTLTexture> _Nonnull) texture {
-	MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-	passDescriptor.colorAttachments[0].texture = texture;
-	passDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-	passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-	passDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(.5, .5, .5, 1.);
+	MTLRenderPassDescriptor *firstPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+	firstPassDescriptor.colorAttachments[0].texture = texture;
+	firstPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
+	firstPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+	firstPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(.5, .5, .5, 1.);
+
+	MTLRenderPassDescriptor *followingPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+	followingPassDescriptor.colorAttachments[0].texture = texture;
+	followingPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+	followingPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
 
 	for (size_t i = 0; i < [shaders_ getPipelineCount]; ++i) {
-		auto encoder = [commandBuffers_[i] renderCommandEncoderWithDescriptor: passDescriptor];
+		auto encoder = [commandBuffers_[i] renderCommandEncoderWithDescriptor: (i == 0) ? firstPassDescriptor : followingPassDescriptor];
 		encoders_.push_back(encoder);
 		[encoder setRenderPipelineState: [shaders_ selectPipeline: i]];
 	};
@@ -135,14 +140,12 @@ struct Buffer {
 	for (auto commandEncoder : encoders_) {
 		[commandEncoder endEncoding];
 	}
-	size_t i = 0;
 	for (auto commandBuffer : commandBuffers_) {
-		if (i == 1) {
-			[commandBuffer presentDrawable: drawable];
-			[commandBuffer commit];
-		}
-		++i;
+		[commandBuffer commit];
 	}
+	assert(!commandBuffers_.empty());
+	[commandBuffers_.back() waitUntilCompleted];
+	[drawable present];
 	encoders_.clear();
 	commandBuffers_.clear();
 	++currentFrameIndex_;
