@@ -29,7 +29,7 @@ public:
 
 	void BeginRender();
 	size_t StartRenderPass();
-	void SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& bufferIndices, const Mesh& model);
+	void SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& vsBuffers, const std::vector<size_t>& psBuffers, const Mesh& model);
 
 	ResourceHeapHandle GetStaticShaderResourceHeap(unsigned short descCountNeeded);
 	ShaderResourceIndex GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count);
@@ -58,7 +58,7 @@ private:
 	ShaderResources shaderResources_;
 	std::vector<Buffer> buffers_;
 	
-	std::vector<StackAlloc::FrameDesc&> shaderResourceDescriptors_;
+	std::vector<const StackAlloc::FrameDesc*> shaderResourceDescriptors_;
 	D3D12_RECT m_scissorRect;
 	bool loadingComplete_ = false;
 };

@@ -85,7 +85,6 @@ void Scene::Render() {
 		renderer_->UpdateShaderResource(o.shaderParams.mvpStartIndex + renderer_->GetCurrenFrameIndex(), &mvp, sizeof(ShaderStructures::cMVP));
 		renderer_->UpdateShaderResource(o.shaderParams.colorStartIndex + renderer_->GetCurrenFrameIndex(), &o.color, sizeof(ShaderStructures::cColor));
 		renderer_->SubmitToEncoder(o.shaderParams.id, o.shaderParams.id, o.shaderParams.heapHandle, { o.shaderParams.mvpStartIndex}, {o.shaderParams.colorStartIndex}, o.mesh);
-		break;
 	}
 }
 void Scene::Update(double frame, double total) {

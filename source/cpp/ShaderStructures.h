@@ -43,9 +43,9 @@ struct cObjectPS {
 };
 
 struct PointLight {
-	float4 diffuse;
-	float4 ambient;
-	float4 specular;
+	float3 diffuse;
+	float3 ambient;
+	float3 specular;
 	float3 pos;
 	float3 att;
 	float range;
@@ -53,7 +53,7 @@ struct PointLight {
 #define MAX_LIGHTS 2
 struct cFrame {
 	PointLight light[MAX_LIGHTS];
-	float4 eyePos;
+	float3 eyePos;
 };
 using TexVSShaderParams = ShaderParamTraits<cObjectVS>;
 using TexPSShaderParams = ShaderParamTraits<tDiffuse, cObjectPS, cFrame>;
@@ -65,6 +65,7 @@ struct cBuffers {
 
 struct ConstantColorRef : cBuffers {
 	ConstantColorRef(const cMVP& mvp, const cColor& color) {
+#undef max
 		assert(sizeof(mvp) < std::numeric_limits<buf_size_t>::max());
 		data.emplace_back(reinterpret_cast<const uint8_t*>(&mvp), (buf_size_t)sizeof(mvp));
 		assert(sizeof(color) < std::numeric_limits<buf_size_t>::max());
