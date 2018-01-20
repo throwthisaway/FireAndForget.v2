@@ -43,40 +43,57 @@ void RendererWrapper::EndUploadResources() {
 	renderer->EndUploadResources();
 }
 
+ShaderResourceIndex RendererWrapper::CreateShaderResource(uint32_t size, uint16_t count) {
+	return renderer->CreateShaderResource(size, count);
+}
+void RendererWrapper::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size) {
+	return renderer->UpdateShaderResource(shaderResourceIndex, data, size);
+}
+
+DescAllocEntryIndex RendererWrapper::AllocDescriptors(uint16_t count) {
+	return renderer->AllocDescriptors(count);
+}
+void RendererWrapper::CreateCBV(DescAllocEntryIndex index, uint16_t offset, ShaderResourceIndex resourceIndex) {
+	renderer->CreateCBV(index, offset, resourceIndex);
+}
+void RendererWrapper::CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex textureBufferIndex) {
+	renderer->CreateSRV(index, offset, textureBufferIndex);
+}
+
 void RendererWrapper::BeginRender() {
 	renderer->BeginRender();
 }
 size_t RendererWrapper::StartRenderPass() {
 	return renderer->StartRenderPass();
 }
-void RendererWrapper::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& vsBuffers, const std::vector<size_t>& psBuffers, const Mesh& model) {
-	renderer->SubmitToEncoder(encoderIndex, pipelineIndex, shaderResourceHeap, vsBuffers, psBuffers, model);
-}
-
 uint32_t RendererWrapper::GetCurrenFrameIndex() {
 	return renderer->m_deviceResources->GetCurrentFrameIndex();
 }
-
-ResourceHeapHandle RendererWrapper::GetStaticShaderResourceHeap(unsigned short descCountNeeded) {
-	return renderer->GetStaticShaderResourceHeap(descCountNeeded);
-}
-ShaderResourceIndex RendererWrapper::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count) {
-	return renderer->GetShaderResourceIndex(shaderResourceHeap, size, count);
-}
-void RendererWrapper::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size) {
-	renderer->UpdateShaderResource(shaderResourceIndex, data, size);
-}
-ShaderResourceIndex RendererWrapper::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex) {
-	return renderer->GetShaderResourceIndex(shaderResourceHeap, textureIndex);
-}
+//
+//ResourceHeapHandle RendererWrapper::GetStaticShaderResourceHeap(unsigned short descCountNeeded) {
+//	return renderer->GetStaticShaderResourceHeap(descCountNeeded);
+//}
+//ShaderResourceIndex RendererWrapper::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count) {
+//	return renderer->GetShaderResourceIndex(shaderResourceHeap, size, count);
+//}
+//void RendererWrapper::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size) {
+//	renderer->UpdateShaderResource(shaderResourceIndex, data, size);
+//}
+//ShaderResourceIndex RendererWrapper::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex) {
+//	return renderer->GetShaderResourceIndex(shaderResourceHeap, textureIndex);
+//}
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
 using namespace Windows::Foundation;
 
+namespace {
+	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536;
+};
 Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
 	pipelineStates_(deviceResources.get()),
-	shaderResources_(deviceResources->GetD3DDevice()),
+	cbAlloc_(deviceResources->GetD3DDevice(), defaultBufferSize),
+	descAlloc_(deviceResources->GetD3DDevice(), defaultDescCount),
 	m_deviceResources(deviceResources) {
 
 	CreateDeviceDependentResources();
@@ -98,7 +115,7 @@ void Renderer::EndUploadResources() {
 	m_deviceResources->WaitForGpu();
 	bufferUpload_.intermediateResources.clear();
 }
-BufferIndex Renderer::CreateTexture(const void* buffer, UINT width, UINT height, UINT bytesPerPixel, DXGI_FORMAT format) {
+BufferIndex Renderer::CreateTexture(const void* buffer, UINT64 width, UINT height, UINT bytesPerPixel, DXGI_FORMAT format) {
 	CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
 
 	auto device = m_deviceResources->GetD3DDevice();
@@ -139,7 +156,7 @@ BufferIndex Renderer::CreateTexture(const void* buffer, UINT width, UINT height,
 		bufferUpload_.cmdList->ResourceBarrier(1, &vertexBufferResourceBarrier);
 	}
 	buffers_.push_back({ resource, 0, 0, 0, format });
-	return buffers_.size() - 1;
+	return (BufferIndex)buffers_.size() - 1;
 }
 BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes, size_t elementSize) {
 	CD3DX12_RESOURCE_DESC vertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes);
@@ -179,7 +196,7 @@ BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes, size_
 		bufferUpload_.cmdList->ResourceBarrier(1, &vertexBufferResourceBarrier);
 	}
 	buffers_.push_back({ resource, resource->GetGPUVirtualAddress(), sizeInBytes, elementSize});
-	return buffers_.size() - 1;
+	return (BufferIndex)buffers_.size() - 1;
 }
 
 void Renderer::CreateDeviceDependentResources() {
@@ -274,44 +291,37 @@ size_t Renderer::StartRenderPass() {
 	return 0;
 }
 
-void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, ResourceHeapHandle shaderResourceHeap, const std::vector<size_t>& vsBuffers, const std::vector<size_t>& psBuffers, const Mesh& model) {
+template<>
+void Renderer::Submit(const ShaderStructures::PosCmd& cmd) {
 	if (!loadingComplete_) return;
-
-	auto& state = pipelineStates_.states_[pipelineIndex];
-	auto* commandList = commandLists_[pipelineIndex].Get();
+	const auto id = ShaderStructures::Pos;
+	auto& state = pipelineStates_.states_[id];
+	auto* commandList = commandLists_[id].Get();
 	PIXBeginEvent(commandList, 0, L"SubmitToEncoder");
 	{
-		auto& resources = shaderResources_.GetShaderResourceHeap(shaderResourceHeap);
-		ID3D12DescriptorHeap* ppHeaps[] = { resources.resource_.cbvHeap.Get() };
+		const auto& desc = descAlloc_.Get(cmd.descAllocEntryIndex);
+		ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
 		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 		// Bind the current frame's constant buffer to the pipeline.
-		size_t rootParameterIndex = 0;
 		auto d3dDevice = m_deviceResources->GetD3DDevice();
 		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		for (size_t index : vsBuffers) {
-			auto& resource = resources.Get(index);
-			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = resource.gpuHandle;
-			gpuHandle.Offset(m_deviceResources->GetCurrentFrameIndex(), cbvDescriptorSize);
-			commandList->SetGraphicsRootDescriptorTable(rootParameterIndex++, gpuHandle);
+		for (auto binding : cmd.bindings) {
+			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_.GetGPUHandle(cmd.descAllocEntryIndex, binding.offset + m_deviceResources->GetCurrentFrameIndex() % binding.count);
+			commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
 		}
-		for (size_t index : psBuffers) {
-			auto& resource = resources.Get(index);
-			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = resource.gpuHandle;
-			gpuHandle.Offset(m_deviceResources->GetCurrentFrameIndex(), cbvDescriptorSize);
-			commandList->SetGraphicsRootDescriptorTable(rootParameterIndex++, gpuHandle);
-		}
+
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 		{
-			const auto& buffer = buffers_[model.vb];
+			const auto& buffer = buffers_[cmd.vb];
 			vertexBufferView.BufferLocation = buffer.bufferLocation;
 			vertexBufferView.StrideInBytes = (UINT)buffer.elementSize;
 			vertexBufferView.SizeInBytes = (UINT)buffer.size;
 		}
 		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
 		{
-			const auto& buffer = buffers_[model.ib];
+			const auto& buffer = buffers_[cmd.ib];
 			indexBufferView.BufferLocation = buffer.bufferLocation;
 			indexBufferView.SizeInBytes = (UINT)buffer.size;
 			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
@@ -319,12 +329,11 @@ void Renderer::SubmitToEncoder(size_t encoderIndex, size_t pipelineIndex, Resour
 		// TODO:: nb and uvb
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
 		commandList->IASetIndexBuffer(&indexBufferView);
-		for (const auto& layer : model.layers)
-			for (const auto& submesh : layer.submeshes)
-				commandList->DrawIndexedInstanced(submesh.count, 1, submesh.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
+		commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
 	}
 	PIXEndEvent(commandList);
 }
+
 bool Renderer::Render() {
 	if (!loadingComplete_) return false;
 
@@ -343,30 +352,61 @@ bool Renderer::Render() {
 	}
 
 	// Execute the command list.
-	m_deviceResources->GetCommandQueue()->ExecuteCommandLists(ppCommandLists.size(), &ppCommandLists.front());
+	m_deviceResources->GetCommandQueue()->ExecuteCommandLists((UINT)ppCommandLists.size(), &ppCommandLists.front());
 
 	return true;
 }
 
-ResourceHeapHandle Renderer::GetStaticShaderResourceHeap(unsigned short descCountNeeded) {
-	return shaderResources_.GetCurrentShaderResourceHeap(descCountNeeded);
-}
-size_t Renderer::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count) {
-	auto& resources = shaderResources_.GetShaderResourceHeap(shaderResourceHeap);
-	auto index = resources.PushPerFrameCBV(size, count);
-	size_t startIndex = shaderResourceDescriptors_.size();
-	for (unsigned short i = 0; i < count; ++i, ++index)
-		shaderResourceDescriptors_.emplace_back(&resources.Get(index));
-	return startIndex;
+ShaderResourceIndex Renderer::CreateShaderResource(uint32_t size, uint16_t count) {
+	return cbAlloc_.Push(size, count);
 }
 void Renderer::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size) {
-	assert(shaderResourceDescriptors_.size() > shaderResourceIndex);
-	const StackAlloc::FrameDesc* frameDesc = shaderResourceDescriptors_[shaderResourceIndex];
-	memcpy(frameDesc->destination, data, size);
+	memcpy(cbAlloc_.GetCPUAddress(shaderResourceIndex), data, size);
 }
-ShaderResourceIndex Renderer::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex) {
-	auto& resources = shaderResources_.GetShaderResourceHeap(shaderResourceHeap);
-	auto index = resources.PushSRV(buffers_[textureIndex].resource.Get(), buffers_[textureIndex].format);
-	shaderResourceDescriptors_.emplace_back(&resources.Get(index));
-	return shaderResourceDescriptors_.size() - 1;
+DescAllocEntryIndex Renderer::AllocDescriptors(uint16_t count) {
+	return descAlloc_.Push(count);
 }
+void Renderer::CreateCBV(DescAllocEntryIndex index, uint16_t offset, ShaderResourceIndex resourceIndex) {
+	descAlloc_.CreateCBV(index, offset, cbAlloc_.GetGPUAddress(resourceIndex), cbAlloc_.GetSize(resourceIndex));
+}
+void Renderer::CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex textureBufferIndex) {
+	descAlloc_.CreateSRV(index, offset, buffers_[textureBufferIndex].resource.Get(), buffers_[textureBufferIndex].format);
+}
+
+// TODO:: these have to come after Renderer::Submit specialization
+template<>
+void Renderer::Submit(const ShaderStructures::TexCmd& cmd) {
+	// TODO::
+}
+template<>
+void RendererWrapper::Submit(const ShaderStructures::PosCmd& cmd) {
+	renderer->Submit(cmd);
+}
+template<>
+void RendererWrapper::Submit(const ShaderStructures::TexCmd& cmd) {
+	renderer->Submit(cmd);
+}
+
+//ResourceHeapHandle Renderer::GetStaticShaderResourceHeap(unsigned short descCountNeeded) {
+//	return shaderResources_.GetCurrentShaderResourceHeap(descCountNeeded);
+//}
+//size_t Renderer::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count) {
+//	auto& resources = shaderResources_.GetShaderResourceHeap(shaderResourceHeap);
+//	auto index = resources.PushPerFrameCBV(size, count);
+//	size_t startIndex = shaderResourceDescriptors_.size();
+//	for (unsigned short i = 0; i < count; ++i, ++index)
+//		shaderResourceDescriptors_.emplace_back(&resources.Get(index));
+//	return startIndex;
+//}
+//void Renderer::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size) {
+//	assert(shaderResourceDescriptors_.size() > shaderResourceIndex);
+//	const StackAlloc::FrameDesc* frameDesc = shaderResourceDescriptors_[shaderResourceIndex];
+//	memcpy(frameDesc->destination, data, size);
+//}
+//ShaderResourceIndex Renderer::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex) {
+//	auto& resources = shaderResources_.GetShaderResourceHeap(shaderResourceHeap);
+//	auto index = resources.PushSRV(buffers_[textureIndex].resource.Get(), buffers_[textureIndex].format);
+//	shaderResourceDescriptors_.emplace_back(&resources.Get(index));
+//	return shaderResourceDescriptors_.size() - 1;
+//}
+

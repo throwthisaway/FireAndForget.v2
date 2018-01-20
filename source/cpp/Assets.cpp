@@ -103,70 +103,70 @@ void Assets::Init(RendererWrapper* renderer) {
 	//auto pos2 = renderer->CreateBuffer(positions2, sizeof(positions2) * sizeof(positions2[0]), sizeof(float) * 4);
 	//staticModels[PLACEHOLDER2] = {pos2, col, 0, sizeof(positions2) / sizeof(positions[0]) / 4};
 #ifdef PLATFORM_WIN
-	auto res = materials.emplace(L"default", Material{ { 1.f, 1.f, 1.f },
-		InvalidBufferIndex,
-		InvalidBufferIndex,
-		1.f, 128.f, 1.f });
-	auto& defaultMaterial = res.first->second;
-	struct VertexPositionColor
-	{
-		DirectX::XMFLOAT3 pos;
-		DirectX::XMFLOAT3 color;
-	};
-	VertexPositionColor cubeVertices[] =
-	{
-		{ XMFLOAT3(-0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(-0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-	};
+	//auto res = materials.emplace(L"default", Material{ { 1.f, 1.f, 1.f },
+	//	InvalidBuffer,
+	//	InvalidBuffer,
+	//	1.f, 128.f, 1.f });
+	//auto& defaultMaterial = res.first->second;
+	//struct VertexPositionColor
+	//{
+	//	DirectX::XMFLOAT3 pos;
+	//	DirectX::XMFLOAT3 color;
+	//};
+	//VertexPositionColor cubeVertices[] =
+	//{
+	//	{ XMFLOAT3(-0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+	//	{ XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+	//	{ XMFLOAT3(-0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+	//	{ XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
+	//	{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+	//	{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+	//	{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+	//	{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+	//};
 
-	const UINT vertexBufferSize = sizeof(cubeVertices);
-	auto posCol = renderer->CreateBuffer(cubeVertices, vertexBufferSize, sizeof(VertexPositionColor));
+	//const UINT vertexBufferSize = sizeof(cubeVertices);
+	//auto posCol = renderer->CreateBuffer(cubeVertices, vertexBufferSize, sizeof(VertexPositionColor));
 
-	unsigned short cubeIndices[] =
-	{
-		0, 2, 1, // -x
-		1, 2, 3,
+	//unsigned short cubeIndices[] =
+	//{
+	//	0, 2, 1, // -x
+	//	1, 2, 3,
 
-		4, 5, 6, // +x
-		5, 7, 6,
+	//	4, 5, 6, // +x
+	//	5, 7, 6,
 
-		0, 1, 5, // -y
-		0, 5, 4,
+	//	0, 1, 5, // -y
+	//	0, 5, 4,
 
-		2, 6, 7, // +y
-		2, 7, 3,
+	//	2, 6, 7, // +y
+	//	2, 7, 3,
 
-		0, 4, 6, // -z
-		0, 6, 2,
+	//	0, 4, 6, // -z
+	//	0, 6, 2,
 
-		1, 3, 7, // +z
-		1, 7, 5,
-	};
+	//	1, 3, 7, // +z
+	//	1, 7, 5,
+	//};
 
-	const UINT indexBufferSize = sizeof(cubeIndices);
-	auto index = renderer->CreateBuffer(cubeIndices, indexBufferSize, sizeof(unsigned short));
+	//const UINT indexBufferSize = sizeof(cubeIndices);
+	//auto index = renderer->CreateBuffer(cubeIndices, indexBufferSize, sizeof(unsigned short));
 
-	staticModels[PLACEHOLDER1] = { posCol, InvalidBufferIndex, index, InvalidBufferIndex, {{{/*pivot*/}, {{ 0, indexBufferSize / sizeof(unsigned short), defaultMaterial }}}} };
+	//staticModels[PLACEHOLDER1] = { posCol, InvalidBuffer, index, InvalidBuffer, {{{/*pivot*/}, {{ 0, indexBufferSize / sizeof(unsigned short), defaultMaterial }}}} };
 
-	VertexPositionColor cubeVertices2[] =
-	{
-		{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(1.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(1.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(1.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(1.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-	};
-	auto posCol2 = renderer->CreateBuffer(cubeVertices2, vertexBufferSize, sizeof(VertexPositionColor));
-	staticModels[PLACEHOLDER2] = { posCol2, InvalidBufferIndex, index, InvalidBufferIndex, { { {/*pivot*/ },{ { 0, indexBufferSize / sizeof(unsigned short), defaultMaterial } } } } };
+	//VertexPositionColor cubeVertices2[] =
+	//{
+	//	{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+	//	{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+	//	{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+	//	{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
+	//	{ XMFLOAT3(1.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+	//	{ XMFLOAT3(1.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+	//	{ XMFLOAT3(1.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+	//	{ XMFLOAT3(1.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+	//};
+	//auto posCol2 = renderer->CreateBuffer(cubeVertices2, vertexBufferSize, sizeof(VertexPositionColor));
+	//staticModels[PLACEHOLDER2] = { posCol2, InvalidBuffer, index, InvalidBuffer, { { {/*pivot*/ },{ { 0, indexBufferSize / sizeof(unsigned short), defaultMaterial } } } } };
 
 	auto checkerboardTask = DX::ReadDataAsync(L"checkerboard.mesh").then([this, renderer](std::vector<byte>& data) {
 		MeshLoader::Mesh mesh;
@@ -180,11 +180,10 @@ void Assets::Init(RendererWrapper* renderer) {
 		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
 		CreateModel(L"BEETHOVE_object.mesh", renderer, staticModels[BEETHOVEN], mesh);
 	});
-	(checkerboardTask && beethovenTask).then([this, renderer]() {
+	loadCompleteTask = (checkerboardTask && beethovenTask).then([this, renderer]() {
 		Concurrency::when_all(std::begin(loadTasks), std::end(loadTasks)).then([this, renderer]() {
 			loadTasks.clear();
 			renderer->EndUploadResources();
-			loadCompleted = true;
 		}); });
 #elif defined(PLATFORM_MAC_OS)
 	{
@@ -202,12 +201,20 @@ void Assets::Init(RendererWrapper* renderer) {
 		CreateModel(L"BEETHOVE_object.mesh", renderer, staticModels[BEETHOVEN], mesh);
 	}
 	renderer->EndUploadResources();
-	loadCompleted = true;
 #endif
 }
-
+//SubMesh ConvertSectionToSubmesh(RendererWrapper* renderer, const MeshLoader::Layer::Sections::Section& section) {
+//	SubMesh result{ section.offset * VERTICESPERPOLY, section.count * VERTICESPERPOLY };
+//	CreateShaderResources
+//	return result;
+//}
+//Mesh::Layer ConvertLayer(RendererWrapper* renderer, const MeshLoader::Layer& layer) {
+//	Mesh::Layer result;
+//	for (size_t i = 0; i < layer.poly.count; ++i)
+//		result.submeshes.push_back((ConvertSectionToSubmesh(renderer, layer.poly.sections[i])));
+//	return result;
+//}
 void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh) {
-	auto vertices = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
 	// TODO:: if (!mesh.polygons.empty()
 #ifdef PLATFORM_WIN
 	for (auto& p : mesh.polygons) {
@@ -215,15 +222,14 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 		std::swap(temp.v1, temp.v3);
 	}
 #endif
-	auto indices = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
-	model.vb = vertices;
-	model.colb = InvalidBufferIndex;
-	model.ib = indices;
+	model.vb = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
+	model.colb = InvalidBuffer;
+	model.ib = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
 	model.nb = renderer->CreateBuffer(mesh.normalsP.data(), mesh.normalsP.size() * sizeof(mesh.normalsP.front()), sizeof(mesh.normalsP.front()));
 	// TODO:: uvmaps
 	for (const auto& layer : mesh.layers) {
 		model.layers.emplace_back(Mesh::Layer{});
-		Mesh::Layer& modelLayer =model.layers.back();
+		Mesh::Layer& modelLayer = model.layers.back();
 		//submeshes
 		for (size_t i = 0; i < layer.poly.count; ++i) {
 			// Surface properties
@@ -232,48 +238,58 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 			auto colLayers = surf.surface_infos[MeshLoader::COLOR_MAP].layers;
 
 			// material id: <object_name>_<surface_name>
-			auto res = materials.emplace(std::wstring{ name } + L'_' + std::wstring{ s2ws(surf.name) }, Material{ { surf.color[0], surf.color[1], surf.color[2] },
-				InvalidBufferIndex /* texture data*/,
-				InvalidBufferIndex /* uv */,
-				surf.surface_infos[MeshLoader::SPECULARITY_MAP].val,
-				surf.surface_infos[MeshLoader::GLOSSINESS_MAP].val,
-				surf.surface_infos[MeshLoader::TRANSPARENCY_MAP].val });
+			auto res = materials.emplace(std::wstring{ name } + L'_' + std::wstring{ s2ws(surf.name) }, Material{ });
 			modelLayer.submeshes.push_back({ layer.poly.sections[i].offset * VERTICESPERPOLY, layer.poly.sections[i].count * VERTICESPERPOLY, res.first->second });
 			/* currently, insertion always succeeds because of material id */
-			if (res.second &&
-				// extract only the color info's first layer with image now
-				colLayers && colLayers->image && colLayers->image->path) {
-				Material& material = res.first->second;
-				const auto& uv = mesh.uvs.uvmaps[surfaceIndex][colLayers->uvmap];
-				auto elementSize = UVCOORDS * VERTICESPERPOLY * sizeof(*uv.uv);
-				material.color_uvb = renderer->CreateBuffer(uv.uv, uv.n * elementSize, elementSize);
-				auto path = s2ws(colLayers->image->path);
-				if (!istrcmp(path, path.size() - 3, std::wstring{ L"tga" })) {
-					path = extractFilename(path);
-					auto res = images.emplace(path, Img::ImgData{});
-					if (res.second) {
-						Img::ImgData& color_image = res.first->second;
+			if (res.second) {
+				Material& gpuMaterial = res.first->second;
+				{
+					gpuMaterial.cColor = renderer->CreateShaderResource(sizeof(ShaderStructures::cColor), 1);
+					ShaderStructures::cColor data;
+					data.color[0] = surf.color[0]; data.color[1] = surf.color[1]; data.color[2] = surf.color[2]; data.color[3] = surf.surface_infos[MeshLoader::TRANSPARENCY_MAP].val;
+					renderer->UpdateShaderResource(gpuMaterial.cColor, &data, sizeof(ShaderStructures::cColor));
+				}
+				{
+					gpuMaterial.cMaterial = renderer->CreateShaderResource(sizeof(ShaderStructures::cMaterial), 1);
+					ShaderStructures::cMaterial data;
+					data.material.diffuse[0] = surf.color[0]; data.material.diffuse[1] = surf.color[1]; data.material.diffuse[2] = surf.color[2];
+					data.material.specular = surf.surface_infos[MeshLoader::SPECULARITY_MAP].val;
+					data.material.power = surf.surface_infos[MeshLoader::GLOSSINESS_MAP].val; // TODO:: convert
+					renderer->UpdateShaderResource(gpuMaterial.cMaterial, &data, sizeof(ShaderStructures::cMaterial));
+				}
+				if (// extract only the color info's first layer with image now
+					colLayers && colLayers->image && colLayers->image->path) {
+					const auto& uv = mesh.uvs.uvmaps[surfaceIndex][colLayers->uvmap];
+					auto elementSize = UVCOORDS * VERTICESPERPOLY * sizeof(*uv.uv);
+					gpuMaterial.staticColorUV = renderer->CreateBuffer(uv.uv, uv.n * elementSize, elementSize);
+					auto path = s2ws(colLayers->image->path);
+					if (!istrcmp(path, path.size() - 3, std::wstring{ L"tga" })) {
+						path = extractFilename(path);
+						auto res = images.emplace(path, Img::ImgData{});
+						if (res.second) {
+							Img::ImgData& color_image = res.first->second;
 #ifdef PLATFORM_MAC_OS
-						auto res = LoadFromBundle(path.c_str());
-						// TODO::
+							auto res = LoadFromBundle(path.c_str());
+							// TODO::
 #elif defined(PLATFORM_WIN)
-						auto load = DX::ReadDataAsync(path).then([this, &material, &color_image, renderer](std::vector<byte>& data) {
-							auto err = DecodeTGA(data.data(), data.size(), color_image, true);
-							if (err != Img::TgaDecodeResult::Ok) {
-								// TODO::
-								assert(false);
+							auto load = DX::ReadDataAsync(path).then([this, &gpuMaterial, &color_image, renderer](std::vector<byte>& data) {
+								auto err = DecodeTGA(data.data(), data.size(), color_image, true);
+								if (err != Img::TgaDecodeResult::Ok) {
+									// TODO::
+									assert(false);
 							}
-							else {
-								material.color_tex_index = renderer->CreateTexture(color_image.data.get(),
-									color_image.width,
-									color_image.height,
-									color_image.bytesPerPixel,
-									color_image.pf);
-							}
+								else {
+									gpuMaterial.tStaticColorTexture = renderer->CreateTexture(color_image.data.get(),
+										color_image.width,
+										color_image.height,
+										color_image.bytesPerPixel,
+										color_image.pf);
+								}
 						});
-						loadTasks.push_back(load);
+							loadTasks.push_back(load);
 #endif
 					}
+				}
 				}
 			}
 		}

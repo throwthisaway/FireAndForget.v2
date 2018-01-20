@@ -4,9 +4,7 @@
 using namespace Microsoft::WRL;
 
 namespace {
-	const size_t staticDescCount = 256, staticBufferSize = 65536;
-
-	auto CreateDescriptorHeapForCBuffer(ID3D12Device* d3dDevice, UINT numDesc) {
+	auto CreateDescriptorHeapForCBV_SRV_UAV(ID3D12Device* d3dDevice, UINT numDesc) {
 		ComPtr<ID3D12DescriptorHeap> cbvHeap;
 		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 		heapDesc.NumDescriptors = numDesc;
@@ -78,77 +76,99 @@ namespace {
 			SetupDescriptorHeapInternal(device, cbvGpuAddress, cbvCpuHandle);
 		}
 	}
-	template <typename... BuffersT>
-	ShaderResource CreateShaderResources(ID3D12Device* device, unsigned short repeat) {
-		ShaderResource res;
-		res.cbvHeap = CreateDescriptorHeapForCBuffer(device, sizeof...(BuffersT)* repeat);
-		res.cbuffer = CreateConstantBuffer(device, Aligned256SizeOf<sizeof(BuffersT)...>::value * repeat);
-		SetupDescriptorHeap<BuffersT...>(device, res.cbvHeap.Get(), res.cbuffer.Get(), repeat);
-		return res;
-	}
 }
-ShaderResource CreateShaderResource(ID3D12Device* device, UINT count, size_t size) {
-	return { CreateDescriptorHeapForCBuffer(device, count), CreateConstantBuffer(device, size), count, size };
-}
-StackAlloc::StackAlloc(ID3D12Device* device, size_t max, size_t size) :
-	device_(device),
-	resource_(CreateShaderResource(device, staticDescCount, staticBufferSize)),
-	cbvGpuAddress_(resource_.cbuffer->GetGPUVirtualAddress()),
-	cbvCpuHandle_(resource_.cbvHeap->GetCPUDescriptorHandleForHeapStart()),
-	cbvDescriptorSize_(device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)) {
-	frames_.reserve(max);
-	CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
-	DX::ThrowIfFailed(resource_.cbuffer->Map(0, &readRange, reinterpret_cast<void**>(&mappedConstantBuffer_)));
-}
-StackAlloc::Index StackAlloc::PushPerFrameCBV(UINT size, unsigned short count) {
-#undef max
-	if (frames_.size() + count >= frames_.capacity()) return std::numeric_limits<unsigned short>::max();
-	auto alignedSize = AlignTo256(size);
-	if (alignedSize * count > resource_.size) return std::numeric_limits<unsigned short>::max();
-	size_t index = frames_.size();
-	for (size_t i = 0; i < count; ++i) {
-		D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
-		desc.BufferLocation = cbvGpuAddress_;
-		desc.SizeInBytes = alignedSize;
-		device_->CreateConstantBufferView(&desc, cbvCpuHandle_);
 
-		UINT8* destination = mappedConstantBufferOffset_ + mappedConstantBuffer_;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(resource_.cbvHeap->GetGPUDescriptorHandleForHeapStart(), INT(frames_.size()), cbvDescriptorSize_);
-		frames_.push_back({ alignedSize, destination, gpuHandle });
+CBAlloc::CBAlloc(ID3D12Device* device, size_t bufferSize, size_t startCount, size_t maxCount) : device_(device), maxSize_(bufferSize), maxCount_(maxCount) {
+	assert(startCount);
+	assert(!maxCount || maxCount > startCount);
+	assert(bufferSize);
 
-		cbvGpuAddress_ += desc.SizeInBytes;
-		mappedConstantBufferOffset_ += desc.SizeInBytes;
-		cbvCpuHandle_.Offset(cbvDescriptorSize_);
-	}
-	return unsigned short(index);
+	for (size_t i = 0; i < startCount; ++i)
+		buffers_.push_back(CreateConstantBuffer(device, bufferSize));
+
+	currentGPUAddressBase_ = buffers_.front()->GetGPUVirtualAddress();
+	DX::ThrowIfFailed(buffers_.front()->Map(0, &CD3DX12_RANGE(0, 0) /* We do not intend to read from this resource on the CPU.*/, reinterpret_cast<void**>(&currentMappedBufferBase_)));
 }
-StackAlloc::Index StackAlloc::PushSRV(ID3D12Resource* textureBuffer, DXGI_FORMAT format) {
-	if (frames_.size() >= frames_.capacity()) return std::numeric_limits<unsigned short>::max();
+CBAlloc::~CBAlloc() {
+	for (auto& buffer : buffers_) buffer->Unmap(0, nullptr);
+}
+ShaderResourceIndex CBAlloc::Push(uint32_t size, uint16_t count) {
+	size = AlignTo256(size);
+	if (maxSize_ - currentOffset_ < size * count ) {
+		if (maxCount_ && maxCount_ <= currentBufferIndex_) return InvalidShaderResource;
+		++currentBufferIndex_;  currentOffset_ = 0;
+		if (buffers_.size() <= currentBufferIndex_) buffers_.push_back(CreateConstantBuffer(device_, maxSize_));
+
+		currentGPUAddressBase_ = buffers_.front()->GetGPUVirtualAddress();
+		DX::ThrowIfFailed(buffers_.front()->Map(0, &CD3DX12_RANGE(0, 0) /* We do not intend to read from this resource on the CPU.*/, reinterpret_cast<void**>(&currentMappedBufferBase_)));
+	}
+	auto startIndex = entries_.size();
+	for (size_t i = 0; i < count; ++i)
+		entries_.push_back({ size, currentMappedBufferBase_ + currentOffset_, currentGPUAddressBase_ + currentOffset_});
+	currentOffset_ += size * count;
+	return (ShaderResourceIndex)startIndex;
+}
+
+DescriptorAlloc::DescriptorAlloc(ID3D12Device* device, size_t descCount, size_t startHeapCount, size_t maxHeapCount) : 
+	device_(device), 
+	maxDescCount_((InternalDescriptorIndex)descCount),
+	maxHeapCount_((DescriptorHeapIndex)maxHeapCount) {
+	assert(startHeapCount);
+	assert(!maxHeapCount || maxHeapCount > startHeapCount);
+	assert(descCount);
+
+	for (size_t i = 0; i < startHeapCount; ++i)
+		descriptorHeaps_.push_back({ CreateDescriptorHeapForCBV_SRV_UAV(device, maxDescCount_) });
+}
+DescriptorAlloc::DescriptorHeapIndex DescriptorAlloc::EnsureAvailableHeap(InternalDescriptorIndex count) {
+	for (DescriptorHeapIndex i = 0; i <=/*inclusive*/ currentHeapIndex_; ++i) {
+		if (descriptorHeaps_[i].currentDescIndex + count < maxDescCount_) return i;
+	}
+	if (maxHeapCount_ && maxHeapCount_ <= currentHeapIndex_) return InvalidDescriptorHeap;
+	++currentHeapIndex_;
+	descriptorHeaps_.push_back({ CreateDescriptorHeapForCBV_SRV_UAV(device_, maxDescCount_) });
+	return (DescriptorHeapIndex)descriptorHeaps_.size() - 1;
+}
+
+DescAllocEntryIndex DescriptorAlloc::Push(uint16_t count) {
+	DescriptorHeapIndex heapIndex = EnsureAvailableHeap(count);
+	if (heapIndex == InvalidDescriptorHeap) return InvalidDescAllocEntry;
+
+	auto& heapEntry = descriptorHeaps_[heapIndex];
+	entries_.push_back({ heapEntry.descriptorHeap.Get(), heapEntry.currentDescIndex, count });
+	heapEntry.currentDescIndex += count;
+	return (DescAllocEntryIndex)entries_.size() - 1;
+}
+
+const DescriptorAlloc::DescriptorEntry& DescriptorAlloc::Get(DescAllocEntryIndex index) const {
+	assert(index < entries_.size());
+	return entries_[index];
+}
+CD3DX12_GPU_DESCRIPTOR_HANDLE DescriptorAlloc::GetGPUHandle(DescAllocEntryIndex index, uint16_t offset) const {
+	assert(index < entries_.size());
+	assert(entries_[index].count > offset);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE handle(entries_[index].heap->GetGPUDescriptorHandleForHeapStart(), INT(entries_[index].descIndex + offset), device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	return handle;
+}
+
+CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorAlloc::GetCPUHandle(DescAllocEntryIndex index, uint16_t offset) const {
+	assert(index < entries_.size());
+	assert(entries_[index].count > offset);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(entries_[index].heap->GetCPUDescriptorHandleForHeapStart(), INT(entries_[index].descIndex + offset), device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+	return handle;
+}
+
+void DescriptorAlloc::CreateCBV(DescAllocEntryIndex index, uint16_t offset, D3D12_GPU_VIRTUAL_ADDRESS cbGPUAddress, uint32_t cbSize) {
+	D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
+	desc.BufferLocation = cbGPUAddress;
+	desc.SizeInBytes = cbSize;
+	device_->CreateConstantBufferView(&desc, GetCPUHandle(index, offset));
+}
+void DescriptorAlloc::CreateSRV(DescAllocEntryIndex index, uint16_t offset, ID3D12Resource* textureBuffer, DXGI_FORMAT format) {
 	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
 	desc.Format = format;
 	desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	desc.Texture2D.MipLevels = 1;
-	device_->CreateShaderResourceView(textureBuffer, &desc, cbvCpuHandle_);
-	cbvCpuHandle_.Offset(cbvDescriptorSize_);
-	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(resource_.cbvHeap->GetGPUDescriptorHandleForHeapStart(), INT(frames_.size()), cbvDescriptorSize_);
-	frames_.push_back({ 0, nullptr, gpuHandle });
-	return frames_.size() - 1;
-}
-StackAlloc::~StackAlloc() {
-	resource_.cbuffer->Unmap(0, nullptr);
-}
-const StackAlloc::FrameDesc& StackAlloc::Get(size_t index) {
-	assert(frames_.size() > index);
-	return frames_[index];
-}
-
-ShaderResources::ShaderResources(ID3D12Device* device) : staticResources_(device, staticDescCount, staticBufferSize) {}
-
-StackAlloc& ShaderResources::GetShaderResourceHeap(ResourceHeapHandle) {
-	return staticResources_; // TODO::
-}
-
-ResourceHeapHandle ShaderResources::GetCurrentShaderResourceHeap(unsigned short descCountNeeded) {
-	return 0; // TODO:: check for available free resources, create new heap if necessary
+	device_->CreateShaderResourceView(textureBuffer, &desc, GetCPUHandle(index, offset));
 }

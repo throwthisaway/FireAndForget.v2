@@ -1,4 +1,4 @@
-Texture2D diffuse : register(t0);
+Texture2D tColor : register(t0);
 
 struct PointLight {
 	float3 diffuse;
@@ -13,10 +13,10 @@ struct Material {
 	float specular, power;
 };
 #define MAX_LIGHTS 2
-cbuffer cObject : register(b0) {
+cbuffer cMaterial : register(b0) {
 	Material mat;
 };
-cbuffer cFrame : register(b1) {
+cbuffer cScene : register(b1) {
 	PointLight light[MAX_LIGHTS];
 	float3 eyePos;
 };
@@ -83,7 +83,7 @@ float3 ComputePointLight_Diffuse(PointLight l, float3 pos, float3 normal, float3
 	return  max(dot(lv / l_distance, normalize(normal)), 0.f) * l.diffuse * col / dot(l.att, float3(1.0f, l_distance, l_distance * l_distance));
 }
 float4 main(PSIn input) : SV_TARGET {
-	float4 diffuse_color = diffuse.Sample(smp, input.uv0);
+	float4 diffuse_color = tColor.Sample(smp, input.uv0);
 	float3 fragment = float3(0., 0., 0.);
 	for (int i = 0; i < MAX_LIGHTS; i++) {
 		fragment += ComputePointLight_Phong(light[i], input.world_pos.xyz, input.n.xyz, diffuse_color.xyz, mat.specular, mat.power);

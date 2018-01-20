@@ -13,29 +13,40 @@
 struct Time;
 
 struct Scene {
+	struct SceneShaderResources {
+		ShaderResourceIndex cScene;
+	};
 	struct Object {
-		glm::mat4 m;
-		glm::vec4 color;	// TODO:: remove mesh.material already has it, or initialize from it 
-		glm::vec3 pos, pivot, rot;
+		glm::vec3 pos, rot;
 		float scale = 1.f;
-		const Mesh& mesh;
-		struct {
-			ShaderStructures::Id id;
-			ResourceHeapHandle heapHandle = InvalidResourceHeap;
-			ShaderResourceIndex mvpStartIndex, colorStartIndex, colorTexSRVIndex;
-		}shaderParams;
-		Object(const Mesh& mesh) : mesh(mesh) {}
+		
+		struct Layer {
+			glm::vec3 pivot;
+			// pos
+			ShaderResourceIndex cMVP;
+			std::vector<ShaderStructures::PosCmd> posCmd;
+			// tex
+			ShaderResourceIndex cObject;
+			std::vector<ShaderStructures::TexCmd> texCmd;
+		};
+		std::vector<Layer> layers;
+	
+		Object(RendererWrapper* renderer, const Mesh& mesh, const SceneShaderResources& sceneShaderResources);
 		void Update(double frame, double total);
 	};
 	void Init(RendererWrapper*, int, int);
 	void Render();
 	void Update(double frame, double total);
 	Input input;
+	bool loadCompleted = false;
 private:
 	RendererWrapper* renderer_;
-
 	Assets assets_;
 	std::vector<Object> objects_;
+	struct {
+		ShaderStructures::cScene cScene;
+	}shaderStructures;
+	SceneShaderResources shaderResources;
 	Camera camera_;
 
 	// TODO:: remove

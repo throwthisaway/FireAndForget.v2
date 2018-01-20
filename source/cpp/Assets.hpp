@@ -5,21 +5,26 @@
 #include <glm/glm.hpp>
 #include "MeshLoader.h"
 #include "Img.h"
+#include "ShaderStructures.h"
 #if defined(PLATFORM_WIN)
 #include <ppltasks.h>
 #endif
+
 struct Material {
-	glm::vec3 color;
-	BufferIndex color_tex_index = InvalidBufferIndex, color_uvb = InvalidBufferIndex;
-	float specular, power, alpha;
+	// pos
+	ShaderResourceIndex cColor = InvalidShaderResource;
+	// tex
+	BufferIndex tStaticColorTexture = InvalidBuffer, staticColorUV = InvalidBuffer;
+	ShaderResourceIndex cMaterial = InvalidShaderResource;
 };
+// geometry by surface
 struct SubMesh {
 	// TODO:: uint16_t is not enough
 	MeshLoader::index_t offset, count;
 	Material& material;
 };
 struct Mesh {
-	BufferIndex vb = InvalidBufferIndex, colb = InvalidBufferIndex, ib = InvalidBufferIndex, nb = InvalidBufferIndex;
+	BufferIndex vb = InvalidBuffer, colb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer;
 	struct Layer {
 		glm::vec3 pivot;
 		std::vector<SubMesh> submeshes;
@@ -37,9 +42,9 @@ struct Assets {
 	std::array<Mesh, STATIC_MODEL_COUNT> staticModels;
 	std::unordered_map<std::wstring, Img::ImgData> images;
 	std::unordered_map<std::wstring, Material> materials;
-	bool loadCompleted = false;
 #if defined(PLATFORM_WIN)
 	std::vector<Concurrency::task<void>> loadTasks;
+	Concurrency::task<void> loadCompleteTask;
 #endif
 private:
 	void CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh);
