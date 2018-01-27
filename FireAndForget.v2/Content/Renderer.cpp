@@ -297,14 +297,13 @@ void Renderer::Submit(const ShaderStructures::PosCmd& cmd) {
 	const auto id = ShaderStructures::Pos;
 	auto& state = pipelineStates_.states_[id];
 	auto* commandList = commandLists_[id].Get();
-	PIXBeginEvent(commandList, 0, L"SubmitToEncoder");
+	PIXBeginEvent(commandList, 0, L"SubmitPosCmd");
 	{
 		const auto& desc = descAlloc_.Get(cmd.descAllocEntryIndex);
 		ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
 		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 		// Bind the current frame's constant buffer to the pipeline.
 		auto d3dDevice = m_deviceResources->GetD3DDevice();
-		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		for (auto binding : cmd.bindings) {
 			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_.GetGPUHandle(cmd.descAllocEntryIndex, binding.offset + m_deviceResources->GetCurrentFrameIndex() % binding.count);
 			commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
@@ -312,6 +311,7 @@ void Renderer::Submit(const ShaderStructures::PosCmd& cmd) {
 
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+		assert(cmd.vb != InvalidBuffer);
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 		{
 			const auto& buffer = buffers_[cmd.vb];
@@ -319,6 +319,7 @@ void Renderer::Submit(const ShaderStructures::PosCmd& cmd) {
 			vertexBufferView.StrideInBytes = (UINT)buffer.elementSize;
 			vertexBufferView.SizeInBytes = (UINT)buffer.size;
 		}
+		assert(cmd.ib != InvalidBuffer);
 		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
 		{
 			const auto& buffer = buffers_[cmd.ib];
@@ -336,7 +337,54 @@ void Renderer::Submit(const ShaderStructures::PosCmd& cmd) {
 
 template<>
 void Renderer::Submit(const ShaderStructures::TexCmd& cmd) {
-	// TODO::
+	if (!loadingComplete_) return;
+	const auto id = ShaderStructures::Tex;
+	auto& state = pipelineStates_.states_[id];
+	auto* commandList = commandLists_[id].Get();
+	PIXBeginEvent(commandList, 0, L"SubmitTexCmd");
+	{
+		const auto& desc = descAlloc_.Get(cmd.descAllocEntryIndex);
+		ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
+		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		// Bind the current frame's constant buffer to the pipeline.
+		auto d3dDevice = m_deviceResources->GetD3DDevice();
+		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		for (auto binding : cmd.bindings) {
+			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_.GetGPUHandle(cmd.descAllocEntryIndex, binding.offset + m_deviceResources->GetCurrentFrameIndex() % binding.count);
+			commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
+		}
+
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		assert(cmd.vb != InvalidBuffer);
+		assert(cmd.nb != InvalidBuffer);
+		assert(cmd.uvb != InvalidBuffer);
+		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
+			{ buffers_[cmd.vb].bufferLocation,
+			(UINT)buffers_[cmd.vb].size,
+			(UINT)buffers_[cmd.vb].elementSize },
+
+			{ buffers_[cmd.nb].bufferLocation,
+			(UINT)buffers_[cmd.nb].size,
+			(UINT)buffers_[cmd.nb].elementSize },
+
+			{ buffers_[cmd.uvb].bufferLocation,
+			(UINT)buffers_[cmd.uvb].size,
+			(UINT)buffers_[cmd.uvb].elementSize } };
+		assert(cmd.ib != InvalidBuffer);
+		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
+		{
+			const auto& buffer = buffers_[cmd.ib];
+			indexBufferView.BufferLocation = buffer.bufferLocation;
+			indexBufferView.SizeInBytes = (UINT)buffer.size;
+			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+		}
+		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
+
+		commandList->IASetIndexBuffer(&indexBufferView);
+		commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
+	}
+	PIXEndEvent(commandList);
 }
 
 bool Renderer::Render() {

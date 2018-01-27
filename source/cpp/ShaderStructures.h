@@ -66,7 +66,7 @@ using PosParams = ShaderParamTraits<cMVP, cColor>;
 
 struct PosCmd {
 	uint32_t offset, count;
-	BufferIndex vb, ib;
+	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer;
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
 	ResourceBinding bindings[PosParams::count];
 };
@@ -106,7 +106,7 @@ using TexParams = ShaderParamTraits<cObject, tTexture, cMaterial, cScene>;
 
 struct TexCmd {
 	uint32_t offset, count;
-	BufferIndex vb, ib, nb, uvb;
+	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer, uvb = InvalidBuffer;
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
 	ResourceBinding bindings[TexParams::count];
 };
