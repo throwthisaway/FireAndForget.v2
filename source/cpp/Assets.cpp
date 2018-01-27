@@ -181,7 +181,7 @@ void Assets::Init(RendererWrapper* renderer) {
 		CreateModel(L"BEETHOVE_object.mesh", renderer, staticModels[BEETHOVEN], mesh);
 	});
 	loadCompleteTask = (checkerboardTask && beethovenTask).then([this, renderer]() {
-		Concurrency::when_all(std::begin(loadTasks), std::end(loadTasks)).then([this, renderer]() {
+		return Concurrency::when_all(std::begin(loadTasks), std::end(loadTasks)).then([this, renderer]() {
 			loadTasks.clear();
 			renderer->EndUploadResources();
 		}); });

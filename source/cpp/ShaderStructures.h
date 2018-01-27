@@ -107,6 +107,7 @@ using TexParams = ShaderParamTraits<cObject, tTexture, cMaterial, cScene>;
 struct TexCmd {
 	uint32_t offset, count;
 	BufferIndex vb, ib, nb, uvb;
+	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
 	ResourceBinding bindings[TexParams::count];
 };
 //using TexVSSParams = ShaderParamTraits<cObjectVS>;

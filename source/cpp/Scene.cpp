@@ -17,47 +17,46 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 		// tex
 		l.cObject = renderer->CreateShaderResource(sizeof(ShaderStructures::cObject), RendererWrapper::frameCount_);
 		for (auto& submesh : layer.submeshes) {
-			//if (submesh.material.tStaticColorTexture != InvalidBuffer) {
-			//	// tex
-			//	l.texCmd.push_back({});
-			//	auto& cmd = l.texCmd.back();
-			//	cmd.offset = submesh.offset; cmd.count = submesh.count;
-			//	cmd.vb = mesh.vb; cmd.ib = mesh.ib; cmd.nb = mesh.nb; cmd.uvb = submesh.material.staticColorUV;
-			//	DescriptorIndex startDescriptorIndex = renderer->AllocDescriptors(ShaderStructures::TexParams::numDesc::value);
-			//	// TODO:: remove
-			//	assert(ShaderStructures::TexParams::numDesc::value == 8);
-			//	// cObject
-			//	DescriptorIndex offset = 0, count = ShaderStructures::SingleDescriptorCount<ShaderStructures::cObject>(RendererWrapper::frameCount_);
-			//	for (; offset < count; ++offset) {
-			//		renderer->CreateCBV(startDescriptorIndex, offset, l.cObject);
-			//	}
-			//	auto rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cObject>::value;
-			//	cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, startDescriptorIndex, count };
+			if (submesh.material.tStaticColorTexture != InvalidBuffer) {
+				// tex
+				l.texCmd.push_back({});
+				auto& cmd = l.texCmd.back();
+				cmd.offset = submesh.offset; cmd.count = submesh.count;
+				cmd.vb = mesh.vb; cmd.ib = mesh.ib; cmd.nb = mesh.nb; cmd.uvb = submesh.material.staticColorUV;
+				cmd.descAllocEntryIndex = renderer->AllocDescriptors(ShaderStructures::TexParams::numDesc::value);
+				// TODO:: remove
+				assert(ShaderStructures::TexParams::numDesc::value == 8);
+				// cObject
+				uint16_t offset = 0, count = ShaderStructures::cObject::numDesc;
+				auto rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cObject>::value;
+				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
+				for (; offset < count; ++offset) {
+					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, l.cObject);
+				}
 
-			//	// tTexture
-			//	renderer->CreateSRV(startDescriptorIndex, offset, submesh.material.tStaticColorTexture);
-			//	count = ShaderStructures::SingleDescriptorCount<ShaderStructures::tTexture>(RendererWrapper::frameCount_);
-			//	rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::tTexture>::value;
-			//	cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, startDescriptorIndex, count };
-			//	offset += count;
+				// tTexture
+				renderer->CreateSRV(cmd.descAllocEntryIndex, offset, submesh.material.tStaticColorTexture);
+				count = ShaderStructures::tTexture::numDesc;
+				rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::tTexture>::value;
+				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
+				offset += count;
 
-			//	// cMaterial
-			//	renderer->CreateCBV(startDescriptorIndex, offset, submesh.material.cMaterial);
-			//	count = ShaderStructures::SingleDescriptorCount<ShaderStructures::cMaterial>(RendererWrapper::frameCount_);
-			//	rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cMaterial>::value;
-			//	cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, startDescriptorIndex, count };
-			//	offset += count;
+				// cMaterial
+				renderer->CreateCBV(cmd.descAllocEntryIndex, offset, submesh.material.cMaterial);
+				count = ShaderStructures::cMaterial::numDesc;
+				rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cMaterial>::value;
+				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
+				offset += count;
 
-			//	// cScene
-			//	count = ShaderStructures::SingleDescriptorCount<ShaderStructures::cScene>(RendererWrapper::frameCount_);
-			//	for (; offset < count; ++offset) {
-			//		renderer->CreateCBV(startDescriptorIndex, offset, sceneShaderResources.cScene);
-			//	}
-			//	rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cScene>::value;
-			//	cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, startDescriptorIndex, count };
-			//	offset += count;
-			//} else
-			{
+				// cScene
+				count = ShaderStructures::cScene::numDesc;
+				for (; offset < count; ++offset) {
+					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, sceneShaderResources.cScene);
+				}
+				rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cScene>::value;
+				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
+				offset += count;
+			} else {
 				// pos
 				l.posCmd.push_back({});
 				auto& cmd = l.posCmd.back();
@@ -110,10 +109,11 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	}
 	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::numDesc);
 	assets_.Init(renderer);
-	assets_.loadCompleteTask.then([this, renderer]() {
-		objects_.emplace_back(renderer, assets_.staticModels[Assets::CHECKERBOARD], shaderResources);
-		objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources);
-		loadCompleted = true;
+	assets_.loadCompleteTask.then([this, renderer](Concurrency::task<void>& assetsWhenAllCompletion) {
+		assetsWhenAllCompletion.then([this, renderer]() {
+			objects_.emplace_back(renderer, assets_.staticModels[Assets::CHECKERBOARD], shaderResources);
+			objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources);
+			loadCompleted = true; });
 	});
 //	{
 //		objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);

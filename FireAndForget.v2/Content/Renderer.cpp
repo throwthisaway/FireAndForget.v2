@@ -334,6 +334,11 @@ void Renderer::Submit(const ShaderStructures::PosCmd& cmd) {
 	PIXEndEvent(commandList);
 }
 
+template<>
+void Renderer::Submit(const ShaderStructures::TexCmd& cmd) {
+	// TODO::
+}
+
 bool Renderer::Render() {
 	if (!loadingComplete_) return false;
 
@@ -374,10 +379,6 @@ void Renderer::CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex
 }
 
 // TODO:: these have to come after Renderer::Submit specialization
-template<>
-void Renderer::Submit(const ShaderStructures::TexCmd& cmd) {
-	// TODO::
-}
 template<>
 void RendererWrapper::Submit(const ShaderStructures::PosCmd& cmd) {
 	renderer->Submit(cmd);
