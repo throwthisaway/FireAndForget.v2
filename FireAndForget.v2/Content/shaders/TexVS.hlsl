@@ -18,9 +18,9 @@ struct PSIn {
 PSIn main(VIn input) {
 	PSIn output;
 	float4 pos = float4(input.pos, 1.f);
-	output.pos = mul(mvp, pos);
-	output.world_pos = mul(m, pos);
-	output.n = normalize(mul(m, input.n));
+	output.pos = mul(pos, mvp);
+	output.world_pos = mul(pos, m);
+	output.n = normalize(mul(input.n, m));
 	output.uv0 = input.uv0;
 
 	return output;

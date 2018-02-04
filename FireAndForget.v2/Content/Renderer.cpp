@@ -92,8 +92,6 @@ namespace {
 };
 Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
 	pipelineStates_(deviceResources.get()),
-	cbAlloc_(deviceResources->GetD3DDevice(), defaultBufferSize),
-	descAlloc_(deviceResources->GetD3DDevice(), defaultDescCount),
 	m_deviceResources(deviceResources) {
 
 	CreateDeviceDependentResources();
@@ -200,6 +198,8 @@ BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes, size_
 }
 
 void Renderer::CreateDeviceDependentResources() {
+	cbAlloc_.Init(m_deviceResources->GetD3DDevice(), defaultBufferSize);
+	descAlloc_.Init(m_deviceResources->GetD3DDevice(), defaultDescCount);
 	pipelineStates_.CreateDeviceDependentResources();
 	auto d3dDevice = m_deviceResources->GetD3DDevice();
 	// 1 command list for each pipeline state, and 1 for frame commands
@@ -319,18 +319,21 @@ void Renderer::Submit(const ShaderStructures::PosCmd& cmd) {
 			vertexBufferView.StrideInBytes = (UINT)buffer.elementSize;
 			vertexBufferView.SizeInBytes = (UINT)buffer.size;
 		}
-		assert(cmd.ib != InvalidBuffer);
-		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
-		{
-			const auto& buffer = buffers_[cmd.ib];
-			indexBufferView.BufferLocation = buffer.bufferLocation;
-			indexBufferView.SizeInBytes = (UINT)buffer.size;
-			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-		}
 		// TODO:: nb and uvb
 		commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
-		commandList->IASetIndexBuffer(&indexBufferView);
-		commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
+		if (cmd.ib != InvalidBuffer) {
+			D3D12_INDEX_BUFFER_VIEW	indexBufferView;
+			{
+				const auto& buffer = buffers_[cmd.ib];
+				indexBufferView.BufferLocation = buffer.bufferLocation;
+				indexBufferView.SizeInBytes = (UINT)buffer.size;
+				indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+			}
+			commandList->IASetIndexBuffer(&indexBufferView);
+			commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
+		} else {
+			commandList->DrawInstanced(cmd.count, 1, cmd.offset, 0);
+		}
 	}
 	PIXEndEvent(commandList);
 }
@@ -371,18 +374,24 @@ void Renderer::Submit(const ShaderStructures::TexCmd& cmd) {
 			{ buffers_[cmd.uvb].bufferLocation,
 			(UINT)buffers_[cmd.uvb].size,
 			(UINT)buffers_[cmd.uvb].elementSize } };
-		assert(cmd.ib != InvalidBuffer);
-		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
-		{
-			const auto& buffer = buffers_[cmd.ib];
-			indexBufferView.BufferLocation = buffer.bufferLocation;
-			indexBufferView.SizeInBytes = (UINT)buffer.size;
-			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-		}
+
 		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
 
-		commandList->IASetIndexBuffer(&indexBufferView);
-		commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
+		if (cmd.ib != InvalidBuffer) {
+			D3D12_INDEX_BUFFER_VIEW	indexBufferView;
+			{
+				const auto& buffer = buffers_[cmd.ib];
+				indexBufferView.BufferLocation = buffer.bufferLocation;
+				indexBufferView.SizeInBytes = (UINT)buffer.size;
+				indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+			}
+			
+
+			commandList->IASetIndexBuffer(&indexBufferView);
+			commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
+		} else {
+			commandList->DrawInstanced(cmd.count, 1, cmd.offset, 0);
+		}
 	}
 	PIXEndEvent(commandList);
 }

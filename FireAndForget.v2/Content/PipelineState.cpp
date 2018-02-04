@@ -133,10 +133,10 @@ void PipelineStates::CreateDeviceDependentResources() {
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
 
 		D3D12_STATIC_SAMPLER_DESC sampler = {};
-		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		sampler.MipLODBias = 0;
 		sampler.MaxAnisotropy = 0;
 		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
@@ -185,6 +185,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.VS = CD3DX12_SHADER_BYTECODE(&vertexShader->front(), vertexShader->size());
 			state.PS = CD3DX12_SHADER_BYTECODE(&pixelShader->front(), pixelShader->size());
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			//state.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 			state.SampleMask = UINT_MAX;
@@ -223,6 +224,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.VS = CD3DX12_SHADER_BYTECODE(&vertexShader->front(), vertexShader->size());
 			state.PS = CD3DX12_SHADER_BYTECODE(&pixelShader->front(), pixelShader->size());
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 			state.SampleMask = UINT_MAX;
@@ -255,8 +257,8 @@ void PipelineStates::CreateDeviceDependentResources() {
 			auto rootSignatureIndex = ROOT_VS_1CB_PS_1TX_2CB;
 			const D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, 
-				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, 
+				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			};
 
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
@@ -265,6 +267,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 			state.VS = CD3DX12_SHADER_BYTECODE(&vertexShader->front(), vertexShader->size());
 			state.PS = CD3DX12_SHADER_BYTECODE(&pixelShader->front(), pixelShader->size());
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 			state.SampleMask = UINT_MAX;

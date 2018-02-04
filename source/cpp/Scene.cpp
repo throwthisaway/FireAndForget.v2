@@ -113,6 +113,8 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 		assetsWhenAllCompletion.then([this, renderer]() {
 			objects_.emplace_back(renderer, assets_.staticModels[Assets::CHECKERBOARD], shaderResources);
 			objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources);
+			// TODO:: remove
+			objects_.back().pos.y += .5f;
 			loadCompleted = true; });
 	});
 //	{

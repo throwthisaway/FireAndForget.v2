@@ -103,6 +103,7 @@ void App::Load(Platform::String^ entryPoint)
 }
 
 // This method is called after the window becomes active.
+static int i = 0;
 void App::Run()
 {
 	while (!m_windowClosed)
@@ -111,21 +112,25 @@ void App::Run()
 		{
 			CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(CoreProcessEventsOption::ProcessAllIfPresent);
 
-			auto commandQueue = GetDeviceResources()->GetCommandQueue();
-			PIXBeginEvent(commandQueue, 0, L"Update");
-			{
-				m_main->Update();
-			}
-			PIXEndEvent(commandQueue);
-
-			PIXBeginEvent(commandQueue, 0, L"Render");
-			{
-				if (m_main->Render())
+			// TODO:: nasty hack to not allow to timeout the app and close on first start and be able to attach graphics diagnostic tools
+			if (i > 500) {
+				auto commandQueue = GetDeviceResources()->GetCommandQueue();
+				PIXBeginEvent(commandQueue, 0, L"Update");
 				{
-					GetDeviceResources()->Present();
+					m_main->Update();
 				}
+				PIXEndEvent(commandQueue);
+
+				PIXBeginEvent(commandQueue, 0, L"Render");
+				{
+					if (m_main->Render())
+					{
+						GetDeviceResources()->Present();
+					}
+				}
+				PIXEndEvent(commandQueue);
 			}
-			PIXEndEvent(commandQueue);
+			else ++i;
 		}
 		else
 		{

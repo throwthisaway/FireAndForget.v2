@@ -78,7 +78,8 @@ namespace {
 	}
 }
 
-CBAlloc::CBAlloc(ID3D12Device* device, size_t bufferSize, size_t startCount, size_t maxCount) : device_(device), maxSize_(bufferSize), maxCount_(maxCount) {
+void CBAlloc::Init(ID3D12Device* device, size_t bufferSize, size_t startCount, size_t maxCount) {
+	device_ = device; maxSize_ = bufferSize; maxCount_ = maxCount;
 	assert(startCount);
 	assert(!maxCount || maxCount > startCount);
 	assert(bufferSize);
@@ -109,10 +110,10 @@ ShaderResourceIndex CBAlloc::Push(uint32_t size, uint16_t count) {
 	return (ShaderResourceIndex)startIndex;
 }
 
-DescriptorAlloc::DescriptorAlloc(ID3D12Device* device, size_t descCount, size_t startHeapCount, size_t maxHeapCount) : 
-	device_(device), 
-	maxDescCount_((InternalDescriptorIndex)descCount),
-	maxHeapCount_((DescriptorHeapIndex)maxHeapCount) {
+void DescriptorAlloc::Init(ID3D12Device* device, size_t descCount, size_t startHeapCount, size_t maxHeapCount) {
+	device_ = device;
+	maxDescCount_ = (InternalDescriptorIndex)descCount;
+	maxHeapCount_ = (DescriptorHeapIndex)maxHeapCount;
 	assert(startHeapCount);
 	assert(!maxHeapCount || maxHeapCount > startHeapCount);
 	assert(descCount);

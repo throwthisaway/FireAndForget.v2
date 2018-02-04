@@ -14,7 +14,7 @@
 #include "MeshLoader.h"
 #include "Tga.h"
 #include "StringUtil.h"
-
+//#define INDEXED_DRAWING
 namespace {
 #ifdef PLATFORM_MAC_OS
 	std::vector<uint8_t> LoadFromBundle(const wchar_t* fname) {
@@ -217,15 +217,27 @@ void Assets::Init(RendererWrapper* renderer) {
 void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh) {
 	// TODO:: if (!mesh.polygons.empty()
 #ifdef PLATFORM_WIN
-	for (auto& p : mesh.polygons) {
-		auto& temp = const_cast<MeshLoader::Polygon&>(p);
-		std::swap(temp.v1, temp.v3);
-	}
+	//for (auto& p : mesh.polygons) {
+	//	auto& temp = const_cast<MeshLoader::Polygon&>(p);
+	//	std::swap(temp.v1, temp.v3);
+	//}
 #endif
+#ifdef INDEXED_DRAWING
 	model.vb = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
-	model.colb = InvalidBuffer;
 	model.ib = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
 	model.nb = renderer->CreateBuffer(mesh.normalsP.data(), mesh.normalsP.size() * sizeof(mesh.normalsP.front()), sizeof(mesh.normalsP.front()));
+#else
+	std::vector<vec3_t> vertices;
+	vertices.reserve(mesh.vertices.size() * VERTICESPERPOLY);
+	for (const auto& idx : mesh.polygons) {
+		vertices.push_back(mesh.vertices[idx.v1]);
+		vertices.push_back(mesh.vertices[idx.v2]);
+		vertices.push_back(mesh.vertices[idx.v3]);
+	}
+	model.vb = renderer->CreateBuffer(vertices.data(), vertices.size() * sizeof(vertices[0]), sizeof(vertices[0]));
+	model.nb = renderer->CreateBuffer(mesh.normalsV.data(), mesh.normalsV.size() * sizeof(mesh.normalsV.front()), sizeof(mesh.normalsV.front()) / 3 /*TODO:: fix this one normal contains 3 normals*/);
+#endif
+	model.colb = InvalidBuffer;
 	// TODO:: uvmaps
 	for (const auto& layer : mesh.layers) {
 		model.layers.emplace_back(Mesh::Layer{});
@@ -260,8 +272,8 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 				if (// extract only the color info's first layer with image now
 					colLayers && colLayers->image && colLayers->image->path) {
 					const auto& uv = mesh.uvs.uvmaps[surfaceIndex][colLayers->uvmap];
-					auto elementSize = UVCOORDS * VERTICESPERPOLY * sizeof(*uv.uv);
-					gpuMaterial.staticColorUV = renderer->CreateBuffer(uv.uv, uv.n * elementSize, elementSize);
+					auto elementSize = UVCOORDS * sizeof(*uv.uv);
+					gpuMaterial.staticColorUV = renderer->CreateBuffer(uv.uv, uv.n * elementSize * VERTICESPERPOLY, elementSize);
 					auto path = s2ws(colLayers->image->path);
 					if (!istrcmp(path, path.size() - 3, std::wstring{ L"tga" })) {
 						path = extractFilename(path);

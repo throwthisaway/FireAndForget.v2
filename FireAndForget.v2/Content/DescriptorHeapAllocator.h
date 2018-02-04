@@ -19,7 +19,7 @@ class CBAlloc {
 	D3D12_GPU_VIRTUAL_ADDRESS currentGPUAddressBase_;
 	uint8_t* currentMappedBufferBase_;
 public:
-	CBAlloc(ID3D12Device* device, size_t bufferSize, size_t startCount = 1, size_t maxCount = 0);
+	void Init(ID3D12Device* device, size_t bufferSize, size_t startCount = 1, size_t maxCount = 0);
 	~CBAlloc();
 	ShaderResourceIndex Push(uint32_t size, uint16_t count);
 	inline D3D12_GPU_VIRTUAL_ADDRESS GetGPUAddress(ShaderResourceIndex index) const {
@@ -63,7 +63,7 @@ public:
 	};
 	using Index = uint32_t;
 	static constexpr Index InvalidIndex = std::numeric_limits<Index>::max();
-	DescriptorAlloc(ID3D12Device* device, size_t descCount, size_t startHeapCount = 1, size_t maxHeapCount = 0);
+	void Init(ID3D12Device* device, size_t descCount, size_t startHeapCount = 1, size_t maxHeapCount = 0);
 	DescAllocEntryIndex Push(uint16_t count);
 
 	const DescriptorEntry& Get(DescAllocEntryIndex index) const;

@@ -83,10 +83,11 @@ float3 ComputePointLight_Diffuse(PointLight l, float3 pos, float3 normal, float3
 	return  max(dot(lv / l_distance, normalize(normal)), 0.f) * l.diffuse * col / dot(l.att, float3(1.0f, l_distance, l_distance * l_distance));
 }
 float4 main(PSIn input) : SV_TARGET {
-	float4 diffuse_color = tColor.Sample(smp, input.uv0);
+	/*float4 diffuse_color = tColor.Sample(smp, input.uv0);
 	float3 fragment = float3(0., 0., 0.);
 	for (int i = 0; i < MAX_LIGHTS; i++) {
 		fragment += ComputePointLight_Phong(light[i], input.world_pos.xyz, input.n.xyz, diffuse_color.xyz, mat.specular, mat.power);
 	}
-	return float4(saturate(fragment), 1.f);
+	return float4(saturate(fragment), 1.f);*/
+	return tColor.Sample(smp, input.uv0);
 }
