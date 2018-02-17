@@ -35,9 +35,10 @@ struct PSIn {
 };
 
 float3 ComputePointLight_Phong(PointLight l, float3 pos, float3 normal, float3 col, float spec, float power) {
+	normal.x = -normal.x; normal.y = -normal.y; normal.z = -normal.z;
 	float3 lv = l.pos - pos;	// vector towards light
 	float l_distance = length(lv);
-	if (l_distance > l.range) return float3(.0, .0, .0);
+	if (l_distance > l.range) return col * l.ambient;
 
 	lv = lv / l_distance;			// light direction vector
 
@@ -53,12 +54,12 @@ float3 ComputePointLight_Phong(PointLight l, float3 pos, float3 normal, float3 c
 		float att = 1.0f / dot(l.att, float3(1.0f, l_distance, l_distance * l_distance));
 		return (diffuse + specular) * att;
 	}
-	return float3(.0, .0, .0);// TODO:: ambient
+	return col * l.ambient;
 }
 float3 ComputePointLight_BlinnPhong(PointLight l, float3 pos, float3 normal, float3 col, float spec, float power) {
 	float3 lv = l.pos - pos;	// vector towards light
 	float l_distance = length(lv);
-	if (l_distance > l.range) return float3(.0, .0, .0);
+	if (l_distance > l.range) return col * l.ambient;
 
 	lv = lv / l_distance;			// light direction vector
 	normal = normalize(normal);	// TODO:: normalize(n) needed?
@@ -73,7 +74,7 @@ float3 ComputePointLight_BlinnPhong(PointLight l, float3 pos, float3 normal, flo
 		float att = 1.0f / dot(l.att, float3(1.0f, l_distance, l_distance * l_distance));
 		return (diffuse + specular) * att;
 	}
-	return float3(.0, .0, .0);// TODO:: ambient
+	return col * l.ambient;
 }
 float3 ComputePointLight_Diffuse(PointLight l, float3 pos, float3 normal, float3 col, float spec, float power) {
 	float3 lv = l.pos - pos;	// vector towards light
@@ -83,11 +84,11 @@ float3 ComputePointLight_Diffuse(PointLight l, float3 pos, float3 normal, float3
 	return  max(dot(lv / l_distance, normalize(normal)), 0.f) * l.diffuse * col / dot(l.att, float3(1.0f, l_distance, l_distance * l_distance));
 }
 float4 main(PSIn input) : SV_TARGET {
-	/*float4 diffuse_color = tColor.Sample(smp, input.uv0);
+	float4 diffuse_color = tColor.Sample(smp, input.uv0);
 	float3 fragment = float3(0., 0., 0.);
 	for (int i = 0; i < MAX_LIGHTS; i++) {
 		fragment += ComputePointLight_Phong(light[i], input.world_pos.xyz, input.n.xyz, diffuse_color.xyz, mat.specular, mat.power);
 	}
-	return float4(saturate(fragment), 1.f);*/
-	return tColor.Sample(smp, input.uv0);
+	return float4(saturate(fragment), 1.f);
+	//return tColor.Sample(smp, input.uv0);
 }

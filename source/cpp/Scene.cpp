@@ -50,11 +50,11 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 
 				// cScene
 				count = ShaderStructures::cScene::numDesc;
-				for (; offset < count; ++offset) {
-					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, sceneShaderResources.cScene);
-				}
 				rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cScene>::value;
 				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
+				for (auto start = offset; start < count + offset; ++start) {
+					renderer->CreateCBV(cmd.descAllocEntryIndex, start, sceneShaderResources.cScene);
+				}
 				offset += count;
 			} else {
 				// pos
@@ -87,10 +87,10 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 }
 namespace {
 static const float defaultLightRange = 25.f;
-static const ShaderStructures::PointLight defaultLight = { {.6f, .6f, .6f} /* diffuse */,
-	{.2f, .2f, .2f} /* ambient */,
-	{.8f, .8f, .8f} /* specular highlight */,
-	{1.f, 1.f, 1.f} /* position */, 
+static const ShaderStructures::PointLight defaultLight = { {.4f, .4f, .4f} ,{}/* diffuse */,
+	{.0f, .0f, .0f}, {} /* ambient */,
+	{.8f, .8f, .8f}, {} /* specular highlight */,
+	{2.f, 2.f, 2.f}, {} /* position */,
 	{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange)} /* attenuation */,
 	defaultLightRange /* range */};
 }
@@ -107,6 +107,8 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	for (int i = 0; i < sizeof(shaderStructures.cScene.light) / sizeof(shaderStructures.cScene.light[0]); ++i) {
 		shaderStructures.cScene.light[i] = defaultLight;
 	}
+	shaderStructures.cScene.light[0].pos[0] = -2.f;
+
 	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::numDesc);
 	assets_.Init(renderer);
 	assets_.loadCompleteTask.then([this, renderer](Concurrency::task<void>& assetsWhenAllCompletion) {
@@ -163,7 +165,8 @@ void Scene::Update(double frame, double total) {
 	// TODO:: remove
 
 	camera_.Update();
-	// TODO:: update cScene
+	shaderStructures.cScene.eyePos[0] = camera_.pos.x; shaderStructures.cScene.eyePos[1] = camera_.pos.y; shaderStructures.cScene.eyePos[2] = camera_.pos.z;
+	renderer_->UpdateShaderResource(shaderResources.cScene + renderer_->GetCurrenFrameIndex(), &shaderStructures.cScene, sizeof(shaderStructures.cScene));
 	for (auto& o : objects_) {
 		o.Update(frame, total);
 		for (const auto& layer : o.layers) {

@@ -235,7 +235,7 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 		vertices.push_back(mesh.vertices[idx.v3]);
 	}
 	model.vb = renderer->CreateBuffer(vertices.data(), vertices.size() * sizeof(vertices[0]), sizeof(vertices[0]));
-	model.nb = renderer->CreateBuffer(mesh.normalsV.data(), mesh.normalsV.size() * sizeof(mesh.normalsV.front()), sizeof(mesh.normalsV.front()) / 3 /*TODO:: fix this one normal contains 3 normals*/);
+	model.nb = renderer->CreateBuffer(mesh.normalsPV.data(), mesh.normalsPV.size() * sizeof(mesh.normalsPV.front()), sizeof(mesh.normalsPV.front()) / VERTICESPERPOLY /*TODO:: fix this one normal contains 3 normals*/);
 #endif
 	model.colb = InvalidBuffer;
 	// TODO:: uvmaps

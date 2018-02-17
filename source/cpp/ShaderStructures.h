@@ -91,9 +91,13 @@ struct cMaterial : cStatic {
 
 struct PointLight {
 	float3 diffuse;
+	float pad1;
 	float3 ambient;
+	float pad2;
 	float3 specular;
+	float pad3;
 	float3 pos;
+	float pad4;
 	float3 att;
 	float range;
 };
