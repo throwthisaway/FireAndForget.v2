@@ -263,6 +263,9 @@
     <None Include="..\source\assets\checkerboard.mesh">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="..\source\assets\light.mesh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="FireAndForget.v2_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>

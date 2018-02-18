@@ -111,14 +111,24 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 
 	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::numDesc);
 	assets_.Init(renderer);
+#ifdef PLATFORM_WIN
 	assets_.loadCompleteTask.then([this, renderer](Concurrency::task<void>& assetsWhenAllCompletion) {
 		assetsWhenAllCompletion.then([this, renderer]() {
+			objects_.emplace_back(renderer, assets_.staticModels[Assets::LIGHT], shaderResources);
 			objects_.emplace_back(renderer, assets_.staticModels[Assets::CHECKERBOARD], shaderResources);
 			objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources);
 			// TODO:: remove
 			objects_.back().pos.y += .5f;
 			loadCompleted = true; });
 	});
+#elif defined(PLATFORM_MAC_OS)
+	objects_.emplace_back(renderer, assets_.staticModels[Assets::LIGHT], shaderResources);
+	objects_.emplace_back(renderer, assets_.staticModels[Assets::CHECKERBOARD], shaderResources);  
+	objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources);
+	// TODO:: remove
+	objects_.back().pos.y += .5f;
+	loadCompleted = true;
+#endif
 //	{
 //		objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);
 //		//objects_.back().m = glm::translate(glm::mat4{},

@@ -34,7 +34,7 @@ struct Mesh {
 struct Assets {
 	~Assets();
 	void Init(RendererWrapper* renderer);
-	static constexpr size_t PLACEHOLDER1 = 0;
+	static constexpr size_t LIGHT = 0;
 	static constexpr size_t PLACEHOLDER2 = 1;
 	static constexpr size_t CHECKERBOARD = 2;
 	static constexpr size_t BEETHOVEN = 3;
@@ -48,4 +48,9 @@ struct Assets {
 #endif
 private:
 	void CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh);
+#if defined(PLATFORM_WIN)
+	Concurrency::task<void> LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id);
+#elif defined(PLATFORM_MAC_OS)
+	void LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id);
+#endif
 };

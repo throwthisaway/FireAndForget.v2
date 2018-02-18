@@ -162,6 +162,9 @@
     <None Include="..\source\assets\checkerboard.mesh">
       <Filter>Assets</Filter>
     </None>
+    <None Include="..\source\assets\light.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">

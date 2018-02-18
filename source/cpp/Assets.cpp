@@ -75,131 +75,41 @@ namespace {
 #endif
 }
 Assets::~Assets() = default;
+#ifdef PLATFORM_WIN
+Concurrency::task<void> Assets::LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id) {
+	return DX::ReadDataAsync(fname).then([this, renderer, fname, id](std::vector<byte>& data) {
+		MeshLoader::Mesh mesh;
+		mesh.data = std::move(data);
+		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
+		CreateModel(fname, renderer, staticModels[id], mesh);
+	});
+}
+#elif defined(PLATFORM_MAC_OS)
+void Assets::LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id) {
+	auto data = LoadFromBundle(fname);
+	MeshLoader::Mesh mesh;
+	mesh.data = std::move(data);
+	MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
+	CreateModel(fname, renderer, staticModels[id], mesh);
+}
+#endif
 void Assets::Init(RendererWrapper* renderer) {
 	renderer->BeginUploadResources();
-	//LoadFromBundle("dssdsds");
-	//static const float positions[] =
-	//{
-	//	0.0,  5., 0, 1,
-	//	-5., -5., 0, 1,
-	//	5., -5., 0, 1,
-	//};
-
-	//static const float colors[] =
-	//{
-	//	1, 0, 0, 1,
-	//	0, 1, 0, 1,
-	//	0, 0, 1, 1,
-	//};
-	//auto pos = renderer->CreateBuffer(positions, sizeof(positions) * sizeof(positions[0]), sizeof(float) * 4);
-	//auto col = renderer->CreateBuffer(colors, sizeof(colors) * sizeof(colors[0]), sizeof(float) * 4);
-	//staticModels[PLACEHOLDER1] = {pos, col, 0, sizeof(positions) / sizeof(positions[0]) / 4};
-	//static const float positions2[] =
-	//{
-	//	0.5,  0.5, 0, 1,
-	//	0., -0.5, 0, 1,
-	//	1., -0.5, 0, 1,
-	//};
-	//auto pos2 = renderer->CreateBuffer(positions2, sizeof(positions2) * sizeof(positions2[0]), sizeof(float) * 4);
-	//staticModels[PLACEHOLDER2] = {pos2, col, 0, sizeof(positions2) / sizeof(positions[0]) / 4};
 #ifdef PLATFORM_WIN
-	//auto res = materials.emplace(L"default", Material{ { 1.f, 1.f, 1.f },
-	//	InvalidBuffer,
-	//	InvalidBuffer,
-	//	1.f, 128.f, 1.f });
-	//auto& defaultMaterial = res.first->second;
-	//struct VertexPositionColor
-	//{
-	//	DirectX::XMFLOAT3 pos;
-	//	DirectX::XMFLOAT3 color;
-	//};
-	//VertexPositionColor cubeVertices[] =
-	//{
-	//	{ XMFLOAT3(-0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-	//	{ XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-	//	{ XMFLOAT3(-0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-	//	{ XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
-	//	{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-	//	{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-	//	{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-	//	{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-	//};
-
-	//const UINT vertexBufferSize = sizeof(cubeVertices);
-	//auto posCol = renderer->CreateBuffer(cubeVertices, vertexBufferSize, sizeof(VertexPositionColor));
-
-	//unsigned short cubeIndices[] =
-	//{
-	//	0, 2, 1, // -x
-	//	1, 2, 3,
-
-	//	4, 5, 6, // +x
-	//	5, 7, 6,
-
-	//	0, 1, 5, // -y
-	//	0, 5, 4,
-
-	//	2, 6, 7, // +y
-	//	2, 7, 3,
-
-	//	0, 4, 6, // -z
-	//	0, 6, 2,
-
-	//	1, 3, 7, // +z
-	//	1, 7, 5,
-	//};
-
-	//const UINT indexBufferSize = sizeof(cubeIndices);
-	//auto index = renderer->CreateBuffer(cubeIndices, indexBufferSize, sizeof(unsigned short));
-
-	//staticModels[PLACEHOLDER1] = { posCol, InvalidBuffer, index, InvalidBuffer, {{{/*pivot*/}, {{ 0, indexBufferSize / sizeof(unsigned short), defaultMaterial }}}} };
-
-	//VertexPositionColor cubeVertices2[] =
-	//{
-	//	{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-	//	{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-	//	{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-	//	{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
-	//	{ XMFLOAT3(1.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-	//	{ XMFLOAT3(1.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-	//	{ XMFLOAT3(1.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-	//	{ XMFLOAT3(1.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-	//};
-	//auto posCol2 = renderer->CreateBuffer(cubeVertices2, vertexBufferSize, sizeof(VertexPositionColor));
-	//staticModels[PLACEHOLDER2] = { posCol2, InvalidBuffer, index, InvalidBuffer, { { {/*pivot*/ },{ { 0, indexBufferSize / sizeof(unsigned short), defaultMaterial } } } } };
-
-	auto checkerboardTask = DX::ReadDataAsync(L"checkerboard.mesh").then([this, renderer](std::vector<byte>& data) {
-		MeshLoader::Mesh mesh;
-		mesh.data = std::move(data);
-		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-		CreateModel(L"checkerboard.mesh", renderer, staticModels[CHECKERBOARD], mesh);
-	});
-	auto beethovenTask = DX::ReadDataAsync(L"BEETHOVE_object.mesh").then([this, renderer](std::vector<byte>& data) {
-		MeshLoader::Mesh mesh;
-		mesh.data = std::move(data);
-		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-		CreateModel(L"BEETHOVE_object.mesh", renderer, staticModels[BEETHOVEN], mesh);
-	});
-	loadCompleteTask = (checkerboardTask && beethovenTask).then([this, renderer]() {
+	std::initializer_list<Concurrency::task<void>> loadMeshTasks{
+		LoadMesh(renderer, L"light.mesh", LIGHT),
+		LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD),
+		LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN) };
+	
+	loadCompleteTask = Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this, renderer]() {
 		return Concurrency::when_all(std::begin(loadTasks), std::end(loadTasks)).then([this, renderer]() {
 			loadTasks.clear();
 			renderer->EndUploadResources();
 		}); });
 #elif defined(PLATFORM_MAC_OS)
-	{
-		auto data = LoadFromBundle(L"checkerboard.mesh");
-		MeshLoader::Mesh mesh;
-		mesh.data = std::move(data);
-		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-		CreateModel(L"checkerboard.mesh", renderer, staticModels[CHECKERBOARD], mesh);
-	}
-	{
-		auto data = LoadFromBundle(L"BEETHOVE_object.mesh");
-		MeshLoader::Mesh mesh;
-		mesh.data = std::move(data);
-		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-		CreateModel(L"BEETHOVE_object.mesh", renderer, staticModels[BEETHOVEN], mesh);
-	}
+	LoadMesh(renderer, L"light.mesh", LIGHT),
+	LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD),
+	LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN)
 	renderer->EndUploadResources();
 #endif
 }
@@ -215,13 +125,6 @@ void Assets::Init(RendererWrapper* renderer) {
 //	return result;
 //}
 void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& model, MeshLoader::Mesh& mesh) {
-	// TODO:: if (!mesh.polygons.empty()
-#ifdef PLATFORM_WIN
-	//for (auto& p : mesh.polygons) {
-	//	auto& temp = const_cast<MeshLoader::Polygon&>(p);
-	//	std::swap(temp.v1, temp.v3);
-	//}
-#endif
 #ifdef INDEXED_DRAWING
 	model.vb = renderer->CreateBuffer(mesh.vertices.data(), mesh.vertices.size() * sizeof(mesh.vertices[0]), sizeof(mesh.vertices[0]));
 	model.ib = renderer->CreateBuffer(mesh.polygons.data(), mesh.polygons.size() * sizeof(mesh.polygons[0]), sizeof(mesh.polygons[0]));
