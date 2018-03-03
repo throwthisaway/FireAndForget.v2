@@ -222,6 +222,7 @@
     <ClInclude Include="Content\DescriptorHeapAllocator.h" />
     <ClInclude Include="Content\PipelineState.h" />
     <ClInclude Include="Content\Renderer.h" />
+    <ClInclude Include="Content\shaders\ShaderStructs.h" />
     <ClInclude Include="FireAndForget_v2Main.h" />
     <ClInclude Include="Common\DirectXHelper.h" />
     <ClInclude Include="Common\StepTimer.h" />

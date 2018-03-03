@@ -33,7 +33,9 @@ public:
 
 	DescAllocEntryIndex AllocDescriptors(uint16_t count);
 	void CreateCBV(DescAllocEntryIndex index, uint16_t offset, ShaderResourceIndex resourceIndex);
+	void CreateCBV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ShaderResourceIndex resourceIndex);
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex textureBufferIndex);
+	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, BufferIndex textureBufferIndex);
 
 	void BeginRender();
 	size_t StartRenderPass();
@@ -69,7 +71,7 @@ private:
 	std::vector<Buffer> buffers_;
 
 	CBAlloc cbAlloc_;
-	DescriptorAlloc descAlloc_;
+	DescriptorAlloc descAlloc_[DX::c_frameCount];
 	
 
 	D3D12_RECT m_scissorRect;

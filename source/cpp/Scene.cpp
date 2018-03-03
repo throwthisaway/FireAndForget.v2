@@ -23,39 +23,37 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				auto& cmd = l.texCmd.back();
 				cmd.offset = submesh.offset; cmd.count = submesh.count;
 				cmd.vb = mesh.vb; cmd.ib = mesh.ib; cmd.nb = mesh.nb; cmd.uvb = submesh.material.staticColorUV;
-				cmd.descAllocEntryIndex = renderer->AllocDescriptors(ShaderStructures::TexParams::numDesc::value);
-				// TODO:: remove
-				assert(ShaderStructures::TexParams::numDesc::value == 8);
+				cmd.descAllocEntryIndex = renderer->AllocDescriptors(ShaderStructures::TexParams::count);
 				// cObject
-				uint16_t offset = 0, count = ShaderStructures::cObject::numDesc;
-				auto rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cObject>::value;
-				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
-				for (; offset < count; ++offset) {
-					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, l.cObject);
+				uint16_t offset = 0;
+				{
+					// 1st root parameter, 1st descriptor table with 1 descriptor entry
+					auto rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cObject>::value;
+					cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset };
+					for (uint32_t frame = 0; frame < ShaderStructures::cObject::numDesc; ++frame) {
+						renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, l.cObject + frame);
+					}
+					++offset;
 				}
 
-				// tTexture
-				renderer->CreateSRV(cmd.descAllocEntryIndex, offset, submesh.material.tStaticColorTexture);
-				count = ShaderStructures::tTexture::numDesc;
-				rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::tTexture>::value;
-				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
-				offset += count;
+				{
+					// 2nd root parameter, 2nd descriptor table with 3 descriptor entry
+					// tTexture
+					renderer->CreateSRV(cmd.descAllocEntryIndex, offset, submesh.material.tStaticColorTexture);
+					auto rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::tTexture>::value;
+					cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset };
+					++offset;
 
-				// cMaterial
-				renderer->CreateCBV(cmd.descAllocEntryIndex, offset, submesh.material.cMaterial);
-				count = ShaderStructures::cMaterial::numDesc;
-				rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cMaterial>::value;
-				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
-				offset += count;
+					// cMaterial
+					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, submesh.material.cMaterial);
+					++offset;
 
-				// cScene
-				count = ShaderStructures::cScene::numDesc;
-				rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::cScene>::value;
-				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
-				for (auto start = offset; start < count + offset; ++start) {
-					renderer->CreateCBV(cmd.descAllocEntryIndex, start, sceneShaderResources.cScene);
+					// cScene
+					for (uint32_t frame = 0; frame < ShaderStructures::cScene::numDesc; ++frame) {
+						renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, sceneShaderResources.cScene + frame);
+					}
+					++offset;
 				}
-				offset += count;
 			} else {
 				// pos
 				l.posCmd.push_back({});
@@ -64,23 +62,19 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				cmd.vb = mesh.vb; cmd.ib = mesh.ib; 
 				// cMVP
 				uint16_t offset = 0;
-				uint16_t count = ShaderStructures::cMVP::numDesc;
-				cmd.descAllocEntryIndex = renderer->AllocDescriptors(ShaderStructures::PosParams::numDesc::value);
+				cmd.descAllocEntryIndex = renderer->AllocDescriptors(ShaderStructures::PosParams::count);
 				auto rootParamIndex = ShaderStructures::PosParams::index<ShaderStructures::cMVP>::value;
 				// TODO:: root parameter index is redundant
-				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
-				// TODO:: remove
-				assert(ShaderStructures::PosParams::numDesc::value == 4);
-				for (; offset < count; ++offset) {
-					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, l.cMVP);
+				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset };
+				for (uint32_t frame = 0; frame < ShaderStructures::cMVP::numDesc; ++frame) {
+					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, l.cMVP + frame);
 				}
-
+				++offset;
 				// cColor
 				renderer->CreateCBV(cmd.descAllocEntryIndex, offset, submesh.material.cColor);
-				count = ShaderStructures::cColor::numDesc;
 				rootParamIndex = ShaderStructures::PosParams::index<ShaderStructures::cColor>::value;
-				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset, count };
-				offset += count;
+				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset};
+				++offset;
 			}
 		}
 	}

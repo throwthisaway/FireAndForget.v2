@@ -1,17 +1,7 @@
+#include "ShaderStructs.h"
+
 Texture2D tColor : register(t0);
 
-struct PointLight {
-	float3 diffuse;
-	float3 ambient;
-	float3 specular;
-	float3 pos;
-	float3 att;
-	float range;
-};
-struct Material {
-	float3 diffuse;
-	float specular, power;
-};
 #define MAX_LIGHTS 2
 cbuffer cMaterial : register(b0) {
 	Material mat;

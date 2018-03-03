@@ -150,6 +150,9 @@
     <ClInclude Include="..\source\cpp\CreateShaderParams.h">
       <Filter>cpp</Filter>
     </ClInclude>
+    <ClInclude Include="Content\shaders\ShaderStructs.h">
+      <Filter>Content\shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />

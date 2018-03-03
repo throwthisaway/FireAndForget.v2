@@ -59,6 +59,12 @@ void RendererWrapper::CreateCBV(DescAllocEntryIndex index, uint16_t offset, Shad
 void RendererWrapper::CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex textureBufferIndex) {
 	renderer->CreateSRV(index, offset, textureBufferIndex);
 }
+void RendererWrapper::CreateCBV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ShaderResourceIndex resourceIndex) {
+	renderer->CreateCBV(index, offset, frame, resourceIndex);
+}
+void RendererWrapper::CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, BufferIndex textureBufferIndex) {
+	renderer->CreateSRV(index, offset, frame, textureBufferIndex);
+}
 
 void RendererWrapper::BeginRender() {
 	renderer->BeginRender();
@@ -199,7 +205,9 @@ BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes, size_
 
 void Renderer::CreateDeviceDependentResources() {
 	cbAlloc_.Init(m_deviceResources->GetD3DDevice(), defaultBufferSize);
-	descAlloc_.Init(m_deviceResources->GetD3DDevice(), defaultDescCount);
+	for (UINT i = 0; i < DX::c_frameCount; ++i) {
+		descAlloc_[i].Init(m_deviceResources->GetD3DDevice(), defaultDescCount);
+	}
 	pipelineStates_.CreateDeviceDependentResources();
 	auto d3dDevice = m_deviceResources->GetD3DDevice();
 	// 1 command list for each pipeline state, and 1 for frame commands
@@ -299,13 +307,13 @@ void Renderer::Submit(const ShaderStructures::PosCmd& cmd) {
 	auto* commandList = commandLists_[id].Get();
 	PIXBeginEvent(commandList, 0, L"SubmitPosCmd");
 	{
-		const auto& desc = descAlloc_.Get(cmd.descAllocEntryIndex);
+		const auto& desc = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].Get(cmd.descAllocEntryIndex);
 		ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
 		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 		// Bind the current frame's constant buffer to the pipeline.
 		auto d3dDevice = m_deviceResources->GetD3DDevice();
 		for (auto binding : cmd.bindings) {
-			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_.GetGPUHandle(cmd.descAllocEntryIndex, binding.offset + m_deviceResources->GetCurrentFrameIndex() % binding.count);
+			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].GetGPUHandle(cmd.descAllocEntryIndex, binding.offset);
 			commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
 		}
 
@@ -346,14 +354,14 @@ void Renderer::Submit(const ShaderStructures::TexCmd& cmd) {
 	auto* commandList = commandLists_[id].Get();
 	PIXBeginEvent(commandList, 0, L"SubmitTexCmd");
 	{
-		const auto& desc = descAlloc_.Get(cmd.descAllocEntryIndex);
+		const auto& desc = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].Get(cmd.descAllocEntryIndex);
 		ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
 		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 		// Bind the current frame's constant buffer to the pipeline.
 		auto d3dDevice = m_deviceResources->GetD3DDevice();
 		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		for (auto binding : cmd.bindings) {
-			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_.GetGPUHandle(cmd.descAllocEntryIndex, binding.offset + m_deviceResources->GetCurrentFrameIndex() % binding.count);
+			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].GetGPUHandle(cmd.descAllocEntryIndex, binding.offset);
 			commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
 		}
 
@@ -426,15 +434,28 @@ void Renderer::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, con
 	memcpy(cbAlloc_.GetCPUAddress(shaderResourceIndex), data, size);
 }
 DescAllocEntryIndex Renderer::AllocDescriptors(uint16_t count) {
-	return descAlloc_.Push(count);
+	DescAllocEntryIndex result;
+	for (UINT i = 0; i < DX::c_frameCount; ++i) {
+		result = descAlloc_[i].Push(count);
+	}
+	return result; // All of them should have the same index
 }
 void Renderer::CreateCBV(DescAllocEntryIndex index, uint16_t offset, ShaderResourceIndex resourceIndex) {
-	descAlloc_.CreateCBV(index, offset, cbAlloc_.GetGPUAddress(resourceIndex), cbAlloc_.GetSize(resourceIndex));
+	for (UINT i = 0; i < DX::c_frameCount; ++i) {
+		descAlloc_[i].CreateCBV(index, offset, cbAlloc_.GetGPUAddress(resourceIndex), cbAlloc_.GetSize(resourceIndex));
+	}
+}
+void Renderer::CreateCBV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ShaderResourceIndex resourceIndex) {
+	descAlloc_[frame].CreateCBV(index, offset, cbAlloc_.GetGPUAddress(resourceIndex), cbAlloc_.GetSize(resourceIndex));
 }
 void Renderer::CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex textureBufferIndex) {
-	descAlloc_.CreateSRV(index, offset, buffers_[textureBufferIndex].resource.Get(), buffers_[textureBufferIndex].format);
+	for (UINT i = 0; i < DX::c_frameCount; ++i) {
+		descAlloc_[i].CreateSRV(index, offset, buffers_[textureBufferIndex].resource.Get(), buffers_[textureBufferIndex].format);
+	}
 }
-
+void Renderer::CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, BufferIndex textureBufferIndex) {
+	descAlloc_[frame].CreateSRV(index, offset, buffers_[textureBufferIndex].resource.Get(), buffers_[textureBufferIndex].format);
+}
 // TODO:: these have to come after Renderer::Submit specialization
 template<>
 void RendererWrapper::Submit(const ShaderStructures::PosCmd& cmd) {

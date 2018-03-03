@@ -45,14 +45,14 @@ struct desc_count<TCurrent, TRest...> : std::integral_constant<uint32_t, TCurren
 // template order corresponds root parameter order of root signature
 template<typename... T> struct ShaderParamTraits {
 	template<typename S> using index = index<S, T...>;
-	using numDesc = desc_count<T...>;
+	//using numDesc = desc_count<T...>;
 	static constexpr uint16_t count = sizeof...(T);
 };
 
 // root parameter/attrib index -> resource
 struct ResourceBinding {
 	uint32_t paramIndex;	// root parameter or attrib index
-	uint16_t offset, count;	// one resource per frame, count number of frames
+	uint16_t offset;	// one resource per frame
 };
 
 // Pos

@@ -26,7 +26,9 @@ public:
 
 	DescAllocEntryIndex AllocDescriptors(uint16_t count);
 	void CreateCBV(DescAllocEntryIndex index, uint16_t offset, ShaderResourceIndex resourceIndex);
+	void CreateCBV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ShaderResourceIndex resourceIndex);
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex textureBufferIndex);
+	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ShaderResourceIndex resourceIndex);
 
 	void BeginRender();
 	size_t StartRenderPass();
