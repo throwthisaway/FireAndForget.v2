@@ -9,9 +9,9 @@ namespace ShaderStructures {
 	const int FrameCount = 3;
 #endif
 	using ShaderId = size_t;
-const ShaderId ColPos = 0;
-const ShaderId Pos = 1;
-const ShaderId Tex = 2;
+const ShaderId Pos = 0;
+const ShaderId Tex = 1;
+const ShaderId Debug = 2;
 const ShaderId Count = 3;
 
 // basic hlsl type aliases

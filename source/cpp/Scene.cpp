@@ -109,6 +109,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	assets_.loadCompleteTask.then([this, renderer](Concurrency::task<void>& assetsWhenAllCompletion) {
 		assetsWhenAllCompletion.then([this, renderer]() {
 			objects_.emplace_back(renderer, assets_.staticModels[Assets::LIGHT], shaderResources);
+			objects_.emplace_back(renderer, assets_.staticModels[Assets::PLACEHOLDER], shaderResources);
 			objects_.emplace_back(renderer, assets_.staticModels[Assets::CHECKERBOARD], shaderResources);
 			objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources);
 			// TODO:: remove

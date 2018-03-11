@@ -35,7 +35,7 @@ struct Assets {
 	~Assets();
 	void Init(RendererWrapper* renderer);
 	static constexpr size_t LIGHT = 0;
-	static constexpr size_t PLACEHOLDER2 = 1;
+	static constexpr size_t PLACEHOLDER = 1;
 	static constexpr size_t CHECKERBOARD = 2;
 	static constexpr size_t BEETHOVEN = 3;
 	static constexpr size_t STATIC_MODEL_COUNT = 4;

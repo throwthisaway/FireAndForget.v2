@@ -98,6 +98,7 @@ void Assets::Init(RendererWrapper* renderer) {
 #ifdef PLATFORM_WIN
 	std::initializer_list<Concurrency::task<void>> loadMeshTasks{
 		LoadMesh(renderer, L"light.mesh", LIGHT),
+		LoadMesh(renderer, L"box.mesh", PLACEHOLDER),
 		LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD),
 		LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN) };
 	

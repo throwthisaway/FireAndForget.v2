@@ -261,6 +261,9 @@
     <None Include="..\source\assets\BEETHOVE_object.mesh">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="..\source\assets\box.mesh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="..\source\assets\checkerboard.mesh">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -270,6 +273,12 @@
     <None Include="FireAndForget.v2_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Content\shaders\DebugPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\DebugVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Content\shaders\PosPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
