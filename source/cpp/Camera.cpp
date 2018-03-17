@@ -11,22 +11,14 @@ void Camera::Perspective(size_t w, size_t h) {
 
 void Camera::Update() {
 	const float pixelToRadRatio = .01f;
-	view = RotationMatrix(glm::translate({}, pos + center), rot.x * pixelToRadRatio, rot.y * pixelToRadRatio, rot.z * pixelToRadRatio);
+	view = RotationMatrix(glm::translate({}, transform.pos + transform.center), transform.rot.x * pixelToRadRatio, transform.rot.y * pixelToRadRatio, transform.rot.z * pixelToRadRatio);
 
 	view *= rotMat;
-	rot = {};
+	transform.rot = {};
 	// copy topleft 3x3 matrix
 	rotMat[0] = view[0]; rotMat[1] = view[1]; rotMat[2] = view[2];
 	vp = proj*view;
-	view = glm::translate(view, -center);
+	view = glm::translate(view, -transform.center);
 	ivp = glm::inverse(vp);
 }
 
-void Camera::Rotate(float dh, float dp, float db, const glm::vec3& center) {
-	rot.x += dh; rot.y += dp; rot.z += db;
-}
-
-void Camera::Translate(float dx, float dy, float dz) {
-	const float pixelToTrRatio = .01f;
-	pos.x += dx * pixelToTrRatio; pos.y += dy * pixelToTrRatio; pos.z += dz * pixelToTrRatio;
-}

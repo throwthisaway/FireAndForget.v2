@@ -11,6 +11,7 @@
 #endif // PLATFORM_WIN
 
 // TODO::
+// - root param index count is not equal to this anymore: auto rootParamIndex = ShaderStructures::TexParams::index<ShaderStructures::tTexture>::value;
 // - load cso in separate tasks, reuse them if possible
 // - refactor Renderer::Submit commands: share code
 // - debug draw should have separate command list, with depth test turned off
@@ -48,6 +49,7 @@ struct Scene {
 	void Render();
 	void Update(double frame, double total);
 	Input input;
+	Camera camera_;
 	bool loadCompleted = false;
 private:
 	RendererWrapper* renderer_;
@@ -57,7 +59,6 @@ private:
 		ShaderStructures::cScene cScene;
 	}shaderStructures;
 	SceneShaderResources shaderResources;
-	Camera camera_;
 
 	// TODO:: remove
 	float	m_radiansPerSecond;

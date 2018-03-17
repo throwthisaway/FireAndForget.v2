@@ -95,6 +95,8 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				}
 
 				{
+					auto rootParamIndex = ShaderStructures::PosParams::index<ShaderStructures::cMaterial>::value;
+					cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset };
 					// cMaterial
 					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, submesh.material.cMaterial);
 					++offset;
@@ -122,12 +124,11 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	renderer_ = renderer;
 	camera_.Perspective(width, height);
 #ifdef PLATFORM_WIN
-	camera_.pos = { 0.f, 0.f, -1.5f };
+	camera_.transform.pos = { 0.f, 0.f, -1.5f };
 #else
 	camera_.pos = {0.f, 0.f, -10.f};
 #endif
-	input.camera_ = &camera_;
-	shaderStructures.cScene.eyePos[0] = camera_.pos.x; shaderStructures.cScene.eyePos[1] = camera_.pos.y; shaderStructures.cScene.eyePos[2] = camera_.pos.z;
+	shaderStructures.cScene.eyePos[0] = camera_.transform.pos.x; shaderStructures.cScene.eyePos[1] = camera_.transform.pos.y; shaderStructures.cScene.eyePos[2] = camera_.transform.pos.z;
 	for (int i = 0; i < sizeof(shaderStructures.cScene.light) / sizeof(shaderStructures.cScene.light[0]); ++i) {
 		shaderStructures.cScene.light[i] = defaultLight;
 	}
@@ -138,10 +139,10 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 #ifdef PLATFORM_WIN
 	assets_.loadCompleteTask.then([this, renderer](Concurrency::task<void>& assetsWhenAllCompletion) {
 		assetsWhenAllCompletion.then([this, renderer]() {
-			//objects_.emplace_back(renderer, assets_.staticModels[Assets::LIGHT], shaderResources, false); 
-			//objects_.emplace_back(renderer, assets_.staticModels[Assets::PLACEHOLDER], shaderResources, true);
+			objects_.emplace_back(renderer, assets_.staticModels[Assets::LIGHT], shaderResources, false); 
+			objects_.emplace_back(renderer, assets_.staticModels[Assets::PLACEHOLDER], shaderResources, true);
 			objects_.emplace_back(renderer, assets_.staticModels[Assets::CHECKERBOARD], shaderResources, false);
-			//objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources, false);
+			objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources, false);
 			// TODO:: remove
 			objects_.back().pos.y += .5f;
 			loadCompleted = true; });
@@ -201,7 +202,7 @@ void Scene::Update(double frame, double total) {
 	// TODO:: remove
 
 	camera_.Update();
-	shaderStructures.cScene.eyePos[0] = camera_.pos.x; shaderStructures.cScene.eyePos[1] = camera_.pos.y; shaderStructures.cScene.eyePos[2] = camera_.pos.z;
+	shaderStructures.cScene.eyePos[0] = camera_.transform.pos.x; shaderStructures.cScene.eyePos[1] = camera_.transform.pos.y; shaderStructures.cScene.eyePos[2] = camera_.transform.pos.z;
 	renderer_->UpdateShaderResource(shaderResources.cScene + renderer_->GetCurrenFrameIndex(), &shaderStructures.cScene, sizeof(shaderStructures.cScene));
 	for (auto& o : objects_) {
 		o.Update(frame, total);

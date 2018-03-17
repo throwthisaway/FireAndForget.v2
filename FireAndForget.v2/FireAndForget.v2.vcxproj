@@ -215,6 +215,7 @@
     <ClInclude Include="..\source\cpp\Scene.hpp" />
     <ClInclude Include="..\source\cpp\Sphere.hpp" />
     <ClInclude Include="..\source\cpp\Timer.hpp" />
+    <ClInclude Include="..\source\cpp\Transform.h" />
     <ClInclude Include="App.h" />
     <ClInclude Include="Common\d3dx12.h" />
     <ClInclude Include="Common\DeviceResources.h" />

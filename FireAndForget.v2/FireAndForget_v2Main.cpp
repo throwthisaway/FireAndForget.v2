@@ -97,12 +97,12 @@ void FireAndForget_v2Main::PointerMoved(float x, float y, bool left, bool middle
 	const size_t Ctrl = 1, Alt = 2, Shift = 4;
 	if (left) {
 		if (modifiers & Alt)
-			scene_.input.TranslateY(y);
+			scene_.input.TranslateY(y, scene_.camera_.transform);
 		else
-			scene_.input.Rotate(x, y);
+			scene_.input.Rotate(x, y, scene_.camera_.transform);
 	}
 	else if (right) {
-		scene_.input.TranslateXZ(x, y);
+		scene_.input.TranslateXZ(x, y, scene_.camera_.transform);
 	}
 }
 void FireAndForget_v2Main::PointerPressed(float x, float y, bool left, bool middle, bool right) {

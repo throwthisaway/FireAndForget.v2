@@ -156,6 +156,9 @@
     <ClInclude Include="Content\shaders\ShaderStructs.hlsl">
       <Filter>Content\shaders</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\cpp\Transform.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
