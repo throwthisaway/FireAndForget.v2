@@ -96,22 +96,14 @@ void FireAndForget_v2Main::OnDeviceRemoved()
 void FireAndForget_v2Main::PointerMoved(float x, float y, bool left, bool middle, bool right, size_t modifiers) {
 	const size_t Ctrl = 1, Alt = 2, Shift = 4;
 	if (left) {
-		if (modifiers & Alt) {
-			auto res = scene_.input.TranslateY(y);
-			if (modifiers & Ctrl) scene_.transform.pos += res;
-			else scene_.camera_.transform.pos += res;
-		}
-		else {
-			auto res = scene_.input.Rotate(x, y);
-			if (modifiers & Ctrl) scene_.transform.rot += res;
-			else scene_.camera_.transform.rot += res;
-		}
+		if (modifiers & Alt) scene_.input.TranslateY(y);
+		else scene_.input.Rotate(x, y);
 	}
-	else if (right) {
-		auto res = scene_.input.TranslateXZ(x, y);
-		if (modifiers & Ctrl) scene_.transform.pos += res;
-		else scene_.camera_.transform.pos += res;
-	}
+	else if (right) scene_.input.TranslateXZ(x, y);
+	if (modifiers & Ctrl)
+		scene_.UpdateSceneTransform();
+	else
+		scene_.UpdateCameraTransform();
 }
 void FireAndForget_v2Main::PointerPressed(float x, float y, bool left, bool middle, bool right) {
 	scene_.input.Start(x, y);

@@ -124,10 +124,12 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	renderer_ = renderer;
 	camera_.Perspective(width, height);
 #ifdef PLATFORM_WIN
-	camera_.transform.pos = { 0.f, 0.f, -1.5f };
+	const float Z = -1.5f;
 #else
-	camera_.pos = {0.f, 0.f, -10.f};
+	const float Z = -10.f;
 #endif
+	camera_.transform.pos = { 0.f, 0.f, Z };
+	camera_.view = ScreenSpaceRotator({}, camera_.transform);
 	shaderStructures.cScene.eyePos[0] = camera_.transform.pos.x; shaderStructures.cScene.eyePos[1] = camera_.transform.pos.y; shaderStructures.cScene.eyePos[2] = camera_.transform.pos.z;
 	for (int i = 0; i < sizeof(shaderStructures.cScene.light) / sizeof(shaderStructures.cScene.light[0]); ++i) {
 		shaderStructures.cScene.light[i] = defaultLight;
@@ -195,6 +197,18 @@ void Scene::Render() {
 			for (const auto& cmd : l.texCmd)
 				renderer_->Submit(cmd);
 		}
+}
+void Scene::UpdateCameraTransform() {
+	camera_.transform.pos += input.dpos;
+	camera_.transform.rot += input.drot;
+	camera_.view = ScreenSpaceRotator(camera_.view, Transform{ camera_.transform.pos, camera_.transform.center, input.drot});
+}
+void Scene::UpdateSceneTransform() {
+	transform.pos += input.dpos;
+	transform.rot += input.drot;
+	for (auto& o : objects_) {
+		// TODO::
+	}
 }
 void Scene::Update(double frame, double total) {
 	// TODO:: remove

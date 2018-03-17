@@ -208,7 +208,6 @@
     <ClInclude Include="..\source\cpp\Camera.hpp" />
     <ClInclude Include="..\source\cpp\CreateShaderParams.h" />
     <ClInclude Include="..\source\cpp\input\Input.hpp" />
-    <ClInclude Include="..\source\cpp\ScreenSpaceRotator.h" />
     <ClInclude Include="..\source\cpp\ShaderStructures.h" />
     <ClInclude Include="..\source\cpp\MatrixUtils.h" />
     <ClInclude Include="..\source\cpp\RendererTypes.h" />
@@ -238,7 +237,6 @@
     <ClCompile Include="..\source\cpp\Camera.cpp" />
     <ClCompile Include="..\source\cpp\input\Input.cpp" />
     <ClCompile Include="..\source\cpp\Scene.cpp" />
-    <ClCompile Include="..\source\cpp\ScreenSpaceRotator.cpp" />
     <ClCompile Include="..\source\cpp\Sphere.cpp" />
     <ClCompile Include="..\source\cpp\Timer.cpp" />
     <ClCompile Include="App.cpp" />

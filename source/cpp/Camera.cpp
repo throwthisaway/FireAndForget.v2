@@ -10,9 +10,6 @@ void Camera::Perspective(size_t w, size_t h) {
 }
 
 void Camera::Update() {
-	view = ssRot.Update(transform);
-	transform.rot = {};
 	vp = proj*view;
 	ivp = glm::inverse(vp);
 }
-

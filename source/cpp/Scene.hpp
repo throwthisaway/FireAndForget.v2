@@ -48,11 +48,13 @@ struct Scene {
 	void Init(RendererWrapper*, int, int);
 	void Render();
 	void Update(double frame, double total);
+	void UpdateCameraTransform();
+	void UpdateSceneTransform();
 	Input input;
-	Transform transform;
-	Camera camera_;
 	bool loadCompleted = false;
 private:
+	Transform transform;
+	Camera camera_;
 	RendererWrapper* renderer_;
 	Assets assets_;
 	std::vector<Object> objects_;
