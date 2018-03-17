@@ -100,6 +100,9 @@
     <ClCompile Include="Content\DescriptorHeapAllocator.cpp">
       <Filter>Content</Filter>
     </ClCompile>
+    <ClCompile Include="..\source\cpp\ScreenSpaceRotator.cpp">
+      <Filter>cpp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
@@ -157,6 +160,9 @@
       <Filter>Content\shaders</Filter>
     </ClInclude>
     <ClInclude Include="..\source\cpp\Transform.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\ScreenSpaceRotator.h">
       <Filter>cpp</Filter>
     </ClInclude>
   </ItemGroup>

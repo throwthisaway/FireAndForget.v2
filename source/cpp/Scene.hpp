@@ -49,6 +49,7 @@ struct Scene {
 	void Render();
 	void Update(double frame, double total);
 	Input input;
+	Transform transform;
 	Camera camera_;
 	bool loadCompleted = false;
 private:
