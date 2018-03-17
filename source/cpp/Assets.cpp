@@ -108,9 +108,10 @@ void Assets::Init(RendererWrapper* renderer) {
 			renderer->EndUploadResources();
 		}); });
 #elif defined(PLATFORM_MAC_OS)
-	LoadMesh(renderer, L"light.mesh", LIGHT),
-	LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD),
-	LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN)
+	LoadMesh(renderer, L"light.mesh", LIGHT);
+	LoadMesh(renderer, L"box.mesh", PLACEHOLDER);
+	LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD);
+	LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN);
 	renderer->EndUploadResources();
 #endif
 }

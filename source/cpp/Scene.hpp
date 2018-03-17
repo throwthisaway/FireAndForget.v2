@@ -10,6 +10,13 @@
 #include "../Content/ShaderStructures.h"
 #endif // PLATFORM_WIN
 
+// TODO::
+// - load cso in separate tasks, reuse them if possible
+// - refactor Renderer::Submit commands: share code
+// - debug draw should have separate command list, with depth test turned off
+// - check is PosParams and PosCmd (TexParams and TexCmd, ...) can be linked
+// - rewrite shaders to 5.x
+// - implicit truncation of vector type: 	output.n = normalize(mul(input.n, m));
 struct Time;
 
 struct Scene {
@@ -22,16 +29,19 @@ struct Scene {
 		
 		struct Layer {
 			glm::vec3 pivot;
-			// pos
+			// debug
 			ShaderResourceIndex cMVP;
+			std::vector<ShaderStructures::DebugCmd> debugCmd;
+			// pos-tex
+			ShaderResourceIndex cObject;
+			//pos
 			std::vector<ShaderStructures::PosCmd> posCmd;
 			// tex
-			ShaderResourceIndex cObject;
 			std::vector<ShaderStructures::TexCmd> texCmd;
 		};
 		std::vector<Layer> layers;
 	
-		Object(RendererWrapper* renderer, const Mesh& mesh, const SceneShaderResources& sceneShaderResources);
+		Object(RendererWrapper* renderer, const Mesh& mesh, const SceneShaderResources& sceneShaderResources, bool debug);
 		void Update(double frame, double total);
 	};
 	void Init(RendererWrapper*, int, int);

@@ -150,7 +150,10 @@
     <ClInclude Include="..\source\cpp\CreateShaderParams.h">
       <Filter>cpp</Filter>
     </ClInclude>
-    <ClInclude Include="Content\shaders\ShaderStructs.h">
+    <ClInclude Include="Content\shaders\Phong.hlsl">
+      <Filter>Content\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\shaders\ShaderStructs.hlsl">
       <Filter>Content\shaders</Filter>
     </ClInclude>
   </ItemGroup>
@@ -190,9 +193,6 @@
     <FxCompile Include="Content\shaders\PosVS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\shaders\TexVS.hlsl">
-      <Filter>Content\shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\shaders\TexPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
@@ -200,6 +200,9 @@
       <Filter>Content\shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\shaders\DebugVS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\TexVS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
   </ItemGroup>

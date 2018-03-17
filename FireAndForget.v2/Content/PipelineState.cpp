@@ -10,7 +10,8 @@ namespace {
 	const D3D12_INPUT_ELEMENT_DESC debugInputLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
 	const D3D12_INPUT_ELEMENT_DESC posInputLayout[] = {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }};
 	const D3D12_INPUT_ELEMENT_DESC texInputLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -91,6 +92,34 @@ void PipelineStates::CreateDeviceDependentResources() {
 	}
 	
 	{
+		// ROOT_VS_1CB_PS_2CB
+		CD3DX12_ROOT_PARAMETER parameter[2];
+		CD3DX12_DESCRIPTOR_RANGE range[2];
+		range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		parameter[0].InitAsDescriptorTable(1, range, D3D12_SHADER_VISIBILITY_VERTEX);
+		range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0);
+		parameter[1].InitAsDescriptorTable(1, range + 1, D3D12_SHADER_VISIBILITY_PIXEL);
+
+		D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
+
+
+		CD3DX12_ROOT_SIGNATURE_DESC descRootSignature;
+		descRootSignature.Init(_ARRAYSIZE(parameter), parameter, 0, nullptr, rootSignatureFlags);
+
+		ComPtr<ID3DBlob> pSignature;
+		ComPtr<ID3DBlob> pError;
+		DX::ThrowIfFailed(D3D12SerializeRootSignature(&descRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, pSignature.GetAddressOf(), pError.GetAddressOf()));
+		ComPtr<ID3D12RootSignature>	rootSignature;
+		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+		NAME_D3D12_OBJECT(rootSignature);
+		rootSignatures_[ROOT_VS_1CB_PS_2CB] = rootSignature;
+	}
+
+	{
 		// ROOT_VS_1CB_PS_1TX_2CB
 		CD3DX12_ROOT_PARAMETER parameter[2];
 		CD3DX12_DESCRIPTOR_RANGE range[3];
@@ -133,7 +162,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 		rootSignatures_[ROOT_VS_1CB_PS_1TX_2CB] = rootSignature;
 	}
 
-	shaderTasks_.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", posInputLayout, _countof(posInputLayout)));
+	shaderTasks_.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_2CB, L"PosVS.cso", L"PosPS.cso", posInputLayout, _countof(posInputLayout)));
 	shaderTasks_.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_2CB, L"TexVS.cso", L"TexPS.cso", texInputLayout, _countof(texInputLayout)));
 	shaderTasks_.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", debugInputLayout, _countof(debugInputLayout)));
 	completionTask_ = Concurrency::when_all(std::begin(shaderTasks_), std::end(shaderTasks_)).then([this]() {

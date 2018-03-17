@@ -55,32 +55,27 @@ struct ResourceBinding {
 	uint16_t offset;	// one resource per frame
 };
 
-// Pos
+// Debug
 struct cMVP : cFrame {
 	matrix mvp;
 };
 struct cColor : cStatic {
 	float4 color;
 };
-using PosParams = ShaderParamTraits<cMVP, cColor>;
+using DebugParams = ShaderParamTraits<cMVP, cColor>;
 
-struct PosCmd {
+struct DebugCmd {
 	uint32_t offset, count;
 	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer;
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	ResourceBinding bindings[PosParams::count];
+	ResourceBinding bindings[DebugParams::count];
 };
 
-//using PosVSParams = ShaderParamTraits<cMVP>;
-//using PosPSParams = ShaderParamTraits<cStaticColor>;
-
-// Tex
+// Pos-Tex
 struct cObject : cFrame {
 	matrix mvp;
 	matrix m;
 };
-
-struct tTexture : cTexture {};
 struct Material {
 	float3 diffuse;
 	float specular, power;
@@ -106,6 +101,18 @@ struct cScene : cFrame {
 	PointLight light[MAX_LIGHTS];
 	float3 eyePos;
 };
+// Pos
+using PosParams = ShaderParamTraits<cObject, cMaterial, cScene>;
+
+struct PosCmd {
+	uint32_t offset, count;
+	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer;
+	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
+	ResourceBinding bindings[PosParams::count];
+};
+// Tex
+struct tTexture : cTexture {};
+
 using TexParams = ShaderParamTraits<cObject, tTexture, cMaterial, cScene>;
 
 struct TexCmd {
