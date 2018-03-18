@@ -302,7 +302,7 @@ size_t Renderer::StartRenderPass() {
 template<>
 void Renderer::Submit(const ShaderStructures::DebugCmd& cmd) {
 	if (!loadingComplete_) return;
-	const auto id = ShaderStructures::Pos;
+	const auto id = ShaderStructures::Debug;
 	auto& state = pipelineStates_.states_[id];
 	auto* commandList = commandLists_[id].Get();
 	PIXBeginEvent(commandList, 0, L"SubmitDebugCmd");

@@ -163,7 +163,8 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 				{
 					gpuMaterial.cColor = renderer->CreateShaderResource(sizeof(ShaderStructures::cColor), 1);
 					ShaderStructures::cColor data;
-					data.color[0] = surf.color[0]; data.color[1] = surf.color[1]; data.color[2] = surf.color[2]; data.color[3] = surf.surface_infos[MeshLoader::TRANSPARENCY_MAP].val;
+					data.color[0] = surf.color[0]; data.color[1] = surf.color[1]; data.color[2] = surf.color[2]; data.color[3] = 1.f;// !!! surf.surface_infos[MeshLoader::TRANSPARENCY_MAP].val;
+					// TODO:: !!!surf.surface_infos[MeshLoader::TRANSPARENCY_MAP].val; is 0.000
 					renderer->UpdateShaderResource(gpuMaterial.cColor, &data, sizeof(ShaderStructures::cColor));
 				}
 				{

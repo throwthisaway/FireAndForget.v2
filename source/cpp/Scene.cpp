@@ -120,6 +120,16 @@ static const ShaderStructures::PointLight defaultLight = { {.4f, .4f, .4f} ,{}/*
 	{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange)} /* attenuation */,
 	defaultLightRange /* range */};
 }
+void Scene::OnAssetsLoaded() {
+	debug_.emplace_back(renderer_, assets_.staticModels[Assets::LIGHT], shaderResources, true);
+	debug_.emplace_back(renderer_, assets_.staticModels[Assets::LIGHT], shaderResources, true);
+	debug_.emplace_back(renderer_, assets_.staticModels[Assets::PLACEHOLDER], shaderResources, true);
+	objects_.emplace_back(renderer_, assets_.staticModels[Assets::CHECKERBOARD], shaderResources, false);
+	objects_.emplace_back(renderer_, assets_.staticModels[Assets::BEETHOVEN], shaderResources, false);
+	// TODO:: remove
+	objects_.back().pos.y += .5f;
+	loadCompleted = true;
+}
 void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	renderer_ = renderer;
 	camera_.Perspective(width, height);
@@ -140,47 +150,11 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	assets_.Init(renderer);
 #ifdef PLATFORM_WIN
 	assets_.loadCompleteTask.then([this, renderer](Concurrency::task<void>& assetsWhenAllCompletion) {
-		assetsWhenAllCompletion.then([this, renderer]() {
-			objects_.emplace_back(renderer, assets_.staticModels[Assets::LIGHT], shaderResources, false); 
-			objects_.emplace_back(renderer, assets_.staticModels[Assets::PLACEHOLDER], shaderResources, true);
-			objects_.emplace_back(renderer, assets_.staticModels[Assets::CHECKERBOARD], shaderResources, false);
-			objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources, false);
-			// TODO:: remove
-			objects_.back().pos.y += .5f;
-			loadCompleted = true; });
+		assetsWhenAllCompletion.then([this]() { OnAssetsLoaded();});
 	});
 #elif defined(PLATFORM_MAC_OS)
-	objects_.emplace_back(renderer, assets_.staticModels[Assets::LIGHT], shaderResources, false);
-	objects_.emplace_back(renderer, assets_.staticModels[Assets::PLACEHOLDER], shaderResources, true);
-	objects_.emplace_back(renderer, assets_.staticModels[Assets::CHECKERBOARD], shaderResources, false);  
-	objects_.emplace_back(renderer, assets_.staticModels[Assets::BEETHOVEN], shaderResources, false);
-	// TODO:: remove
-	objects_.back().pos.y += .5f;
-	loadCompleted = true;
+	OnAssetsLoaded();
 #endif
-//	{
-//		objects_.emplace_back(assets_.staticModels[Assets::CHECKERBOARD]);
-//		//objects_.back().m = glm::translate(glm::mat4{},
-//		objects_.back().pos = glm::vec3(.5f, .5f, .5f);
-//		objects_.back().color = glm::vec4(0.f, .8f, .8f, 1.f);
-//		objects_.back().shaderParams.id = ShaderStructures::Tex;
-//		auto heapHandle = renderer->GetStaticShaderResourceHeap(3 * RendererWrapper::frameCount_ + 1);
-//		objects_.back().shaderParams.heapHandle = heapHandle;
-//		objects_.back().shaderParams.mvpStartIndex = renderer->GetShaderResourceIndex(heapHandle, sizeof(ShaderStructures::cMVP), RendererWrapper::frameCount_);
-//		objects_.back().shaderParams.colorStartIndex = renderer->GetShaderResourceIndex(heapHandle, sizeof(ShaderStructures::cColor), RendererWrapper::frameCount_);
-//		bool first = true;
-//		for (auto& layer : objects_.back().mesh.layers) {
-//			for (auto& submesh : layer.submeshes) {
-//				if (submesh.material.color_tex_index != std::numeric_limits<size_t>::max()) {
-//					objects_.back().shaderParams.colorTexSRVIndex = renderer->GetShaderResourceIndex(heapHandle, submesh.material.color_tex_index);
-//					first = false;
-//					break;
-//				}
-//			}
-//			if (!first) break;
-//		}
-//	}
-
 
 	// TODO:: remove
 	m_radiansPerSecond = glm::quarter_pi<float>();
@@ -197,6 +171,11 @@ void Scene::Render() {
 			for (const auto& cmd : l.texCmd)
 				renderer_->Submit(cmd);
 		}
+	for (const auto& o : debug_)
+		for (const auto& l : o.layers) {
+			for (const auto& cmd : l.debugCmd)
+				renderer_->Submit(cmd);
+		}
 }
 void Scene::UpdateCameraTransform() {
 	camera_.transform.pos += input.dpos;
@@ -206,9 +185,7 @@ void Scene::UpdateCameraTransform() {
 void Scene::UpdateSceneTransform() {
 	transform.pos += input.dpos;
 	transform.rot += input.drot;
-	for (auto& o : objects_) {
-		// TODO::
-	}
+	m = ScreenSpaceRotator(m, Transform{ transform.pos, transform.center, input.drot });
 }
 void Scene::Update(double frame, double total) {
 	// TODO:: remove
@@ -219,6 +196,22 @@ void Scene::Update(double frame, double total) {
 	shaderStructures.cScene.eyePos[0] = camera_.transform.pos.x; shaderStructures.cScene.eyePos[1] = camera_.transform.pos.y; shaderStructures.cScene.eyePos[2] = camera_.transform.pos.z;
 	renderer_->UpdateShaderResource(shaderResources.cScene + renderer_->GetCurrenFrameIndex(), &shaderStructures.cScene, sizeof(shaderStructures.cScene));
 	for (auto& o : objects_) {
+		o.Update(frame, total);
+		for (const auto& layer : o.layers) {
+			auto m = this->m * glm::translate(RotationMatrix(glm::translate(glm::mat4{}, layer.pivot), o.rot.x, o.rot.y, o.rot.z), o.pos);
+			auto mvp = glm::transpose(camera_.vp * m);
+			// TODO:: update resources according to selected encoderIndex/shaderid
+			ShaderStructures::cMVP cMVP;
+			memcpy(cMVP.mvp, &mvp, sizeof(cMVP.mvp));
+			renderer_->UpdateShaderResource(layer.cMVP + renderer_->GetCurrenFrameIndex(), &cMVP, sizeof(cMVP));
+
+			ShaderStructures::cObject cObject;
+			memcpy(cObject.mvp, &mvp, sizeof(cObject.mvp));
+			memcpy(cObject.m, &m, sizeof(cObject.m));
+			renderer_->UpdateShaderResource(layer.cObject + renderer_->GetCurrenFrameIndex(), &cObject, sizeof(cObject));
+		}
+	}
+	for (auto& o : debug_) {
 		o.Update(frame, total);
 		for (const auto& layer : o.layers) {
 			auto m = glm::translate(RotationMatrix(glm::translate(glm::mat4{}, layer.pivot), o.rot.x, o.rot.y, o.rot.z), o.pos);

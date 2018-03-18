@@ -46,6 +46,7 @@ struct Scene {
 		void Update(double frame, double total);
 	};
 	void Init(RendererWrapper*, int, int);
+	void OnAssetsLoaded();
 	void Render();
 	void Update(double frame, double total);
 	void UpdateCameraTransform();
@@ -53,11 +54,12 @@ struct Scene {
 	Input input;
 	bool loadCompleted = false;
 private:
+	glm::mat4 m;	// for scene transform
 	Transform transform;
 	Camera camera_;
 	RendererWrapper* renderer_;
 	Assets assets_;
-	std::vector<Object> objects_;
+	std::vector<Object> objects_, debug_;
 	struct {
 		ShaderStructures::cScene cScene;
 	}shaderStructures;
