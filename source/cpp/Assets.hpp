@@ -14,7 +14,8 @@ struct Material {
 	// pos
 	ShaderResourceIndex cColor = InvalidShaderResource;
 	// tex
-	BufferIndex tStaticColorTexture = InvalidBuffer, staticColorUV = InvalidBuffer;
+	BufferIndex staticColorUV = InvalidBuffer;
+	TextureIndex tStaticColorTexture = InvalidTexture;
 	ShaderResourceIndex cMaterial = InvalidShaderResource;
 };
 // geometry by surface

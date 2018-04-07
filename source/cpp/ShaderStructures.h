@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "RendererTypes.h"
 #include "compatibility.h"
 
@@ -49,12 +50,18 @@ template<typename... T> struct ShaderParamTraits {
 	static constexpr uint16_t count = sizeof...(T);
 };
 
+#ifdef PLATFORM_WIN
 // root parameter/attrib index -> resource
 struct ResourceBinding {
 	uint32_t paramIndex;	// root parameter or attrib index
 	uint16_t offset;	// one resource per frame
 };
-
+#elif defined(PLATFORM_MAC_OS)
+struct BufferInfo {
+	BufferIndex bufferIndex;	// root parameter or attrib index
+	uint16_t bufferCount;	// one resource per frame
+};
+#endif
 // Debug
 struct cMVP : cFrame {
 	matrix mvp;
@@ -62,13 +69,19 @@ struct cMVP : cFrame {
 struct cColor : cStatic {
 	float4 color;
 };
-using DebugParams = ShaderParamTraits<cMVP, cColor>;
 
 struct DebugCmd {
 	uint32_t offset, count;
 	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer;
+#ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	ResourceBinding bindings[DebugParams::count];
+	using Params = ShaderParamTraits<cMVP, cColor>;
+	ResourceBinding bindings[Params::count];
+#elif defined(PLATFORM_MAC_OS)
+	using VSParams = ShaderParamTraits<cMVP>;
+	using FSParams = ShaderParamTraits<cColor>;
+	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
+#endif
 };
 
 // Pos-Tex
@@ -102,24 +115,36 @@ struct cScene : cFrame {
 	float3 eyePos;
 };
 // Pos
-using PosParams = ShaderParamTraits<cObject, cMaterial, cScene>;
 
 struct PosCmd {
 	uint32_t offset, count;
 	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer;
+#ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	ResourceBinding bindings[PosParams::count];
+	using Params = ShaderParamTraits<cObject, cMaterial, cScene>;
+	ResourceBinding bindings[Params::count];
+#elif defined(PLATFORM_MAC_OS)
+	using VSParams = ShaderParamTraits<cObject>;
+	using FSParams = ShaderParamTraits<cMaterial, cScene>;
+	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
+#endif
 };
 // Tex
 struct tTexture : cTexture {};
 
-using TexParams = ShaderParamTraits<cObject, tTexture, cMaterial, cScene>;
-
 struct TexCmd {
 	uint32_t offset, count;
 	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer, uvb = InvalidBuffer;
+#ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	ResourceBinding bindings[TexParams::count];
+	using Params = ShaderParamTraits<cObject, tTexture, cMaterial, cScene>;
+	ResourceBinding bindings[Params::count];
+#elif defined(PLATFORM_MAC_OS)
+	using VSParams = ShaderParamTraits<cObject>;
+	using FSParams = ShaderParamTraits<cMaterial, cScene>;
+	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
+	TextureIndex textures[1];
+#endif
 };
 //using TexVSSParams = ShaderParamTraits<cObjectVS>;
 //using TexPSParams = ShaderParamTraits<tStaticTexture, cObjectPS, cFrame>;

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "DescriptorHeapAllocator.h"
 #include "..\Common\DirectXHelper.h"
+#include "..\source\cpp\BufferUtils.h"
+
 using namespace Microsoft::WRL;
 
 namespace {
@@ -41,13 +43,12 @@ namespace {
 	template<size_t Size0, size_t... SizeX>
 	struct SizeOf<Size0, SizeX...> : std::integral_constant<std::size_t, Size0 + SizeOf<SizeX...>::value > {};
 
-	template<typename T> constexpr T AlignTo256(T val) { return (val + 255) & ~255; }
 	// Constant buffers must be 256-byte aligned.
 	template<size_t ...>
 	struct Aligned256SizeOf : std::integral_constant<std::size_t, 0> {};
 
 	template<size_t Size0, size_t... SizeX>
-	struct Aligned256SizeOf<Size0, SizeX...> : std::integral_constant<std::size_t, AlignTo256(Size0) + Aligned256SizeOf<SizeX...>::value > {};
+	struct Aligned256SizeOf<Size0, SizeX...> : std::integral_constant<std::size_t, AlignTo<Size0, 256>(Size0) + Aligned256SizeOf<SizeX...>::value > {};
 
 	//template<typename... BuffersT>
 	//struct ShaderResourceDesc {};

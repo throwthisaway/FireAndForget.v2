@@ -27,28 +27,24 @@
 
 - (void) setupPipeline: (MTLPixelFormat) pixelFormat {
 	{
-		// ColPos or appropriate default shader to be removed later
-		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
-		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"vertex_main"];
-		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"fragment_main"];
-		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
-		pipeline_ = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: NULL];
-		[pipelines_ addObject:pipeline_];
-	}
-
-	{
 		// Pos
 		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
 		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
 		vertexDesc.attributes[0].format = MTLVertexFormatFloat3;
 		vertexDesc.attributes[0].bufferIndex = 0;
 		vertexDesc.attributes[0].offset = 0;
+		vertexDesc.attributes[1].format = MTLVertexFormatFloat3;
+		vertexDesc.attributes[1].bufferIndex = 1;
+		vertexDesc.attributes[1].offset = 0;
 		vertexDesc.layouts[0].stride = 3 * sizeof(float);
 		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+		vertexDesc.layouts[1].stride = 3 * sizeof(float);
+		vertexDesc.layouts[1].stepFunction = MTLVertexStepFunctionPerVertex;
 		pipelineDescriptor.vertexDescriptor = vertexDesc;
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"pos_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"pos_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
+		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 		pipeline_ = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: NULL];
 		[pipelines_ addObject:pipeline_];
 	}
@@ -76,6 +72,25 @@
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"tex_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"tex_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
+		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
+		pipeline_ = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: NULL];
+		[pipelines_ addObject:pipeline_];
+	}
+
+	{
+		// Debug
+		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
+		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
+		vertexDesc.attributes[0].format = MTLVertexFormatFloat3;
+		vertexDesc.attributes[0].bufferIndex = 0;
+		vertexDesc.attributes[0].offset = 0;
+		vertexDesc.layouts[0].stride = 3 * sizeof(float);
+		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+		pipelineDescriptor.vertexDescriptor = vertexDesc;
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"debug_vs_main"];
+		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"debug_fs_main"];
+		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
+		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 		pipeline_ = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: NULL];
 		[pipelines_ addObject:pipeline_];
 	}

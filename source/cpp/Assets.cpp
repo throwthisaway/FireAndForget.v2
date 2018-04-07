@@ -135,9 +135,15 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 	std::vector<vec3_t> vertices;
 	vertices.reserve(mesh.vertices.size() * VERTICESPERPOLY);
 	for (const auto& idx : mesh.polygons) {
+#ifdef PLATFORM_WIN
 		vertices.push_back(mesh.vertices[idx.v1]);
 		vertices.push_back(mesh.vertices[idx.v2]);
 		vertices.push_back(mesh.vertices[idx.v3]);
+#elif defined(PLATFORM_MAC_OS)
+		vertices.push_back(mesh.vertices[idx.v3]);
+		vertices.push_back(mesh.vertices[idx.v2]);
+		vertices.push_back(mesh.vertices[idx.v1]);
+#endif
 	}
 	model.vb = renderer->CreateBuffer(vertices.data(), vertices.size() * sizeof(vertices[0]), sizeof(vertices[0]));
 	model.nb = renderer->CreateBuffer(mesh.normalsPV.data(), mesh.normalsPV.size() * sizeof(mesh.normalsPV.front()), sizeof(mesh.normalsPV.front()) / VERTICESPERPOLY /*TODO:: fix this one normal contains 3 normals*/);
@@ -187,23 +193,32 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 						if (res.second) {
 							Img::ImgData& color_image = res.first->second;
 #ifdef PLATFORM_MAC_OS
-							auto res = LoadFromBundle(path.c_str());
-							// TODO::
+							auto data = LoadFromBundle(path.c_str());
+							auto err = DecodeTGA(data.data(), data.size(), color_image, true);
+							if (err != Img::TgaDecodeResult::Ok) {
+								// TODO::
+								assert(false);
+							} else {
+								gpuMaterial.tStaticColorTexture = renderer->CreateTexture(color_image.data.get(),
+																						  color_image.width,
+																						  color_image.height,
+																						  color_image.bytesPerPixel,
+																						  color_image.pf);
+							}
 #elif defined(PLATFORM_WIN)
 							auto load = DX::ReadDataAsync(path).then([this, &gpuMaterial, &color_image, renderer](std::vector<byte>& data) {
 								auto err = DecodeTGA(data.data(), data.size(), color_image, true);
 								if (err != Img::TgaDecodeResult::Ok) {
 									// TODO::
 									assert(false);
-							}
-								else {
-									gpuMaterial.tStaticColorTexture = renderer->CreateTexture(color_image.data.get(),
-										color_image.width,
-										color_image.height,
-										color_image.bytesPerPixel,
-										color_image.pf);
+								} else {
+										gpuMaterial.tStaticC0olorTexture = renderer->CreateTexture(color_image.data.get(),
+											color_image.width,
+											color_image.height,
+											color_image.bytesPerPixel,
+											color_image.pf);
 								}
-						});
+							});
 							loadTasks.push_back(load);
 #endif
 					}

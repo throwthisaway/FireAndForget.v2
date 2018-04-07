@@ -142,6 +142,10 @@
 		scene_.input.TranslateXZ(event.locationInWindow.x, -event.locationInWindow.y);
 	else
 		scene_.input.Rotate(event.locationInWindow.x, -event.locationInWindow.y);
+	if (event.modifierFlags & NSEventModifierFlagControl)
+		scene_.UpdateSceneTransform();
+	else
+		scene_.UpdateCameraTransform();
 }
 - (void)rightMouseDragged:(NSEvent *)event {
 	NSLog(@"mouse dragged %f %f", event.locationInWindow.x, event.locationInWindow.y);
