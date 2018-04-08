@@ -18,17 +18,15 @@ struct FSIn {
 	float3 n [[user(normal)]];
 	float2 uv0;
 };
-vertex FSIn tex_vs_main(device float3* pos_in [[buffer(0)]],
-						device float3* n [[buffer(1)]],
-						device float2* uv0 [[buffer(2)]],
+vertex FSIn tex_vs_main(VIn input [[stage_in]],
 						constant uObject& obj [[buffer(3)]],
 						uint id [[vertex_id]]) {
 	FSIn output;
-	float4 pos = float4(pos_in[id], 1.f);
+	float4 pos = float4(input.pos, 1.f);
 	output.pos = pos * obj.mvp;
 	output.world_pos = pos * obj.m;
-	output.n = n[id] * float3x3(obj.m[0].xyz, obj.m[1].xyz, obj.m[2].xyz);
-	output.uv0 = uv0[id];
+	output.n = input.n * float3x3(obj.m[0].xyz, obj.m[1].xyz, obj.m[2].xyz);
+	output.uv0 = input.uv0;
 
 	return output;
 }

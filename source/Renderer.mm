@@ -165,6 +165,7 @@ struct Texture {
 		commandBuffers_.push_back([commandQueue_ commandBuffer]);
 }
 - (void) startRenderPass: (id<MTLTexture> _Nonnull) texture {
+
 	[self makeDepthTexture:texture.width withHeight:texture.height];
 	MTLRenderPassDescriptor *firstPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 	firstPassDescriptor.colorAttachments[0].texture = texture;
@@ -300,8 +301,8 @@ struct Texture {
 }
 
 -(void) submitTexCmd: (const ShaderStructures::TexCmd&) cmd {
-	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
-	[capManager startCaptureWithCommandQueue: commandQueue_];
+//	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
+//	[capManager startCaptureWithCommandQueue: commandQueue_];
 	id<MTLRenderCommandEncoder> commandEncoder = encoders_[ShaderStructures::Tex];
 
 	size_t vsAttribIndex = 0, fsAttribIndex = 0;
@@ -330,7 +331,7 @@ struct Texture {
 	else
 		[commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart: cmd.offset vertexCount: cmd.count instanceCount: 1 baseInstance: 0];
 
-//	[capManager stopCapture];
+	//[capManager stopCapture];
 }
 @end
 

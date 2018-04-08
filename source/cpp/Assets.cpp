@@ -135,15 +135,9 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 	std::vector<vec3_t> vertices;
 	vertices.reserve(mesh.vertices.size() * VERTICESPERPOLY);
 	for (const auto& idx : mesh.polygons) {
-#ifdef PLATFORM_WIN
 		vertices.push_back(mesh.vertices[idx.v1]);
 		vertices.push_back(mesh.vertices[idx.v2]);
 		vertices.push_back(mesh.vertices[idx.v3]);
-#elif defined(PLATFORM_MAC_OS)
-		vertices.push_back(mesh.vertices[idx.v3]);
-		vertices.push_back(mesh.vertices[idx.v2]);
-		vertices.push_back(mesh.vertices[idx.v1]);
-#endif
 	}
 	model.vb = renderer->CreateBuffer(vertices.data(), vertices.size() * sizeof(vertices[0]), sizeof(vertices[0]));
 	model.nb = renderer->CreateBuffer(mesh.normalsPV.data(), mesh.normalsPV.size() * sizeof(mesh.normalsPV.front()), sizeof(mesh.normalsPV.front()) / VERTICESPERPOLY /*TODO:: fix this one normal contains 3 normals*/);
