@@ -18,9 +18,9 @@ struct FSIn {
 	float3 n [[user(normal)]];
 	float2 uv0;
 };
-vertex FSIn tex_vs_main(constant float3* pos_in [[buffer(0)]],
-						constant float3* n [[buffer(1)]],
-						constant float2* uv0 [[buffer(2)]],
+vertex FSIn tex_vs_main(device float3* pos_in [[buffer(0)]],
+						device float3* n [[buffer(1)]],
+						device float2* uv0 [[buffer(2)]],
 						constant uObject& obj [[buffer(3)]],
 						uint id [[vertex_id]]) {
 	FSIn output;

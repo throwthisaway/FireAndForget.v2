@@ -300,6 +300,8 @@ struct Texture {
 }
 
 -(void) submitTexCmd: (const ShaderStructures::TexCmd&) cmd {
+	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
+	[capManager startCaptureWithCommandQueue: commandQueue_];
 	id<MTLRenderCommandEncoder> commandEncoder = encoders_[ShaderStructures::Tex];
 
 	size_t vsAttribIndex = 0, fsAttribIndex = 0;
@@ -327,6 +329,8 @@ struct Texture {
 		[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib].buffer indexBufferOffset: cmd.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 	else
 		[commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart: cmd.offset vertexCount: cmd.count instanceCount: 1 baseInstance: 0];
+
+//	[capManager stopCapture];
 }
 @end
 
