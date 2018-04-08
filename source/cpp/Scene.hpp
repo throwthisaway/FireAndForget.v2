@@ -25,11 +25,11 @@ struct Scene {
 		ShaderResourceIndex cScene;
 	};
 	struct Object {
-		glm::vec3 pos, rot;
+		vec3_t pos, rot;
 		float scale = 1.f;
 		
 		struct Layer {
-			glm::vec3 pivot;
+			vec3_t pivot;
 			// debug
 			ShaderResourceIndex cMVP;
 			std::vector<ShaderStructures::DebugCmd> debugCmd;
@@ -63,6 +63,7 @@ private:
 	struct {
 		ShaderStructures::cScene cScene;
 	}shaderStructures;
+	std::array<Object*, MAX_LIGHTS> lights_;
 	SceneShaderResources shaderResources;
 
 	// TODO:: remove

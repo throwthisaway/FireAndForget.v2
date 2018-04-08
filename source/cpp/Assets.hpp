@@ -27,7 +27,7 @@ struct SubMesh {
 struct Mesh {
 	BufferIndex vb = InvalidBuffer, colb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer;
 	struct Layer {
-		glm::vec3 pivot;
+		vec3_t pivot;
 		std::vector<SubMesh> submeshes;
 	};
 	std::vector<Layer> layers;

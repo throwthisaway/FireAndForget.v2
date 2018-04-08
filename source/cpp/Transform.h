@@ -1,6 +1,6 @@
 #pragma once
-#include <glm/glm.hpp>
+#include"types.h"
 
 struct Transform {
-	glm::vec3 pos, center, rot;
+	vec3_t pos, center, rot;
 };

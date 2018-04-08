@@ -3,6 +3,16 @@
 #include "MatrixUtils.h"
 #include "CreateShaderParams.h"
 
+namespace{
+inline vec3_t ToVec3(const float* v) {
+	return { v[0], v[1], v[2] };
+}
+
+inline void FromVec3(const vec3_t& v, float* out) {
+	out[0] = v.x; out[1] = v.y; out[2] = v.z;
+}
+}
+
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
 }
@@ -51,12 +61,12 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				cmd.offset = submesh.offset; cmd.count = submesh.count;
 				cmd.vb = mesh.vb; cmd.ib = mesh.ib; cmd.nb = mesh.nb; cmd.uvb = submesh.material.staticColorUV;
 #ifdef PLATFORM_WIN
-				cmd.descAllocEntryIndex = renderer->AllocDescriptors(ShaderStructures::TexParams::count);
+				cmd.descAllocEntryIndex = renderer->AllocDescriptors(TexCmd::Params::count);
 				// cObject
 				uint16_t offset = 0;
 				{
 					// 1st root parameter, 1st descriptor table with 1 descriptor entry
-					auto rootParamIndex = TexParams::index<cObject>::value;
+					auto rootParamIndex = TexCmd::Params::index<cObject>::value;
 					cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
 					for (uint32_t frame = 0; frame < cObject::numDesc; ++frame) {
 						renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, l.cObject + frame);
@@ -68,7 +78,7 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 					// 2nd root parameter, 2nd descriptor table with 3 descriptor entry
 					// tTexture
 					renderer->CreateSRV(cmd.descAllocEntryIndex, offset, submesh.material.tStaticColorTexture);
-					auto rootParamIndex = TexParams::index<tTexture>::value;
+					auto rootParamIndex = TexCmd::Params::index<tTexture>::value;
 					cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
 					++offset;
 
@@ -95,12 +105,12 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				cmd.offset = submesh.offset; cmd.count = submesh.count;
 				cmd.vb = mesh.vb; cmd.ib = mesh.ib; cmd.nb = mesh.nb;
 #ifdef PLATFORM_WIN
-				cmd.descAllocEntryIndex = renderer->AllocDescriptors(PosParams::count);
+				cmd.descAllocEntryIndex = renderer->AllocDescriptors(PosCmd::Params::count);
 				// cObject
 				uint16_t offset = 0;
 				{
 					// 1st root parameter, 1st descriptor table with 1 descriptor entry
-					auto rootParamIndex = PosParams::index<cObject>::value;
+					auto rootParamIndex = PosCmd::Params::index<cObject>::value;
 					cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
 					for (uint32_t frame = 0; frame < cObject::numDesc; ++frame) {
 						renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, l.cObject + frame);
@@ -109,7 +119,7 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				}
 
 				{
-					auto rootParamIndex = PosParams::index<cMaterial>::value;
+					auto rootParamIndex = PosCmd::Params::index<cMaterial>::value;
 					cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
 					// cMaterial
 					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, submesh.material.cMaterial);
@@ -146,7 +156,12 @@ void Scene::OnAssetsLoaded() {
 	objects_.emplace_back(renderer_, assets_.staticModels[Assets::CHECKERBOARD], shaderResources, false);
 	objects_.emplace_back(renderer_, assets_.staticModels[Assets::BEETHOVEN], shaderResources, false);
 	// TODO:: remove
-	objects_.back().pos.y += .5f;
+	objects_.back().pos += glm::vec3{0.f, .5f, 0.f};
+
+	lights_[0] = &debug_[0];
+	lights_[1] = &debug_[1];
+	lights_[0]->pos = ToVec3(shaderStructures.cScene.light[0].pos);
+	lights_[1]->pos = ToVec3(shaderStructures.cScene.light[1].pos);
 	loadCompleted = true;
 }
 void Scene::Init(RendererWrapper* renderer, int width, int height) {
@@ -159,7 +174,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 #endif
 	camera_.transform.pos = { 0.f, 0.f, Z };
 	camera_.view = ScreenSpaceRotator({}, camera_.transform);
-	shaderStructures.cScene.eyePos[0] = camera_.transform.pos.x; shaderStructures.cScene.eyePos[1] = camera_.transform.pos.y; shaderStructures.cScene.eyePos[2] = camera_.transform.pos.z;
+	FromVec3(camera_.transform.pos, shaderStructures.cScene.eyePos);
 	for (int i = 0; i < sizeof(shaderStructures.cScene.light) / sizeof(shaderStructures.cScene.light[0]); ++i) {
 		shaderStructures.cScene.light[i] = defaultLight;
 	}
@@ -207,12 +222,13 @@ void Scene::UpdateSceneTransform() {
 	m = ScreenSpaceRotator(m, Transform{ transform.pos, transform.center, input.drot });
 }
 void Scene::Update(double frame, double total) {
+	if (!loadCompleted) return;
 	// TODO:: remove
 	m_angle += static_cast<float>(total) * m_radiansPerSecond / 1000.f;
 	// TODO:: remove
 
 	camera_.Update();
-	shaderStructures.cScene.eyePos[0] = camera_.transform.pos.x; shaderStructures.cScene.eyePos[1] = camera_.transform.pos.y; shaderStructures.cScene.eyePos[2] = camera_.transform.pos.z;
+	FromVec3(camera_.transform.pos, shaderStructures.cScene.eyePos);
 	renderer_->UpdateShaderResource(shaderResources.cScene + renderer_->GetCurrenFrameIndex(), &shaderStructures.cScene, sizeof(shaderStructures.cScene));
 	for (auto& o : objects_) {
 		o.Update(frame, total);
@@ -230,6 +246,9 @@ void Scene::Update(double frame, double total) {
 			renderer_->UpdateShaderResource(layer.cObject + renderer_->GetCurrenFrameIndex(), &cObject, sizeof(cObject));
 		}
 	}
+	// TODO:: update light pos here if neccessay
+	lights_[0]->pos = ToVec3(shaderStructures.cScene.light[0].pos);
+	lights_[1]->pos = ToVec3(shaderStructures.cScene.light[1].pos);
 	for (auto& o : debug_) {
 		o.Update(frame, total);
 		for (const auto& layer : o.layers) {

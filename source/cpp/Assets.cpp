@@ -212,7 +212,7 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 									// TODO::
 									assert(false);
 								} else {
-										gpuMaterial.tStaticC0olorTexture = renderer->CreateTexture(color_image.data.get(),
+										gpuMaterial.tStaticColorTexture = renderer->CreateTexture(color_image.data.get(),
 											color_image.width,
 											color_image.height,
 											color_image.bytesPerPixel,

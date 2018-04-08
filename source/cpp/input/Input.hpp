@@ -1,12 +1,12 @@
 #pragma once
-#include <glm/glm.hpp>
+#include "types.h"
 
 class Input {
 	float x_, y_;
 public:
-	glm::vec3 dpos, drot;
+	vec3_t dpos, drot;
 	void Start(float x, float y);
-	glm::vec3 Rotate(float x, float y);
-	glm::vec3 TranslateXZ(float x, float y);
-	glm::vec3 TranslateY(float y);
+	vec3_t Rotate(float x, float y);
+	vec3_t TranslateXZ(float x, float y);
+	vec3_t TranslateY(float y);
 };
