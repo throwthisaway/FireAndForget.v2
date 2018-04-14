@@ -190,7 +190,6 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderStructures::ShaderId 
 		state.VS = CD3DX12_SHADER_BYTECODE(&vertexShader->front(), vertexShader->size());
 		state.PS = CD3DX12_SHADER_BYTECODE(&pixelShader->front(), pixelShader->size());
 		state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		state.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 		state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 		state.SampleMask = UINT_MAX;

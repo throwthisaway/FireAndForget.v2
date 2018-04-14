@@ -216,8 +216,9 @@ void Scene::UpdateCameraTransform() {
 
 void Scene::UpdateSceneTransform() {
 	transform.pos += input.dpos;
-	transform.rot += input.drot;
-	m = ScreenSpaceRotator(m, Transform{ transform.pos, transform.center, input.drot });
+	auto rot = glm::inverse(glm::mat3(camera_.view)) * input.drot;
+	transform.rot += rot;
+	m = ScreenSpaceRotator(m, Transform{ transform.pos, transform.center, rot });
 }
 void Scene::Update(double frame, double total) {
 	if (!loadCompleted) return;
