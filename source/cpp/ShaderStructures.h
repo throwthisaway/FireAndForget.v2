@@ -96,7 +96,6 @@ struct Material {
 struct cMaterial : cStatic {
 	Material material;
 };
-
 struct PointLight {
 	float3 diffuse;
 	float pad1;
@@ -107,8 +106,11 @@ struct PointLight {
 	float3 pos;
 	float pad4;
 	float3 att;
+	float pad5;
 	float range;
+	float3 pad6;
 };
+
 #define MAX_LIGHTS 2
 struct cScene : cFrame {
 	PointLight light[MAX_LIGHTS];

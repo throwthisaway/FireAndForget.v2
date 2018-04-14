@@ -165,6 +165,8 @@ struct Texture {
 		commandBuffers_.push_back([commandQueue_ commandBuffer]);
 }
 - (void) startRenderPass: (id<MTLTexture> _Nonnull) texture {
+//	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
+//	if (![capManager isCapturing]) [capManager startCaptureWithCommandQueue:commandQueue_];
 
 	[self makeDepthTexture:texture.width withHeight:texture.height];
 	MTLRenderPassDescriptor *firstPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
@@ -193,6 +195,7 @@ struct Texture {
 		encoders_.push_back(encoder);
 		[encoder setRenderPipelineState: [shaders_ selectPipeline: i]];
 		[encoder setDepthStencilState: depthStencilState_];
+		[encoder setCullMode: MTLCullModeBack];
 	};
 }
 
@@ -233,6 +236,8 @@ struct Texture {
 	encoders_.clear();
 	commandBuffers_.clear();
 	++currentFrameIndex_;
+	//MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
+	//[capManager stopCapture];
 }
 
 - (uint32_t) getCurrentFrameIndex {
@@ -301,8 +306,6 @@ struct Texture {
 }
 
 -(void) submitTexCmd: (const ShaderStructures::TexCmd&) cmd {
-//	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
-//	[capManager startCaptureWithCommandQueue: commandQueue_];
 	id<MTLRenderCommandEncoder> commandEncoder = encoders_[ShaderStructures::Tex];
 
 	size_t vsAttribIndex = 0, fsAttribIndex = 0;
@@ -330,8 +333,6 @@ struct Texture {
 		[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib].buffer indexBufferOffset: cmd.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 	else
 		[commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart: cmd.offset vertexCount: cmd.count instanceCount: 1 baseInstance: 0];
-
-	//[capManager stopCapture];
 }
 @end
 

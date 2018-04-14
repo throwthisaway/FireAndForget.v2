@@ -1,4 +1,4 @@
-#include "ShaderStructs.metal"
+#include "Phong_include.metal"
 
 struct cObject {
 	float4x4 mvp, m;
@@ -34,7 +34,13 @@ vertex PSIn pos_vs_main(VIn input[[stage_in]],
 fragment float4 pos_fs_main(PSIn input [[stage_in]],
 							constant cMaterial& material [[buffer(0)]],
 							constant cScene& scene [[buffer(1)]]) {
-	// TODO:: phong
-	return float4(material.mat.diffuse, 1.f);
+	float3 diff = float3(0.f, 0.f, 0.f);
+	for (int i = 0; i < MAX_LIGHTS; ++i) {
+		diff += ComputePointLight_Diffuse(scene.light[i],
+										float3(input.world_pos),
+										input.n,
+										material.mat.diffuse);
+	}
+	return float4(diff, 1.f);
 }
 

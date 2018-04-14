@@ -1,6 +1,4 @@
-#include <metal_stdlib>
-using namespace metal;
-
+#include "Phong_include.metal"
 // TODO:: declare sampler and texture
 struct uObject {
 	float4x4 mvp;
@@ -30,10 +28,26 @@ vertex FSIn tex_vs_main(VIn input [[stage_in]],
 
 	return output;
 }
+#define MAX_LIGHTS 2
+struct cMaterial {
+	Material mat;
+};
+struct cScene {
+	PointLight light[MAX_LIGHTS];
+	float3 eyePos;
+};
 
 fragment float4 tex_fs_main(FSIn input [[stage_in]],
 							texture2d<float> diffuseTexture [[texture(0)]],
-							sampler smp [[sampler(0)]]) {
+							sampler smp [[sampler(0)]],
+							constant cScene& scene [[buffer(1)]]) {
 	float3 diffuseColor = diffuseTexture.sample(smp, input.uv0).rgb;
-	return float4(diffuseColor, 1.f);
+	float3 diff = float3(0.f, 0.f, 0.f);
+	for (int i = 0; i < MAX_LIGHTS; ++i) {
+		diff += ComputePointLight_Diffuse(scene.light[i],
+										  float3(input.world_pos),
+										  input.n,
+										  diffuseColor);
+	}
+	return float4(diff, 1.f);
 }

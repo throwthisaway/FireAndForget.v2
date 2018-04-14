@@ -26,6 +26,9 @@
 		BD3D1ACA1E8A682D00F7311A /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD3D1AC91E8A682D00F7311A /* Metal.framework */; };
 		BD3D1ACC1E8A684000F7311A /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD3D1ACB1E8A684000F7311A /* QuartzCore.framework */; };
 		BD3D1ACF1E8A689800F7311A /* MetalView.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1ACE1E8A689800F7311A /* MetalView.mm */; };
+		BD6A40E0208230A80027E1D7 /* Phong.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD1DA547206FE61C004EF62A /* Phong.metal */; };
+		BD6A40E1208230AF0027E1D7 /* ShaderStructs.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD1DA548206FE61C004EF62A /* ShaderStructs.metal */; };
+		BD6A40E2208230BA0027E1D7 /* Phong_include.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD6A40DF20822FD80027E1D7 /* Phong_include.metal */; };
 		BD72038C1EEC1A1800B2C914 /* libMeshLoader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BD72038B1EEC1A1800B2C914 /* libMeshLoader.a */; };
 		BD7203921EEC1C5E00B2C914 /* Assets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD7203901EEC1C5E00B2C914 /* Assets.cpp */; };
 		BD7203941EEC1FDA00B2C914 /* BEETHOVE_object.mesh in Resources */ = {isa = PBXBuildFile; fileRef = BD7203931EEC1FDA00B2C914 /* BEETHOVE_object.mesh */; };
@@ -56,7 +59,7 @@
 		BD19CC4D1F13A962005781A5 /* Timer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Timer.hpp; path = cpp/Timer.hpp; sourceTree = "<group>"; };
 		BD1C01301EA4F7A80035CD53 /* MetalViewDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MetalViewDelegate.h; sourceTree = "<group>"; };
 		BD1DA544206FDABC004EF62A /* Debug.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Debug.metal; path = shaders/Debug.metal; sourceTree = "<group>"; };
-		BD1DA547206FE61C004EF62A /* Phong.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Phong.h; path = shaders/Phong.h; sourceTree = "<group>"; };
+		BD1DA547206FE61C004EF62A /* Phong.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Phong.metal; path = shaders/Phong.metal; sourceTree = "<group>"; };
 		BD1DA548206FE61C004EF62A /* ShaderStructs.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = ShaderStructs.metal; path = shaders/ShaderStructs.metal; sourceTree = "<group>"; };
 		BD1DA54920724064004EF62A /* box.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = box.mesh; path = assets/box.mesh; sourceTree = "<group>"; };
 		BD1DA54A20724064004EF62A /* light.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = light.mesh; path = assets/light.mesh; sourceTree = "<group>"; };
@@ -84,6 +87,7 @@
 		BD3D1ACB1E8A684000F7311A /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		BD3D1ACD1E8A689800F7311A /* MetalView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalView.h; sourceTree = "<group>"; };
 		BD3D1ACE1E8A689800F7311A /* MetalView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MetalView.mm; sourceTree = "<group>"; };
+		BD6A40DF20822FD80027E1D7 /* Phong_include.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Phong_include.metal; path = shaders/Phong_include.metal; sourceTree = "<group>"; };
 		BD72038B1EEC1A1800B2C914 /* libMeshLoader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libMeshLoader.a; path = ../../MeshLoader/MeshLoader/build/Debug/libMeshLoader.a; sourceTree = "<group>"; };
 		BD7203901EEC1C5E00B2C914 /* Assets.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Assets.cpp; path = cpp/Assets.cpp; sourceTree = "<group>"; };
 		BD7203911EEC1C5E00B2C914 /* Assets.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Assets.hpp; path = cpp/Assets.hpp; sourceTree = "<group>"; };
@@ -114,12 +118,13 @@
 		BD0E835D1FF00F21005A2F8A /* shaders */ = {
 			isa = PBXGroup;
 			children = (
-				BD1DA547206FE61C004EF62A /* Phong.h */,
+				BD1DA547206FE61C004EF62A /* Phong.metal */,
 				BD1DA548206FE61C004EF62A /* ShaderStructs.metal */,
 				BD0E835F1FF010D9005A2F8A /* Pos.metal */,
 				BD0E835E1FF010D9005A2F8A /* Shaders.metal */,
 				BD0E83621FF010FA005A2F8A /* Tex.metal */,
 				BD1DA544206FDABC004EF62A /* Debug.metal */,
+				BD6A40DF20822FD80027E1D7 /* Phong_include.metal */,
 			);
 			name = shaders;
 			sourceTree = "<group>";
@@ -331,10 +336,13 @@
 			files = (
 				BD0E83631FF010FA005A2F8A /* Tex.metal in Sources */,
 				BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */,
+				BD6A40E0208230A80027E1D7 /* Phong.metal in Sources */,
 				BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */,
 				BD1DA545206FDABC004EF62A /* Debug.metal in Sources */,
 				BD0E83601FF010D9005A2F8A /* Shaders.metal in Sources */,
+				BD6A40E2208230BA0027E1D7 /* Phong_include.metal in Sources */,
 				BD28F7001F0A5E9B00B07CBD /* Shaders.mm in Sources */,
+				BD6A40E1208230AF0027E1D7 /* ShaderStructs.metal in Sources */,
 				BD3D1ACF1E8A689800F7311A /* MetalView.mm in Sources */,
 				BD19CC4E1F13A962005781A5 /* Timer.cpp in Sources */,
 				BD0E83611FF010D9005A2F8A /* Pos.metal in Sources */,
