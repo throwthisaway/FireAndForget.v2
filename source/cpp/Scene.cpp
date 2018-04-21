@@ -144,7 +144,7 @@ static const ShaderStructures::PointLight defaultLight = { {.4f, .4f, .4f} ,{}/*
 	{.0f, .0f, .0f}, {} /* ambient */,
 	{.8f, .8f, .8f}, {} /* specular highlight */,
 	{ 2.f, 2.f, 2.f },{} /* position */,
-	{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange) } /* attenuation */,
+	{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange) } /* attenuation */, {},
 	defaultLightRange /* range */ };
 }
 void Scene::OnAssetsLoaded() {

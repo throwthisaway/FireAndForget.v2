@@ -91,6 +91,7 @@ struct cObject : cFrame {
 };
 struct Material {
 	float3 diffuse;
+	float pad1;
 	float specular, power;
 };
 struct cMaterial : cStatic {

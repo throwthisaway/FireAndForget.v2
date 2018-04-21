@@ -36,10 +36,17 @@ fragment float4 pos_fs_main(PSIn input [[stage_in]],
 							constant cScene& scene [[buffer(1)]]) {
 	float3 diff = float3(0.f, 0.f, 0.f);
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
-		diff += ComputePointLight_Diffuse(scene.light[i],
-										float3(input.world_pos),
-										input.n,
-										material.mat.diffuse);
+//		diff += ComputePointLight_Diffuse(scene.light[i],
+//										float3(input.world_pos),
+//										input.n,
+//										material.mat.diffuse);
+		diff += ComputePointLight_Phong(scene.light[i],
+											 scene.eyePos,
+											float3(input.world_pos),
+											input.n,
+											material.mat.diffuse,
+											material.mat.specular,
+											material.mat.power);
 	}
 	return float4(diff, 1.f);
 }
