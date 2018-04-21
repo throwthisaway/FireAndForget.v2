@@ -4,12 +4,8 @@
 #include "compatibility.h"
 
 namespace ShaderStructures {
-#ifdef PLATFORM_MAC_OS
-	const int FrameCount = 1;
-#else
-	const int FrameCount = 3;
-#endif
-	using ShaderId = size_t;
+const int FrameCount = 3;
+using ShaderId = size_t;
 const ShaderId Pos = 0;
 const ShaderId Tex = 1;
 const ShaderId Debug = 2;

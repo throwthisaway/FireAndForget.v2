@@ -41,8 +41,6 @@ public:
 	//ShaderResourceIndex GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count);
 	//void UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size);
 	//ShaderResourceIndex GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex);
-
-	static const int frameCount_;
 private:
 #ifdef PLATFORM_MAC_OS
 	void* renderer;

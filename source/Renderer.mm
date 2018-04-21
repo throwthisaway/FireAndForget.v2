@@ -5,8 +5,6 @@
 #include "cpp/Assets.hpp"
 #include "cpp/BufferUtils.h"
 
-const int RendererWrapper::frameCount_ = 1;
-
 void RendererWrapper::Init(void* renderer) {
 	this->renderer = renderer;
 }
@@ -91,6 +89,7 @@ struct Texture {
 	Shaders* shaders_;
 	id<MTLDepthStencilState> depthStencilState_;
 	id<MTLSamplerState> defaultSamplerState_;
+	dispatch_semaphore_t frameBoundarySemaphore_;
 	uint32_t currentFrameIndex_;
 }
 
@@ -101,6 +100,7 @@ struct Texture {
 		commandQueue_ = [device newCommandQueue];
 		shaders_ = [[Shaders alloc] initWithDevice:device andPixelFormat:pixelFormat];
 
+		frameBoundarySemaphore_ = dispatch_semaphore_create(ShaderStructures::FrameCount);
 		//[self makeDepthTexture];
 
 		MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
@@ -163,6 +163,8 @@ struct Texture {
 	commandBuffers_.reserve([shaders_ getPipelineCount]);
 	for (size_t i = 0; i < [shaders_ getPipelineCount]; ++i)
 		commandBuffers_.push_back([commandQueue_ commandBuffer]);
+	dispatch_semaphore_wait(frameBoundarySemaphore_, DISPATCH_TIME_FOREVER);
+
 }
 - (void) startRenderPass: (id<MTLTexture> _Nonnull) texture {
 //	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
@@ -227,21 +229,28 @@ struct Texture {
 	for (auto commandEncoder : encoders_) {
 		[commandEncoder endEncoding];
 	}
+
+	assert(!commandBuffers_.empty());
+	[commandBuffers_.back() presentDrawable:drawable];
+
+	__weak dispatch_semaphore_t semaphore = frameBoundarySemaphore_;
+	[commandBuffers_.back() addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
+		// GPU work is complete
+		// Signal the semaphore to start the CPU work
+		dispatch_semaphore_signal(semaphore);
+	}];
 	for (auto commandBuffer : commandBuffers_) {
 		[commandBuffer commit];
 	}
-	assert(!commandBuffers_.empty());
-	[commandBuffers_.back() waitUntilCompleted];
-	[drawable present];
 	encoders_.clear();
 	commandBuffers_.clear();
-	++currentFrameIndex_;
+	currentFrameIndex_ = (currentFrameIndex_ + 1) % ShaderStructures::FrameCount;
 	//MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
 	//[capManager stopCapture];
 }
 
 - (uint32_t) getCurrentFrameIndex {
-	return currentFrameIndex_ % RendererWrapper::frameCount_;
+	return currentFrameIndex_;
 }
 
 - (ShaderResourceIndex) createShaderResource: (uint32_t) length withCount: (uint16_t) count {
@@ -268,11 +277,11 @@ struct Texture {
 
 	// uniforms
 	for (const auto& info : cmd.vsBuffers) {
-		auto offset = ([self getCurrentFrameIndex] + 1) % info.bufferCount;
+		auto offset = currentFrameIndex_ % info.bufferCount;
 		[commandEncoder setVertexBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: vsAttribIndex++];
 	}
 	for (const auto& info : cmd.fsBuffers) {
-		auto offset = ([self getCurrentFrameIndex] + 1) % info.bufferCount;
+		auto offset = currentFrameIndex_ % info.bufferCount;
 		[commandEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: fsAttribIndex++];
 	}
 	if (cmd.ib != InvalidBuffer)
@@ -292,11 +301,11 @@ struct Texture {
 
 	// uniforms
 	for (const auto& info : cmd.vsBuffers) {
-		auto offset = ([self getCurrentFrameIndex] + 1) % info.bufferCount;
+		auto offset = currentFrameIndex_ % info.bufferCount;
 		[commandEncoder setVertexBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: vsAttribIndex++];
 	}
 	for (const auto& info : cmd.fsBuffers) {
-		auto offset = ([self getCurrentFrameIndex] + 1) % info.bufferCount;
+		auto offset = currentFrameIndex_ % info.bufferCount;
 		[commandEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: fsAttribIndex++];
 	}
 	if (cmd.ib != InvalidBuffer)
@@ -316,11 +325,11 @@ struct Texture {
 
 	// uniforms
 	for (const auto& info : cmd.vsBuffers) {
-		auto offset = ([self getCurrentFrameIndex] + 1) % info.bufferCount;
+		auto offset = currentFrameIndex_ % info.bufferCount;
 		[commandEncoder setVertexBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: vsAttribIndex++];
 	}
 	for (const auto& info : cmd.fsBuffers) {
-		auto offset = ([self getCurrentFrameIndex] + 1) % info.bufferCount;
+		auto offset = currentFrameIndex_ % info.bufferCount;
 		[commandEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: fsAttribIndex++];
 	}
 	NSUInteger atIndex = 0;
