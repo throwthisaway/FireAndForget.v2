@@ -48,19 +48,19 @@
 }
 
 -(void)setupVBO {
-	static const float positions[] =
-	{
-		0.0,  0.5, 0, 1,
-		-0.5, -0.5, 0, 1,
-		0.5, -0.5, 0, 1,
-	};
-
-	static const float col[] =
-	{
-		1, 0, 0, 1,
-		0, 1, 0, 1,
-		0, 0, 1, 1,
-	};
+//	static const float positions[] =
+//	{
+//		0.0,  0.5, 0, 1,
+//		-0.5, -0.5, 0, 1,
+//		0.5, -0.5, 0, 1,
+//	};
+//
+//	static const float col[] =
+//	{
+//		1, 0, 0, 1,
+//		0, 1, 0, 1,
+//		0, 0, 1, 1,
+//	};
 
 	//vertices = [device newBufferWithBytes:positions length:sizeof(positions) options: MTLResourceOptionCPUCacheModeDefault];
 	//colors = [device newBufferWithBytes:col length:sizeof(col) options:MTLResourceOptionCPUCacheModeDefault];
@@ -103,6 +103,7 @@
 	timer_.Tick();
 	scene_.Update(timer_.FrameMs(), timer_.TotalMs());
 	@autoreleasepool {
+		// TODO:: triple buffering!!!
 		id<CAMetalDrawable> drawable = [[metalView getMetalLayer] nextDrawable];
 		id<MTLTexture> texture = drawable.texture;
 		[renderer_ beginRender];

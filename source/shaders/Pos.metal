@@ -1,5 +1,5 @@
 #include "Phong_include.metal"
-
+#include "Common_include.metal"
 struct cObject {
 	float4x4 mvp, m;
 };
@@ -31,7 +31,7 @@ vertex PSIn pos_vs_main(VIn input[[stage_in]],
 	return output;
 }
 
-fragment float4 pos_fs_main(PSIn input [[stage_in]],
+fragment FragOut pos_fs_main(PSIn input [[stage_in]],
 							constant cMaterial& material [[buffer(0)]],
 							constant cScene& scene [[buffer(1)]]) {
 	float3 diff = float3(0.f, 0.f, 0.f);
@@ -48,6 +48,10 @@ fragment float4 pos_fs_main(PSIn input [[stage_in]],
 											material.mat.specular,
 											material.mat.power);
 	}
-	return float4(diff, 1.f);
+	FragOut output;
+	output.albedo = float4(diff, 1.f);
+	output.normal = Encode(input.n);
+	output.material = float4(material.mat.specular, material.mat.power, 0.f, 1.f);
+	return output;
 }
 

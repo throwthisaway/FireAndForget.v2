@@ -9,7 +9,9 @@ using ShaderId = size_t;
 const ShaderId Pos = 0;
 const ShaderId Tex = 1;
 const ShaderId Debug = 2;
-const ShaderId Count = 3;
+const ShaderId Deferred = 3;
+const ShaderId Count = 4;
+const int RenderTargetCount = 3;
 
 // basic hlsl type aliases
 using float4 = float[4];

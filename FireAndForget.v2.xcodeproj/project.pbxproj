@@ -29,6 +29,9 @@
 		BD6A40E0208230A80027E1D7 /* Phong.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD1DA547206FE61C004EF62A /* Phong.metal */; };
 		BD6A40E1208230AF0027E1D7 /* ShaderStructs.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD1DA548206FE61C004EF62A /* ShaderStructs.metal */; };
 		BD6A40E2208230BA0027E1D7 /* Phong_include.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD6A40DF20822FD80027E1D7 /* Phong_include.metal */; };
+		BD6A4165208CD9780027E1D7 /* Deferred.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD6A4164208CD9780027E1D7 /* Deferred.metal */; };
+		BD6A4168208CE5D50027E1D7 /* Common_include.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD6A4167208CE5D50027E1D7 /* Common_include.metal */; };
+		BD6A416A208CE7DD0027E1D7 /* Common.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD6A4169208CE7DD0027E1D7 /* Common.metal */; };
 		BD72038C1EEC1A1800B2C914 /* libMeshLoader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BD72038B1EEC1A1800B2C914 /* libMeshLoader.a */; };
 		BD7203921EEC1C5E00B2C914 /* Assets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD7203901EEC1C5E00B2C914 /* Assets.cpp */; };
 		BD7203941EEC1FDA00B2C914 /* BEETHOVE_object.mesh in Resources */ = {isa = PBXBuildFile; fileRef = BD7203931EEC1FDA00B2C914 /* BEETHOVE_object.mesh */; };
@@ -88,6 +91,9 @@
 		BD3D1ACD1E8A689800F7311A /* MetalView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalView.h; sourceTree = "<group>"; };
 		BD3D1ACE1E8A689800F7311A /* MetalView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MetalView.mm; sourceTree = "<group>"; };
 		BD6A40DF20822FD80027E1D7 /* Phong_include.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Phong_include.metal; path = shaders/Phong_include.metal; sourceTree = "<group>"; };
+		BD6A4164208CD9780027E1D7 /* Deferred.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Deferred.metal; path = shaders/Deferred.metal; sourceTree = "<group>"; };
+		BD6A4167208CE5D50027E1D7 /* Common_include.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Common_include.metal; path = shaders/Common_include.metal; sourceTree = "<group>"; };
+		BD6A4169208CE7DD0027E1D7 /* Common.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Common.metal; path = shaders/Common.metal; sourceTree = "<group>"; };
 		BD72038B1EEC1A1800B2C914 /* libMeshLoader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libMeshLoader.a; path = ../../MeshLoader/MeshLoader/build/Debug/libMeshLoader.a; sourceTree = "<group>"; };
 		BD7203901EEC1C5E00B2C914 /* Assets.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Assets.cpp; path = cpp/Assets.cpp; sourceTree = "<group>"; };
 		BD7203911EEC1C5E00B2C914 /* Assets.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Assets.hpp; path = cpp/Assets.hpp; sourceTree = "<group>"; };
@@ -125,6 +131,9 @@
 				BD0E83621FF010FA005A2F8A /* Tex.metal */,
 				BD1DA544206FDABC004EF62A /* Debug.metal */,
 				BD6A40DF20822FD80027E1D7 /* Phong_include.metal */,
+				BD6A4164208CD9780027E1D7 /* Deferred.metal */,
+				BD6A4167208CE5D50027E1D7 /* Common_include.metal */,
+				BD6A4169208CE7DD0027E1D7 /* Common.metal */,
 			);
 			name = shaders;
 			sourceTree = "<group>";
@@ -335,13 +344,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				BD0E83631FF010FA005A2F8A /* Tex.metal in Sources */,
+				BD6A4168208CE5D50027E1D7 /* Common_include.metal in Sources */,
 				BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */,
 				BD6A40E0208230A80027E1D7 /* Phong.metal in Sources */,
 				BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */,
 				BD1DA545206FDABC004EF62A /* Debug.metal in Sources */,
 				BD0E83601FF010D9005A2F8A /* Shaders.metal in Sources */,
 				BD6A40E2208230BA0027E1D7 /* Phong_include.metal in Sources */,
+				BD6A416A208CE7DD0027E1D7 /* Common.metal in Sources */,
 				BD28F7001F0A5E9B00B07CBD /* Shaders.mm in Sources */,
+				BD6A4165208CD9780027E1D7 /* Deferred.metal in Sources */,
 				BD6A40E1208230AF0027E1D7 /* ShaderStructs.metal in Sources */,
 				BD3D1ACF1E8A689800F7311A /* MetalView.mm in Sources */,
 				BD19CC4E1F13A962005781A5 /* Timer.cpp in Sources */,

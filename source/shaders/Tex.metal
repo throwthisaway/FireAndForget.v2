@@ -1,4 +1,5 @@
 #include "Phong_include.metal"
+#include "Common_include.metal"
 // TODO:: declare sampler and texture
 struct uObject {
 	float4x4 mvp;
@@ -37,9 +38,10 @@ struct cScene {
 	float3 eyePos;
 };
 
-fragment float4 tex_fs_main(FSIn input [[stage_in]],
+fragment FragOut tex_fs_main(FSIn input [[stage_in]],
 							texture2d<float> diffuseTexture [[texture(0)]],
 							sampler smp [[sampler(0)]],
+							constant cMaterial& material [[buffer(0)]],
 							constant cScene& scene [[buffer(1)]]) {
 	float3 diffuseColor = diffuseTexture.sample(smp, input.uv0).rgb;
 	float3 diff = float3(0.f, 0.f, 0.f);
@@ -49,5 +51,9 @@ fragment float4 tex_fs_main(FSIn input [[stage_in]],
 										  input.n,
 										  diffuseColor);
 	}
-	return float4(diff, 1.f);
+	FragOut output;
+	output.albedo = float4(diff, 1.f);
+	output.normal = Encode(input.n);
+	output.material = float4(material.mat.specular, material.mat.power, 0.f, 1.f);
+	return output;
 }
