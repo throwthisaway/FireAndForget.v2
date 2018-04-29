@@ -3,6 +3,7 @@
 #include "MatrixUtils.h"
 #include "CreateShaderParams.h"
 
+using namespace ShaderStructures;
 namespace{
 inline vec3_t ToVec3(const float* v) {
 	return { v[0], v[1], v[2] };
@@ -96,7 +97,6 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				cmd.vsBuffers[TexCmd::VSParams::index<cObject>::value] = {l.cObject, cObject::numDesc};
 				cmd.textures[0] = submesh.material.tStaticColorTexture;
 				cmd.fsBuffers[TexCmd::FSParams::index<cMaterial>::value] = {submesh.material.cMaterial, cMaterial::numDesc};
-				cmd.fsBuffers[TexCmd::FSParams::index<cScene>::value] = {sceneShaderResources.cScene, cScene::numDesc};
 #endif
 			} else {
 				l.posCmd.push_back({});
@@ -132,7 +132,6 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 #elif defined(PLATFORM_MAC_OS)
 				cmd.vsBuffers[PosCmd::VSParams::index<cObject>::value] = {l.cObject, cObject::numDesc};
 				cmd.fsBuffers[PosCmd::FSParams::index<cMaterial>::value] = {submesh.material.cMaterial, cMaterial::numDesc};
-				cmd.fsBuffers[PosCmd::FSParams::index<cScene>::value] = {sceneShaderResources.cScene, cScene::numDesc};
 #endif
 			}
 		}
@@ -178,6 +177,20 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	shaderStructures.cScene.light[0].pos[0] = -2.f;
 
 	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::numDesc);
+	DeferredBuffers deferredBuffers;
+#ifdef PLATFORM_WIN
+	deferredBuffers.descAllocEntryIndex = renderer->AllocDescriptors(DeferredBuffers::Params::count);
+	uint16_t offset = 0;
+	// cScene
+	for (uint32_t frame = 0; frame < cScene::numDesc; ++frame) {
+		renderer->CreateCBV(deferredBuffers.descAllocEntryIndex, offset, frame, sceneShaderResources.cScene + frame);
+	}
+	++offset;
+#elif defined(PLATFORM_MAC_OS)
+	deferredBuffers.fsBuffers[DeferredBuffers::FSParams::index<cScene>::value] = {shaderResources.cScene, cScene::numDesc};
+#endif
+	renderer->SetDeferredBuffers(deferredBuffers);
+
 	assets_.Init(renderer);
 #ifdef PLATFORM_WIN
 	assets_.loadCompleteTask.then([this, renderer](Concurrency::task<void>& assetsWhenAllCompletion) {
@@ -228,6 +241,8 @@ void Scene::Update(double frame, double total) {
 
 	camera_.Update();
 	FromVec3(camera_.transform.pos, shaderStructures.cScene.eyePos);
+	auto ip = glm::inverse(camera_.proj);
+	memcpy(shaderStructures.cScene.ip, &ip, sizeof(shaderStructures.cScene.ip));
 	renderer_->UpdateShaderResource(shaderResources.cScene + renderer_->GetCurrenFrameIndex(), &shaderStructures.cScene, sizeof(shaderStructures.cScene));
 	for (auto& o : objects_) {
 		o.Update(frame, total);

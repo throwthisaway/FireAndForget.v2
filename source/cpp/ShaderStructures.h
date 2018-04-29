@@ -11,7 +11,7 @@ const ShaderId Tex = 1;
 const ShaderId Debug = 2;
 const ShaderId Deferred = 3;
 const ShaderId Count = 4;
-const int RenderTargetCount = 3;
+const int RenderTargetCount = 4;
 
 // basic hlsl type aliases
 using float4 = float[4];
@@ -112,6 +112,7 @@ struct PointLight {
 
 #define MAX_LIGHTS 2
 struct cScene : cFrame {
+	matrix ip;
 	PointLight light[MAX_LIGHTS];
 	float3 eyePos;
 };
@@ -122,11 +123,11 @@ struct PosCmd {
 	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer;
 #ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	using Params = ShaderParamTraits<cObject, cMaterial, cScene>;
+	using Params = ShaderParamTraits<cObject, cMaterial>;
 	ResourceBinding bindings[Params::count];
 #elif defined(PLATFORM_MAC_OS)
 	using VSParams = ShaderParamTraits<cObject>;
-	using FSParams = ShaderParamTraits<cMaterial, cScene>;
+	using FSParams = ShaderParamTraits<cMaterial>;
 	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
 #endif
 };
@@ -138,13 +139,25 @@ struct TexCmd {
 	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer, uvb = InvalidBuffer;
 #ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	using Params = ShaderParamTraits<cObject, tTexture, cMaterial, cScene>;
+	using Params = ShaderParamTraits<cObject, tTexture, cMaterial>;
 	ResourceBinding bindings[Params::count];
 #elif defined(PLATFORM_MAC_OS)
 	using VSParams = ShaderParamTraits<cObject>;
-	using FSParams = ShaderParamTraits<cMaterial, cScene>;
+	using FSParams = ShaderParamTraits<cMaterial>;
 	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
 	TextureIndex textures[1];
+#endif
+};
+
+struct DeferredBuffers {
+#ifdef PLATFORM_WIN
+	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
+	using Params = ShaderParamTraits<cScene>;
+	ResourceBinding bindings[Params::count];
+#elif defined(PLATFORM_MAC_OS)
+	using VSParams = ShaderParamTraits<>;
+	using FSParams = ShaderParamTraits<cScene>;
+	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
 #endif
 };
 //using TexVSSParams = ShaderParamTraits<cObjectVS>;

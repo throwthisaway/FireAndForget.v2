@@ -4,7 +4,7 @@ using namespace metal;
 // Method #4
 
 float2 Encode(float3 v) {
-	half p = sqrt(v.z * 8.f + 8.f);
+	float p = sqrt(v.z * 8.f + 8.f);
 	return float2(v.xy/p + .5f);
 }
 

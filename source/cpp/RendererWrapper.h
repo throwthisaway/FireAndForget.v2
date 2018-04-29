@@ -3,6 +3,7 @@
 #include "compatibility.h"
 #include "Img.h"
 #include "RendererTypes.h"
+#include "ShaderStructures.h"
 #ifdef PLATFORM_WIN
 class Renderer;
 #endif
@@ -35,6 +36,7 @@ public:
 	template<typename CmdT>
 	void Submit(const CmdT&);
 
+	void SetDeferredBuffers(const ShaderStructures::DeferredBuffers& deferredBuffers);
 	uint32_t GetCurrenFrameIndex();
 
 	//ResourceHeapHandle GetStaticShaderResourceHeap(unsigned short descCountNeeded);

@@ -21,6 +21,7 @@ using namespace ShaderStructures;
 		colorAttachmentFormats_[0] = MTLPixelFormatRGBA8Unorm;	// color
 		colorAttachmentFormats_[1] = MTLPixelFormatRG16Unorm;	// normal
 		colorAttachmentFormats_[2] = MTLPixelFormatRGBA8Unorm;	// material
+		colorAttachmentFormats_[3] = MTLPixelFormatRGBA32Float;	// debug
 		[self setupShaders];
 		[self setupPipeline: pixelFormat];
 	}
@@ -36,6 +37,7 @@ using namespace ShaderStructures;
 }
 
 - (void) setupPipeline: (MTLPixelFormat) pixelFormat {
+	NSError* error = nullptr;
 	{
 		// Pos
 		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
@@ -56,8 +58,9 @@ using namespace ShaderStructures;
 		for (int i = 0; i < RenderTargetCount; ++i)
 			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];
 		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
-		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: NULL];
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
 		pipelines_.push_back({pipeline, false});
+		if (error) NSLog(@"Pos: %@", [error localizedDescription]);
 	}
 
 	{
@@ -85,8 +88,9 @@ using namespace ShaderStructures;
 		for (int i = 0; i < RenderTargetCount; ++i)
 			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];
 		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
-		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: NULL];
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
 		pipelines_.push_back({pipeline, false});
+		if (error) NSLog(@"Tex %@", [error localizedDescription]);
 	}
 
 	{
@@ -104,8 +108,9 @@ using namespace ShaderStructures;
 		for (int i = 0; i < RenderTargetCount; ++i)
 			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];
 		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
-		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: NULL];
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
 		pipelines_.push_back({pipeline, false});
+		if (error) NSLog(@"Debug %@", [error localizedDescription]);
 	}
 
 	{
@@ -124,10 +129,10 @@ using namespace ShaderStructures;
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"deferred_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"deferred_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
-		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: NULL];
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
 		pipelines_.push_back({pipeline, true});
+		if (error) NSLog(@"%s", [error localizedDescription]);
 	}
-	//TODO:: error: NULL
 }
 
 - (const PipelineState&) selectPipeline: (size_t) index {

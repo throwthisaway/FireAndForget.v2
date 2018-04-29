@@ -18,4 +18,5 @@ struct Mesh;
 -(void) submitDebugCmd: (const ShaderStructures::DebugCmd&) cmd;
 -(void) submitPosCmd: (const ShaderStructures::PosCmd&) cmd;
 -(void) submitTexCmd: (const ShaderStructures::TexCmd&) cmd;
+-(void) setDeferredBuffers: (const ShaderStructures::DeferredBuffers&) buffers;
 @end

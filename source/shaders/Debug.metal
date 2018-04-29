@@ -11,5 +11,6 @@ fragment FragOut debug_fs_main(float4 vert_in [[stage_in]],
 	output.albedo = col;
 	output.normal = normalize(float2(1.f, 1.f));
 	output.material = float4(0.f, 0.f, 0.f, 1.f);
+	output.debug = float4(0.f);//vert_in;
 	return output;
 }

@@ -25,6 +25,9 @@ template<>
 void RendererWrapper::Submit(const ShaderStructures::TexCmd& cmd) {
 	[(__bridge Renderer*)renderer submitTexCmd: cmd];
 }
+void RendererWrapper::SetDeferredBuffers(const ShaderStructures::DeferredBuffers& deferredBuffers) {
+	[(__bridge Renderer*)renderer setDeferredBuffers: deferredBuffers];
+}
 namespace {
 	MTLPixelFormat PixelFormatToMTLPixelFormat(Img::PixelFormat format) {
 		switch (format) {
@@ -92,6 +95,7 @@ struct Texture {
 
 	id<MTLSamplerState> defaultSamplerState_, deferredSamplerState_;
 	id<MTLBuffer> fullscreenTexturedQuad_;
+	ShaderStructures::DeferredBuffers deferredBuffers_;
 
 	dispatch_semaphore_t frameBoundarySemaphore_;
 	uint32_t currentFrameIndex_;
@@ -328,13 +332,24 @@ struct Texture {
 	id<MTLRenderCommandEncoder> deferredEncoder = [deferredCommandBuffer renderCommandEncoderWithDescriptor: deferredPassDescriptor];
 	[deferredEncoder setRenderPipelineState: [shaders_ selectPipeline: Deferred].pipeline];
 	[deferredEncoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
-	NSUInteger atIndex = 0;
-	for (; atIndex < RenderTargetCount; ++atIndex) {
-		[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][atIndex] atIndex:atIndex];
+	NSUInteger fsTexIndex = 0;
+	for (; fsTexIndex < RenderTargetCount; ++fsTexIndex) {
+		[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][fsTexIndex] atIndex:fsTexIndex];
 	}
-	[deferredEncoder setFragmentTexture: depthTextures_[currentFrameIndex_] atIndex:atIndex++];
+	[deferredEncoder setFragmentTexture: depthTextures_[currentFrameIndex_] atIndex:fsTexIndex++];
 
 	[deferredEncoder setFragmentSamplerState:self->deferredSamplerState_ atIndex:0];
+
+	// uniforms
+	size_t vsIndex = 0, fsIndex = 0;
+	for (const auto& info : deferredBuffers_.vsBuffers) {
+		auto offset = currentFrameIndex_ % info.bufferCount;
+		[deferredEncoder setVertexBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: vsIndex++];
+	}
+	for (const auto& info : deferredBuffers_.fsBuffers) {
+		auto offset = currentFrameIndex_ % info.bufferCount;
+		[deferredEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: fsIndex++];
+	}
 
 	[deferredEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
 
@@ -449,6 +464,9 @@ struct Texture {
 		[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib].buffer indexBufferOffset: cmd.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 	else
 		[commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart: cmd.offset vertexCount: cmd.count instanceCount: 1 baseInstance: 0];
+}
+-(void) setDeferredBuffers: (const ShaderStructures::DeferredBuffers&) buffers {
+	deferredBuffers_ = buffers;
 }
 @end
 
