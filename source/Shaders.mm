@@ -131,7 +131,7 @@ using namespace ShaderStructures;
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
 		pipelines_.push_back({pipeline, true});
-		if (error) NSLog(@"%s", [error localizedDescription]);
+		if (error) NSLog(@"%@", [error localizedDescription]);
 	}
 }
 
