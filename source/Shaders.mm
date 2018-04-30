@@ -129,6 +129,9 @@ using namespace ShaderStructures;
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"deferred_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"deferred_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
+		// debug...
+		pipelineDescriptor.colorAttachments[1].pixelFormat = MTLPixelFormatRGBA32Float;
+
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
 		pipelines_.push_back({pipeline, true});
 		if (error) NSLog(@"%@", [error localizedDescription]);

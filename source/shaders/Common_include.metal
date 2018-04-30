@@ -10,3 +10,5 @@ struct FragOut {
 
 float2 Encode(float3 v);
 float3 Decode(float2 v);
+
+float LinearizeDepth(float depth, float n, float f);

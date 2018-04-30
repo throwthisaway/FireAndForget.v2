@@ -19,7 +19,7 @@ vertex PSIn pos_vs_main(VIn input[[stage_in]],
 	PSIn output;
 	float4 pos = float4(input.pos, 1.f);
 	output.pos = pos * obj.mvp;
-	output.n = input.n * float3x3(obj.m[0].xyz, obj.m[1].xyz, obj.m[2].xyz);
+	output.n = float3(float4(input.n, 0.f) * obj.m);// float3x3(obj.m[0].xyz, obj.m[1].xyz, obj.m[2].xyz);
 	return output;
 }
 struct cMaterial {
@@ -29,7 +29,7 @@ fragment FragOut pos_fs_main(PSIn input [[stage_in]],
 							 constant cMaterial& material [[buffer(0)]]) {
 	FragOut output;
 	output.albedo = float4(material.mat.diffuse, 1.f);
-	output.normal = Encode(input.n);
+	output.normal = Encode(normalize(input.n));
 	output.material = float4(material.mat.specular, material.mat.power, 0.f, 1.f);
 	output.debug = input.pos;
 	return output;

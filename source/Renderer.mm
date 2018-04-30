@@ -96,6 +96,7 @@ struct Texture {
 	id<MTLSamplerState> defaultSamplerState_, deferredSamplerState_;
 	id<MTLBuffer> fullscreenTexturedQuad_;
 	ShaderStructures::DeferredBuffers deferredBuffers_;
+	id<MTLTexture> deferredDebugColorAttachments_[FrameCount];
 
 	dispatch_semaphore_t frameBoundarySemaphore_;
 	uint32_t currentFrameIndex_;
@@ -140,6 +141,7 @@ struct Texture {
 			simd::float2 pos;
 			simd::float2 uv;
 		};
+		// top: uv.y = 0
 		PosUV quad[] = {{{-1., -1.f}, {0.f, 1.f}}, {{-1., 1.f}, {0.f, 0.f}}, {{1., -1.f}, {1.f, 1.f}}, {{1., 1.f}, {1.f, 0.f}}};
 		fullscreenTexturedQuad_ = [device_ newBufferWithBytes:quad length:sizeof(quad) options: MTLResourceOptionCPUCacheModeDefault];
 	}
@@ -148,7 +150,7 @@ struct Texture {
 - (void)makeColorAttachmentTextures: (NSUInteger)width withHeight: (NSUInteger)height {
 	if (!self->colorAttachmentTextures_[0][0] || [self->colorAttachmentTextures_[0][0] width] != width ||
 		[self->colorAttachmentTextures_[0][0] height] != height) {
-		for (int i = 0; i < FrameCount; ++i)
+		for (int i = 0; i < FrameCount; ++i) {
 			for (int j = 0; j < RenderTargetCount; ++j) {
 				MTLTextureDescriptor *desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:[shaders_ getColorAttachmentFormats][j]
 																								width:width
@@ -159,6 +161,16 @@ struct Texture {
 				self->colorAttachmentTextures_[i][j] = [device_ newTextureWithDescriptor:desc];
 				[self->colorAttachmentTextures_[i][j] setLabel:@"Color Attachment"];
 			}
+			// debug...
+			MTLTextureDescriptor *desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat: MTLPixelFormatRGBA32Float
+																								   width:width
+																								   height:height
+																								   mipmapped:NO];
+			desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+			desc.resourceOptions = MTLResourceStorageModePrivate;
+			self->deferredDebugColorAttachments_[i] = [device_ newTextureWithDescriptor:desc];
+			[self->deferredDebugColorAttachments_[i]  setLabel:@"Deferred debug color attachment"];
+		}
 	}
 }
 - (void)makeDepthTexture: (NSUInteger)width withHeight: (NSUInteger)height {
@@ -329,7 +341,13 @@ struct Texture {
 	deferredPassDescriptor.colorAttachments[0].texture = drawable.texture;
 	deferredPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
 	deferredPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+	//debug...
+	deferredPassDescriptor.colorAttachments[1].texture = deferredDebugColorAttachments_[currentFrameIndex_];
+	deferredPassDescriptor.colorAttachments[1].loadAction = MTLLoadActionDontCare;
+	deferredPassDescriptor.colorAttachments[1].storeAction = MTLStoreActionStore;
+
 	id<MTLRenderCommandEncoder> deferredEncoder = [deferredCommandBuffer renderCommandEncoderWithDescriptor: deferredPassDescriptor];
+	[deferredEncoder setCullMode: MTLCullModeBack];
 	[deferredEncoder setRenderPipelineState: [shaders_ selectPipeline: Deferred].pipeline];
 	[deferredEncoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
 	NSUInteger fsTexIndex = 0;

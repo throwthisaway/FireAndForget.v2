@@ -115,6 +115,8 @@ struct cScene : cFrame {
 	matrix ip;
 	PointLight light[MAX_LIGHTS];
 	float3 eyePos;
+	float pad0;
+	float n, f;
 };
 // Pos
 

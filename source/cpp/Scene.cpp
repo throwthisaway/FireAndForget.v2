@@ -223,6 +223,7 @@ void Scene::Render() {
 }
 void Scene::UpdateCameraTransform() {
 	camera_.transform.pos += input.dpos;
+	//std::cout<<"cam " << camera_.transform.pos.x << ' ' << camera_.transform.pos.y << ' ' << camera_.transform.pos.z << '\n';
 	camera_.transform.rot += input.drot;
 	camera_.view = ScreenSpaceRotator(camera_.view, Transform{ camera_.transform.pos, camera_.transform.center, input.drot});
 }
@@ -243,6 +244,7 @@ void Scene::Update(double frame, double total) {
 	FromVec3(camera_.transform.pos, shaderStructures.cScene.eyePos);
 	auto ip = glm::inverse(camera_.proj);
 	memcpy(shaderStructures.cScene.ip, &ip, sizeof(shaderStructures.cScene.ip));
+	shaderStructures.cScene.n = camera_.n; shaderStructures.cScene.f = camera_.f;
 	renderer_->UpdateShaderResource(shaderResources.cScene + renderer_->GetCurrenFrameIndex(), &shaderStructures.cScene, sizeof(shaderStructures.cScene));
 	for (auto& o : objects_) {
 		o.Update(frame, total);
@@ -256,6 +258,7 @@ void Scene::Update(double frame, double total) {
 
 			ShaderStructures::cObject cObject;
 			memcpy(cObject.mvp, &mvp, sizeof(cObject.mvp));
+			m = glm::transpose(m);
 			memcpy(cObject.m, &m, sizeof(cObject.m));
 			renderer_->UpdateShaderResource(layer.cObject + renderer_->GetCurrenFrameIndex(), &cObject, sizeof(cObject));
 		}
@@ -275,6 +278,7 @@ void Scene::Update(double frame, double total) {
 
 			ShaderStructures::cObject cObject;
 			memcpy(cObject.mvp, &mvp, sizeof(cObject.mvp));
+			m = glm::transpose(m);
 			memcpy(cObject.m, &m, sizeof(cObject.m));
 			renderer_->UpdateShaderResource(layer.cObject + renderer_->GetCurrenFrameIndex(), &cObject, sizeof(cObject));
 		}

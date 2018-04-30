@@ -17,3 +17,7 @@ float3 Decode(float2 v) {
 	n.z = 1.f - f/2.f;
 	return n;
 }
+
+float LinearizeDepth(float depth, float n, float f) {
+	return (2.0 * n) / (f + n - depth * (f - n));
+}
