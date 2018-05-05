@@ -19,9 +19,14 @@ using float3 = float[3];
 using matrix = float[16];
 
 // resource types
-struct cFrame { static constexpr int numDesc = ShaderStructures::FrameCount; };
-struct cStatic { static constexpr int numDesc = 1; };
-struct cTexture { static constexpr int numDesc = 1; };
+template<int Count>
+struct cDesc { static constexpr int desc_count = Count; };
+template<int Count = 1>
+struct cFrame : cDesc<Count> { static constexpr int frame_count = FrameCount; };
+template<int Count = 1>
+struct cStatic : cDesc<Count> { static constexpr int frame_count = 1; };
+template<int Count = 1>
+struct cTexture : cDesc<Count> { static constexpr int frame_count = 1; };
 
 // https://stackoverflow.com/questions/30736242/how-can-i-get-the-index-of-a-type-in-a-variadic-class-template
 template <typename... > struct index;
@@ -39,11 +44,12 @@ template <typename... > struct desc_count;
 template <>
 struct desc_count<> : std::integral_constant<uint32_t, 0> {};
 template <typename TCurrent, typename... TRest>
-struct desc_count<TCurrent, TRest...> : std::integral_constant<uint32_t, TCurrent::numDesc + desc_count<TRest...>::value> {};
+struct desc_count<TCurrent, TRest...> : std::integral_constant<uint32_t, TCurrent::desc_count + desc_count<TRest...>::value> {};
 
 // template order corresponds root parameter order of root signature
 template<typename... T> struct ShaderParamTraits {
 	template<typename S> using index = index<S, T...>;
+	static constexpr auto desc_count = desc_count<T...>::value;
 	//using numDesc = desc_count<T...>;
 	static constexpr uint16_t count = sizeof...(T);
 };
@@ -61,10 +67,10 @@ struct BufferInfo {
 };
 #endif
 // Debug
-struct cMVP : cFrame {
+struct cMVP : cFrame<> {
 	matrix mvp;
 };
-struct cColor : cStatic {
+struct cColor : cStatic<> {
 	float4 color;
 };
 
@@ -74,7 +80,8 @@ struct DebugCmd {
 #ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
 	using Params = ShaderParamTraits<cMVP, cColor>;
-	ResourceBinding bindings[Params::count];
+	static constexpr int RootParamCount = 2;
+	ResourceBinding bindings[RootParamCount];
 #elif defined(PLATFORM_MAC_OS)
 	using VSParams = ShaderParamTraits<cMVP>;
 	using FSParams = ShaderParamTraits<cColor>;
@@ -83,7 +90,7 @@ struct DebugCmd {
 };
 
 // Pos-Tex
-struct cObject : cFrame {
+struct cObject : cFrame<> {
 	matrix mvp;
 	matrix m;
 };
@@ -92,7 +99,7 @@ struct Material {
 	float pad1;
 	float specular, power;
 };
-struct cMaterial : cStatic {
+struct cMaterial : cStatic<> {
 	Material material;
 };
 struct PointLight {
@@ -111,7 +118,7 @@ struct PointLight {
 };
 
 #define MAX_LIGHTS 2
-struct cScene : cFrame {
+struct cScene : cFrame<> {
 	matrix ip;
 	PointLight light[MAX_LIGHTS];
 	float3 eyePos;
@@ -126,7 +133,8 @@ struct PosCmd {
 #ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
 	using Params = ShaderParamTraits<cObject, cMaterial>;
-	ResourceBinding bindings[Params::count];
+	static constexpr int RootParamCount = 2;
+	ResourceBinding bindings[RootParamCount];
 #elif defined(PLATFORM_MAC_OS)
 	using VSParams = ShaderParamTraits<cObject>;
 	using FSParams = ShaderParamTraits<cMaterial>;
@@ -134,15 +142,17 @@ struct PosCmd {
 #endif
 };
 // Tex
-struct tTexture : cTexture {};
+template<int Count>
+struct tTexture : cTexture<Count> {};
 
 struct TexCmd {
 	uint32_t offset, count;
 	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer, uvb = InvalidBuffer;
 #ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	using Params = ShaderParamTraits<cObject, tTexture, cMaterial>;
-	ResourceBinding bindings[Params::count];
+	using Params = ShaderParamTraits<cObject, tTexture<1>, cMaterial>;
+	static constexpr int RootParamCount = 2;
+	ResourceBinding bindings[RootParamCount];
 #elif defined(PLATFORM_MAC_OS)
 	using VSParams = ShaderParamTraits<cObject>;
 	using FSParams = ShaderParamTraits<cMaterial>;
@@ -154,8 +164,9 @@ struct TexCmd {
 struct DeferredBuffers {
 #ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	using Params = ShaderParamTraits<cScene>;
-	ResourceBinding bindings[Params::count];
+	using Params = ShaderParamTraits<cScene, tTexture<RenderTargetCount + 1 /* Depth */>>;
+	static constexpr int RootParamCount = 1;
+	ResourceBinding bindings[RootParamCount];
 #elif defined(PLATFORM_MAC_OS)
 	using VSParams = ShaderParamTraits<>;
 	using FSParams = ShaderParamTraits<cScene>;

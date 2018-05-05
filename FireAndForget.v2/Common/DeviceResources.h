@@ -32,6 +32,7 @@ namespace DX
 		ID3D12Resource*				GetRenderTarget() const				{ return m_renderTargets[m_currentFrame].Get(); }
 		ID3D12Resource*				GetDepthStencil() const				{ return m_depthStencil.Get(); }
 		ID3D12CommandQueue*			GetCommandQueue() const				{ return m_commandQueue.Get(); }
+		// TODO:: remove
 		ID3D12CommandAllocator*		GetCommandAllocator() const			{ return m_commandAllocators[m_currentFrame].Get(); }
 		DXGI_FORMAT					GetBackBufferFormat() const			{ return m_backBufferFormat; }
 		DXGI_FORMAT					GetDepthBufferFormat() const		{ return m_depthBufferFormat; }

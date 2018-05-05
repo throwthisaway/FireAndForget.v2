@@ -38,11 +38,11 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 #ifdef PLATFORM_WIN
 				// cMVP
 				uint16_t offset = 0;
-				cmd.descAllocEntryIndex = renderer->AllocDescriptors(DebugCmd::Params::count);
+				cmd.descAllocEntryIndex = renderer->AllocDescriptors(DebugCmd::Params::desc_count);
 				auto rootParamIndex = DebugCmd::Params::index<cMVP>::value;
 				// TODO:: root parameter index is redundant
 				cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
-				for (uint32_t frame = 0; frame < cMVP::numDesc; ++frame) {
+				for (uint32_t frame = 0; frame < cMVP::frame_count; ++frame) {
 					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, l.cMVP + frame);
 				}
 				++offset;
@@ -62,35 +62,29 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				cmd.offset = submesh.offset; cmd.count = submesh.count;
 				cmd.vb = mesh.vb; cmd.ib = mesh.ib; cmd.nb = mesh.nb; cmd.uvb = submesh.material.staticColorUV;
 #ifdef PLATFORM_WIN
-				cmd.descAllocEntryIndex = renderer->AllocDescriptors(TexCmd::Params::count);
+				cmd.descAllocEntryIndex = renderer->AllocDescriptors(TexCmd::Params::desc_count);
 				// cObject
 				uint16_t offset = 0;
 				{
-					// 1st root parameter, 1st descriptor table with 1 descriptor entry
+					// 1st root parameter for vs, 1st descriptor table with 1 descriptor entry
 					auto rootParamIndex = TexCmd::Params::index<cObject>::value;
 					cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
-					for (uint32_t frame = 0; frame < cObject::numDesc; ++frame) {
+					for (uint32_t frame = 0; frame < cObject::frame_count; ++frame) {
 						renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, l.cObject + frame);
 					}
 					++offset;
 				}
 
 				{
-					// 2nd root parameter, 2nd descriptor table with 3 descriptor entry
+					// 2nd root parameter for ps, 2nd descriptor table with 3 descriptor entry
 					// tTexture
 					renderer->CreateSRV(cmd.descAllocEntryIndex, offset, submesh.material.tStaticColorTexture);
-					auto rootParamIndex = TexCmd::Params::index<tTexture>::value;
+					auto rootParamIndex = TexCmd::Params::index<tTexture<1>>::value;
 					cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
 					++offset;
 
 					// cMaterial
 					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, submesh.material.cMaterial);
-					++offset;
-
-					// cScene
-					for (uint32_t frame = 0; frame < cScene::numDesc; ++frame) {
-						renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, sceneShaderResources.cScene + frame);
-					}
 					++offset;
 				}
 #elif defined(PLATFORM_MAC_OS)
@@ -104,13 +98,13 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				cmd.vb = mesh.vb; cmd.ib = mesh.ib; cmd.nb = mesh.nb;
 				cmd.offset = submesh.offset; cmd.count = submesh.count;
 #ifdef PLATFORM_WIN
-				cmd.descAllocEntryIndex = renderer->AllocDescriptors(PosCmd::Params::count);
+				cmd.descAllocEntryIndex = renderer->AllocDescriptors(PosCmd::Params::desc_count);
 				uint16_t offset = 0;
 				{
 					// 1st root parameter, 1st descriptor table with 1 descriptor entry
 					auto rootParamIndex = PosCmd::Params::index<cObject>::value;
 					cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
-					for (uint32_t frame = 0; frame < cObject::numDesc; ++frame) {
+					for (uint32_t frame = 0; frame < cObject::frame_count; ++frame) {
 						renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, l.cObject + frame);
 					}
 					++offset;
@@ -121,12 +115,6 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 					cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
 					// cMaterial
 					renderer->CreateCBV(cmd.descAllocEntryIndex, offset, submesh.material.cMaterial);
-					++offset;
-
-					// cScene
-					for (uint32_t frame = 0; frame < cScene::numDesc; ++frame) {
-						renderer->CreateCBV(cmd.descAllocEntryIndex, offset, frame, sceneShaderResources.cScene + frame);
-					}
 					++offset;
 				}
 #elif defined(PLATFORM_MAC_OS)
@@ -176,14 +164,16 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	}
 	shaderStructures.cScene.light[0].pos[0] = -2.f;
 
-	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::numDesc);
+	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::frame_count);
 	DeferredBuffers deferredBuffers;
 #ifdef PLATFORM_WIN
-	deferredBuffers.descAllocEntryIndex = renderer->AllocDescriptors(DeferredBuffers::Params::count);
+	deferredBuffers.descAllocEntryIndex = renderer->AllocDescriptors(DeferredBuffers::Params::desc_count);
 	uint16_t offset = 0;
 	// cScene
-	for (uint32_t frame = 0; frame < cScene::numDesc; ++frame) {
-		renderer->CreateCBV(deferredBuffers.descAllocEntryIndex, offset, frame, sceneShaderResources.cScene + frame);
+	auto rootParamIndex = DeferredBuffers::Params::index<cScene>::value;
+	deferredBuffers.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
+	for (uint32_t frame = 0; frame < cScene::frame_count; ++frame) {
+		renderer->CreateCBV(deferredBuffers.descAllocEntryIndex, offset, frame, shaderResources.cScene + frame);
 	}
 	++offset;
 #elif defined(PLATFORM_MAC_OS)

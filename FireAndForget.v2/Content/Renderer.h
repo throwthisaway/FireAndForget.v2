@@ -4,6 +4,7 @@
 #include "..\Common\StepTimer.h"
 #include "ShaderStructures.h"
 #include "..\source\cpp\RendererWrapper.h"
+#include "..\source\cpp\ShaderStructures.h"
 #include "PipelineState.h"
 #include "DescriptorHeapAllocator.h"
 
@@ -36,6 +37,7 @@ public:
 	void CreateCBV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ShaderResourceIndex resourceIndex);
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex textureBufferIndex);
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, BufferIndex textureBufferIndex);
+	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ID3D12Resource* resource, DXGI_FORMAT format);
 
 	void BeginRender();
 	size_t StartRenderPass();
@@ -43,6 +45,8 @@ public:
 	void Submit(const CmdT&) {
 		assert(false); // TODO:: implement Submit overload
 	}
+
+	void SetDeferredBuffers(const ShaderStructures::DeferredBuffers& deferredBuffers);
 
 	//ResourceHeapHandle GetStaticShaderResourceHeap(unsigned short descCountNeeded);
 	//ShaderResourceIndex GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count);
@@ -57,10 +61,10 @@ private:
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
 	}bufferUpload_;
 
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> frameCommandList_;
-
 	std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>> commandAllocators_;
 	std::vector<Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>> commandLists_;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> deferredCommandAllocators_[ShaderStructures::FrameCount];
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> deferredCommandList_;
 
 	struct Buffer {
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
@@ -73,6 +77,11 @@ private:
 	CBAlloc cbAlloc_;
 	DescriptorAlloc descAlloc_[DX::c_frameCount];
 	
+	Microsoft::WRL::ComPtr<ID3D12Resource> rtt_[ShaderStructures::FrameCount][ShaderStructures::RenderTargetCount];
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
+	UINT rtvDescriptorSize_ = 0;
+	BufferIndex fsQuad_ = InvalidBuffer;
+	ShaderStructures::DeferredBuffers deferredBuffers_;
 
 	D3D12_RECT m_scissorRect;
 	bool loadingComplete_ = false;
