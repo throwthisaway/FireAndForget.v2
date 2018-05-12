@@ -40,7 +40,7 @@ float3 ComputePointLight_BlinnPhong(PointLight l, float3 eyePos, float3 pos, flo
 	}
 	return col * l.ambient;
 }
-float3 ComputePointLight_Diffuse(PointLight l, float3 pos, float3 normal, float3 col, float spec, float power) {
+float3 ComputePointLight_Diffuse(PointLight l, float3 pos, float3 normal, float3 col) {
 	float3 lv = l.pos - pos;	// vector towards light
 	float l_distance = length(lv);
 	//	if (l_distance > l.range) return float3(.0, .0, .0);

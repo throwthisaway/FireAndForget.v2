@@ -37,6 +37,7 @@ public:
 	void CreateCBV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ShaderResourceIndex resourceIndex);
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex textureBufferIndex);
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, BufferIndex textureBufferIndex);
+	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, ID3D12Resource* resource, DXGI_FORMAT format);
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ID3D12Resource* resource, DXGI_FORMAT format);
 
 	void BeginRender();
@@ -77,7 +78,7 @@ private:
 	CBAlloc cbAlloc_;
 	DescriptorAlloc descAlloc_[DX::c_frameCount];
 	
-	Microsoft::WRL::ComPtr<ID3D12Resource> rtt_[ShaderStructures::FrameCount][ShaderStructures::RenderTargetCount];
+	Microsoft::WRL::ComPtr<ID3D12Resource> rtt_[ShaderStructures::RenderTargetCount];
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
 	UINT rtvDescriptorSize_ = 0;
 	BufferIndex fsQuad_ = InvalidBuffer;

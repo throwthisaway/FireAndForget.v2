@@ -253,7 +253,7 @@ void Renderer::CreateDeviceDependentResources() {
 
 	// Create descriptor heaps for render target views
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-	rtvHeapDesc.NumDescriptors = ShaderStructures::FrameCount * ShaderStructures::RenderTargetCount;
+	rtvHeapDesc.NumDescriptors = ShaderStructures::RenderTargetCount;
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	DX::ThrowIfFailed(d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap_)));
@@ -278,8 +278,7 @@ void Renderer::CreateWindowSizeDependentResources() {
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvDescriptor(rtvHeap_->GetCPUDescriptorHandleForHeapStart());
 	uint16_t offset = 0;
-	for (int i = 0; i < ShaderStructures::FrameCount; ++i)
-		for (int j = 0; j < ShaderStructures::RenderTargetCount; ++j) {
+	for (int j = 0; j < ShaderStructures::RenderTargetCount; ++j) {
 		CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(PipelineStates::renderTargetFormats[j], (UINT)viewport.Width, (UINT)viewport.Height);
 		bufferDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
@@ -295,17 +294,16 @@ void Renderer::CreateWindowSizeDependentResources() {
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			nullptr,
 			IID_PPV_ARGS(&resource)));
-		rtt_[i][j] = resource;
+		rtt_[j] = resource;
 		WCHAR name[25];
-		if (swprintf_s(name, L"renderTarget[%u][%u]", i, j) > 0) DX::SetName(resource.Get(), name);
+		if (swprintf_s(name, L"renderTarget[%u]", j) > 0) DX::SetName(resource.Get(), name);
 
 		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 		desc.Format = PipelineStates::renderTargetFormats[j];
 		desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-		device->CreateRenderTargetView(rtt_[i][j].Get(), &desc, rtvDescriptor);
+		device->CreateRenderTargetView(rtt_[j].Get(), &desc, rtvDescriptor);
 		rtvDescriptor.Offset(rtvDescriptorSize_);
 	}
-
 }
 
 void Renderer::Update(DX::StepTimer const& timer) {
@@ -331,7 +329,7 @@ size_t Renderer::StartRenderPass() {
 	// Indicate this resource will be in use as a render target.
 	CD3DX12_RESOURCE_BARRIER renderTargetResourceBarriers[ShaderStructures::RenderTargetCount + 1];
 	for (int i = 0; i < RenderTargetCount; ++i) {
-		renderTargetResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[m_deviceResources->GetCurrentFrameIndex()][i].Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		renderTargetResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[i].Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	}
 	renderTargetResourceBarriers[RenderTargetCount] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 	//D3D12_CPU_DESCRIPTOR_HANDLE renderTargetView = m_deviceResources->GetRenderTargetView();
@@ -340,7 +338,7 @@ size_t Renderer::StartRenderPass() {
 	// TODO:: calculate in CreateWindowSizeDependentResources...
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvs[RenderTargetCount];
 	for (int i = 0; i < RenderTargetCount; ++i) {
-		rtvs[i] = CD3DX12_CPU_DESCRIPTOR_HANDLE(rtvHeap_->GetCPUDescriptorHandleForHeapStart(), m_deviceResources->GetCurrentFrameIndex() * RenderTargetCount + i, rtvDescriptorSize_);
+		rtvs[i] = CD3DX12_CPU_DESCRIPTOR_HANDLE(rtvHeap_->GetCPUDescriptorHandleForHeapStart(), i, rtvDescriptorSize_);
 	}
 	// assign pipelinestates with command lists
 	for (size_t i = 0; i < pipelineStates_.states_.size(); ++i) {
@@ -536,21 +534,18 @@ bool Renderer::Render() {
 		commandList->Close();
 		ppCommandLists.push_back(commandList.Get());
 	}
-	// TODO:: !!!
+	// TODO:: !!! why here works???
 	uint16_t offset = 0;	// cScene
 	++offset;
-	for (int i = 0; i < ShaderStructures::FrameCount; ++i) {
-		for (int j = 0; j < ShaderStructures::RenderTargetCount; ++j) {
-			CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + j, i, rtt_[i][j].Get(), PipelineStates::renderTargetFormats[j]);
-		}
-		// TODO:: is one depthstencil enough???
-		CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + ShaderStructures::RenderTargetCount, i, m_deviceResources->GetDepthStencil(), DXGI_FORMAT_R32_FLOAT/*m_deviceResources->GetDepthBufferFormat()*/);
-	}
+	for (int j = 0; j < ShaderStructures::RenderTargetCount; ++j)
+		CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + j, rtt_[j].Get(), PipelineStates::renderTargetFormats[j]);
+	// TODO:: is one depthstencil enough???
+	CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + ShaderStructures::RenderTargetCount, m_deviceResources->GetDepthStencil(), DXGI_FORMAT_R32_FLOAT/*m_deviceResources->GetDepthBufferFormat()*/);
 	// !!! TODO::
 
 	CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount + 2];
 	for (int i = 0; i < RenderTargetCount; ++i)
-		presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[m_deviceResources->GetCurrentFrameIndex()][i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	presentResourceBarriers[RenderTargetCount] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	presentResourceBarriers[RenderTargetCount + 1] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -639,6 +634,10 @@ void Renderer::CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t fr
 void Renderer::CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ID3D12Resource* resource, DXGI_FORMAT format) {
 	descAlloc_[frame].CreateSRV(index, offset, resource, format);
 }
+void Renderer::CreateSRV(DescAllocEntryIndex index, uint16_t offset, ID3D12Resource* resource, DXGI_FORMAT format) {
+	for (UINT i = 0; i < DX::c_frameCount; ++i)
+		descAlloc_[i].CreateSRV(index, offset, resource, format);
+}
 // TODO:: these have to come after Renderer::Submit specialization
 template<>
 void RendererWrapper::Submit(const ShaderStructures::DebugCmd& cmd) {
@@ -657,13 +656,10 @@ void Renderer::SetDeferredBuffers(const ShaderStructures::DeferredBuffers& defer
 	deferredBuffers_ = deferredBuffers;
 	uint16_t offset = 0;	// cScene
 	++offset;
-	for (int i = 0; i < ShaderStructures::FrameCount; ++i) {
-		for (int j = 0; j < ShaderStructures::RenderTargetCount; ++j) {
-			CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + j, i, rtt_[i][j].Get(), PipelineStates::renderTargetFormats[j]);
-		}
-		// TODO:: is one depthstencil enough???
-		CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + ShaderStructures::RenderTargetCount, i, m_deviceResources->GetDepthStencil(), DXGI_FORMAT_R32_FLOAT/*m_deviceResources->GetDepthBufferFormat()*/);
-	}
+	for (int j = 0; j < ShaderStructures::RenderTargetCount; ++j)
+		CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + j, rtt_[j].Get(), PipelineStates::renderTargetFormats[j]);
+	// TODO:: is one depthstencil enough???
+	CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + ShaderStructures::RenderTargetCount, m_deviceResources->GetDepthStencil(), DXGI_FORMAT_R32_FLOAT/*m_deviceResources->GetDepthBufferFormat()*/);
 }
 //ResourceHeapHandle Renderer::GetStaticShaderResourceHeap(unsigned short descCountNeeded) {
 //	return shaderResources_.GetCurrentShaderResourceHeap(descCountNeeded);
