@@ -1,5 +1,5 @@
-#include "Common_include.hlsl"
-#include "ShaderStructs.hlsl"
+#include "Common.hlsli"
+#include "../../../source/cpp/ShaderStructs.h"
 
 cbuffer cMaterial : register(b0) {
 	Material mat;

@@ -3,7 +3,6 @@
 #include "MatrixUtils.h"
 #include "CreateShaderParams.h"
 
-using namespace ShaderStructures;
 namespace{
 inline vec3_t ToVec3(const float* v) {
 	return { v[0], v[1], v[2] };
@@ -145,24 +144,25 @@ void Scene::OnAssetsLoaded() {
 
 	lights_[0] = &debug_[0];
 	lights_[1] = &debug_[1];
-	lights_[0]->pos = ToVec3(shaderStructures.cScene.light[0].pos);
-	lights_[1]->pos = ToVec3(shaderStructures.cScene.light[1].pos);
+	lights_[0]->pos = ToVec3(shaderStructures.cScene.scene.light[0].pos);
+	lights_[1]->pos = ToVec3(shaderStructures.cScene.scene.light[1].pos);
 	// TODO:: remove
 	objects_.back().pos.y += .5f;
 	loadCompleted = true;
 }
 void Scene::Init(RendererWrapper* renderer, int width, int height) {
+	using namespace ShaderStructures;
 	renderer_ = renderer;
 	camera_.Perspective(width, height);
 	
 	const float Z = -1.5f;
 	camera_.transform.pos = { 0.f, 0.f, Z };
 	camera_.view = ScreenSpaceRotator({}, camera_.transform);
-	FromVec3(camera_.transform.pos, shaderStructures.cScene.eyePos);
-	for (int i = 0; i < sizeof(shaderStructures.cScene.light) / sizeof(shaderStructures.cScene.light[0]); ++i) {
-		shaderStructures.cScene.light[i] = defaultLight;
+	FromVec3(camera_.transform.pos, shaderStructures.cScene.scene.eyePos);
+	for (int i = 0; i < sizeof(shaderStructures.cScene.scene.light) / sizeof(shaderStructures.cScene.scene.light[0]); ++i) {
+		shaderStructures.cScene.scene.light[i] = defaultLight;
 	}
-	shaderStructures.cScene.light[0].pos[0] = -2.f;
+	shaderStructures.cScene.scene.light[0].pos[0] = -2.f;
 
 	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::frame_count);
 	DeferredBuffers deferredBuffers;
@@ -231,10 +231,10 @@ void Scene::Update(double frame, double total) {
 	// TODO:: remove
 
 	camera_.Update();
-	FromVec3(camera_.transform.pos, shaderStructures.cScene.eyePos);
+	FromVec3(camera_.transform.pos, shaderStructures.cScene.scene.eyePos);
 	auto ip = glm::inverse(camera_.proj);
-	memcpy(shaderStructures.cScene.ip, &ip, sizeof(shaderStructures.cScene.ip));
-	shaderStructures.cScene.n = camera_.n; shaderStructures.cScene.f = camera_.f;
+	memcpy(shaderStructures.cScene.scene.ip, &ip, sizeof(shaderStructures.cScene.scene.ip));
+	shaderStructures.cScene.scene.n = camera_.n; shaderStructures.cScene.scene.f = camera_.f;
 	renderer_->UpdateShaderResource(shaderResources.cScene + renderer_->GetCurrenFrameIndex(), &shaderStructures.cScene, sizeof(shaderStructures.cScene));
 	for (auto& o : objects_) {
 		o.Update(frame, total);
@@ -247,15 +247,15 @@ void Scene::Update(double frame, double total) {
 			renderer_->UpdateShaderResource(layer.cMVP + renderer_->GetCurrenFrameIndex(), &cMVP, sizeof(cMVP));
 
 			ShaderStructures::cObject cObject;
-			memcpy(cObject.mvp, &mvp, sizeof(cObject.mvp));
+			memcpy(cObject.obj.mvp, &mvp, sizeof(cObject.obj.mvp));
 			m = glm::transpose(m);
-			memcpy(cObject.m, &m, sizeof(cObject.m));
+			memcpy(cObject.obj.m, &m, sizeof(cObject.obj.m));
 			renderer_->UpdateShaderResource(layer.cObject + renderer_->GetCurrenFrameIndex(), &cObject, sizeof(cObject));
 		}
 	}
 	// TODO:: update light pos here if neccessay
-	lights_[0]->pos = ToVec3(shaderStructures.cScene.light[0].pos);
-	lights_[1]->pos = ToVec3(shaderStructures.cScene.light[1].pos);
+	lights_[0]->pos = ToVec3(shaderStructures.cScene.scene.light[0].pos);
+	lights_[1]->pos = ToVec3(shaderStructures.cScene.scene.light[1].pos);
 	for (auto& o : debug_) {
 		o.Update(frame, total);
 		for (const auto& layer : o.layers) {
@@ -267,9 +267,9 @@ void Scene::Update(double frame, double total) {
 			renderer_->UpdateShaderResource(layer.cMVP + renderer_->GetCurrenFrameIndex(), &cMVP, sizeof(cMVP));
 
 			ShaderStructures::cObject cObject;
-			memcpy(cObject.mvp, &mvp, sizeof(cObject.mvp));
+			memcpy(cObject.obj.mvp, &mvp, sizeof(cObject.obj.mvp));
 			m = glm::transpose(m);
-			memcpy(cObject.m, &m, sizeof(cObject.m));
+			memcpy(cObject.obj.m, &m, sizeof(cObject.obj.m));
 			renderer_->UpdateShaderResource(layer.cObject + renderer_->GetCurrenFrameIndex(), &cObject, sizeof(cObject));
 		}
 	}

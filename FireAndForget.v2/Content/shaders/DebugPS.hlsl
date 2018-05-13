@@ -1,4 +1,4 @@
-#include "Common_include.hlsl"
+#include "Common.hlsli"
 cbuffer cColor : register(b0){
 	float4 color;
 };

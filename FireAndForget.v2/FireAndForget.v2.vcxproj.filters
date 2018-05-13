@@ -144,16 +144,19 @@
     <ClInclude Include="..\source\cpp\CreateShaderParams.h">
       <Filter>cpp</Filter>
     </ClInclude>
-    <ClInclude Include="Content\shaders\Phong.hlsl">
-      <Filter>Content\shaders</Filter>
-    </ClInclude>
-    <ClInclude Include="Content\shaders\ShaderStructs.hlsl">
-      <Filter>Content\shaders</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\cpp\Transform.h">
       <Filter>cpp</Filter>
     </ClInclude>
-    <ClInclude Include="Content\shaders\Common_include.hlsl">
+    <ClInclude Include="Content\shaders\Common.hlsli">
+      <Filter>Content\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\ShaderStructs.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\ShaderTypeAliases.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\shaders\Phong.hlsli">
       <Filter>Content\shaders</Filter>
     </ClInclude>
   </ItemGroup>

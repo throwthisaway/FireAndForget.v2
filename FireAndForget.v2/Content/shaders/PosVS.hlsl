@@ -1,6 +1,6 @@
+#include "../../../source/cpp/ShaderStructs.h"
 cbuffer cObject : register(b0) {
-	matrix mvp;
-	matrix m;
+	Object obj;
 };
 
 struct VIn {
@@ -15,7 +15,7 @@ struct PSIn {
 PSIn main(VIn input) {
 	PSIn output;
 	float4 pos = float4(input.pos, 1.f);
-	output.pos = mul(pos, mvp);
-	output.n = normalize(mul(input.n, m));
+	output.pos = mul(pos, obj.mvp);
+	output.n = normalize(mul(input.n, obj.m));
 	return output;
 }

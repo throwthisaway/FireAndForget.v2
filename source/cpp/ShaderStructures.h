@@ -2,8 +2,10 @@
 #include <vector>
 #include "RendererTypes.h"
 #include "compatibility.h"
+#include "ShaderTypeAliases.h"
 
 namespace ShaderStructures {
+#include "ShaderStructs.h"
 const int FrameCount = 3;
 using ShaderId = size_t;
 const ShaderId Pos = 0;
@@ -12,11 +14,6 @@ const ShaderId Debug = 2;
 const ShaderId Deferred = 3;
 const ShaderId Count = 4;
 const int RenderTargetCount = 4;
-
-// basic hlsl type aliases
-using float4 = float[4];
-using float3 = float[3];
-using matrix = float[16];
 
 // resource types
 template<int Count>
@@ -68,7 +65,7 @@ struct BufferInfo {
 #endif
 // Debug
 struct cMVP : cFrame<> {
-	matrix mvp;
+	float4x4 mvp;
 };
 struct cColor : cStatic<> {
 	float4 color;
@@ -91,39 +88,15 @@ struct DebugCmd {
 
 // Pos-Tex
 struct cObject : cFrame<> {
-	matrix mvp;
-	matrix m;
+	Object obj;
 };
-struct Material {
-	float3 diffuse;
-	float pad1;
-	float specular, power;
-};
+
 struct cMaterial : cStatic<> {
 	Material material;
 };
-struct PointLight {
-	float3 diffuse;
-	float pad1;
-	float3 ambient;
-	float pad2;
-	float3 specular;
-	float pad3;
-	float3 pos;
-	float pad4;
-	float3 att;
-	float pad5;
-	float range;
-	float3 pad6;
-};
 
-#define MAX_LIGHTS 2
 struct cScene : cFrame<> {
-	matrix ip;
-	PointLight light[MAX_LIGHTS];
-	float3 eyePos;
-	float pad0;
-	float n, f;
+	Scene scene;
 };
 // Pos
 

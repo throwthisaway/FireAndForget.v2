@@ -1,14 +1,7 @@
-#include "ShaderStructs.hlsl"
-#include "Phong.hlsl"
-#include "Common_include.hlsl"
+#include "../../../source/cpp/ShaderStructs.h"
+#include "Phong.hlsli"
+#include "Common.hlsli"
 
-#define MAX_LIGHTS 2
-struct Scene {
-	float4x4 ip;
-	PointLight light[MAX_LIGHTS];
-	float3 eyePos;
-	float n, f;
-};
 cbuffer cScene : register(b0) {
 	Scene scene;
 };

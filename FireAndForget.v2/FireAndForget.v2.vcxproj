@@ -208,11 +208,13 @@
     <ClInclude Include="..\source\cpp\Camera.hpp" />
     <ClInclude Include="..\source\cpp\CreateShaderParams.h" />
     <ClInclude Include="..\source\cpp\input\Input.hpp" />
+    <ClInclude Include="..\source\cpp\ShaderStructs.h" />
     <ClInclude Include="..\source\cpp\ShaderStructures.h" />
     <ClInclude Include="..\source\cpp\MatrixUtils.h" />
     <ClInclude Include="..\source\cpp\RendererTypes.h" />
     <ClInclude Include="..\source\cpp\RendererWrapper.h" />
     <ClInclude Include="..\source\cpp\Scene.hpp" />
+    <ClInclude Include="..\source\cpp\ShaderTypeAliases.h" />
     <ClInclude Include="..\source\cpp\Sphere.hpp" />
     <ClInclude Include="..\source\cpp\Timer.hpp" />
     <ClInclude Include="..\source\cpp\Transform.h" />
@@ -223,9 +225,8 @@
     <ClInclude Include="Content\DescriptorHeapAllocator.h" />
     <ClInclude Include="Content\PipelineState.h" />
     <ClInclude Include="Content\Renderer.h" />
-    <ClInclude Include="Content\shaders\Common_include.hlsl" />
-    <ClInclude Include="Content\shaders\Phong.hlsl" />
-    <ClInclude Include="Content\shaders\ShaderStructs.hlsl" />
+    <ClInclude Include="Content\shaders\Common.hlsli" />
+    <ClInclude Include="Content\shaders\Phong.hlsli" />
     <ClInclude Include="FireAndForget_v2Main.h" />
     <ClInclude Include="Common\DirectXHelper.h" />
     <ClInclude Include="Common\StepTimer.h" />
