@@ -314,7 +314,7 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
 			&depthHeapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&depthResourceDesc,
-			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // StartRenderPass sets up the proper state D3D12_RESOURCE_STATE_DEPTH_WRITE,
 			&depthOptimizedClearValue,
 			IID_PPV_ARGS(&m_depthStencil)
 			));

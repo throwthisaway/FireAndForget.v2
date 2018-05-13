@@ -15,6 +15,8 @@ using namespace ShaderStructures;
 // Creating Descriptors - https://msdn.microsoft.com/en-us/library/windows/desktop/dn859358(v=vs.85).aspx
 // https://www.braynzarsoft.net/viewtutorial/q16390-04-directx-12-braynzar-soft-tutorials
 
+static const float Black[] = { 0.f, 0.f, 0.f, 0.f };
+
 void RendererWrapper::Init(Renderer* renderer) {
 	this->renderer = renderer;
 }
@@ -262,8 +264,7 @@ void Renderer::CreateDeviceDependentResources() {
 
 	BeginUploadResources();
 	// fullscreen quad...
-	struct VertexPUV
-	{
+	struct VertexPUV {
 		DirectX::XMFLOAT2 pos, uv;
 	};
 	VertexPUV quad[] = { { { -1., -1.f },{ 0.f, 1.f } },{ { -1., 1.f },{ 0.f, 0.f } },{ { 1., -1.f },{ 1.f, 1.f } },{ { 1., 1.f },{ 1.f, 0.f } } };
@@ -278,21 +279,22 @@ void Renderer::CreateWindowSizeDependentResources() {
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvDescriptor(rtvHeap_->GetCPUDescriptorHandleForHeapStart());
 	uint16_t offset = 0;
+	D3D12_CLEAR_VALUE clearValue;
+	memcpy(clearValue.Color, Black, sizeof(clearValue.Color));
 	for (int j = 0; j < ShaderStructures::RenderTargetCount; ++j) {
 		CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(PipelineStates::renderTargetFormats[j], (UINT)viewport.Width, (UINT)viewport.Height);
+		clearValue.Format = PipelineStates::renderTargetFormats[j];
 		bufferDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-
 
 		auto device = m_deviceResources->GetD3DDevice();
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-
 		CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
 		DX::ThrowIfFailed(device->CreateCommittedResource(
 			&defaultHeapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&bufferDesc,
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			nullptr,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,// StartRenderPass sets up the proper state D3D12_RESOURCE_STATE_RENDER_TARGET,
+			&clearValue,
 			IID_PPV_ARGS(&resource)));
 		rtt_[j] = resource;
 		WCHAR name[25];
@@ -352,11 +354,8 @@ size_t Renderer::StartRenderPass() {
 			commandList->RSSetScissorRects(1, &m_scissorRect);
 			if (i == 0) {
 				commandList->ResourceBarrier(_countof(renderTargetResourceBarriers), renderTargetResourceBarriers);
-				const XMVECTORF32 Black = { 0.f, 0.f, 0.f, 0.f };
 				for (int j = 0; j < RenderTargetCount; ++j) {
-					if (!j) 
-						commandList->ClearRenderTargetView(rtvs[j], DirectX::Colors::CornflowerBlue, 0, nullptr);
-					else commandList->ClearRenderTargetView(rtvs[j], Black, 0, nullptr);
+					commandList->ClearRenderTargetView(rtvs[j], Black, 0, nullptr);
 				}
 				commandList->ClearDepthStencilView(depthStencilView, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 			}
@@ -539,7 +538,6 @@ bool Renderer::Render() {
 	++offset;
 	for (int j = 0; j < ShaderStructures::RenderTargetCount; ++j)
 		CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + j, rtt_[j].Get(), PipelineStates::renderTargetFormats[j]);
-	// TODO:: is one depthstencil enough???
 	CreateSRV(deferredBuffers_.descAllocEntryIndex, offset + ShaderStructures::RenderTargetCount, m_deviceResources->GetDepthStencil(), DXGI_FORMAT_R32_FLOAT/*m_deviceResources->GetDepthBufferFormat()*/);
 	// !!! TODO::
 
