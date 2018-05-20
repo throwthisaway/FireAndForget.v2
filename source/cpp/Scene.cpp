@@ -51,8 +51,8 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 				cmd.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
 				++offset;
 #elif defined(PLATFORM_MAC_OS)
-				cmd.vsBuffers[DebugCmd::VSParams::index<cMVP>::value] = {l.cMVP, cMVP::numDesc};
-				cmd.fsBuffers[DebugCmd::FSParams::index<cColor>::value] = {submesh.material.cColor, cColor::numDesc};
+				cmd.vsBuffers[DebugCmd::VSParams::index<cMVP>::value] = {l.cMVP, cMVP::frame_count};
+				cmd.fsBuffers[DebugCmd::FSParams::index<cColor>::value] = {submesh.material.cColor, cColor::frame_count};
 #endif
 			} else if (submesh.material.tStaticColorTexture != InvalidBuffer) {
 				// tex
@@ -87,9 +87,9 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 					++offset;
 				}
 #elif defined(PLATFORM_MAC_OS)
-				cmd.vsBuffers[TexCmd::VSParams::index<cObject>::value] = {l.cObject, cObject::numDesc};
+				cmd.vsBuffers[TexCmd::VSParams::index<cObject>::value] = {l.cObject, cObject::frame_count};
 				cmd.textures[0] = submesh.material.tStaticColorTexture;
-				cmd.fsBuffers[TexCmd::FSParams::index<cMaterial>::value] = {submesh.material.cMaterial, cMaterial::numDesc};
+				cmd.fsBuffers[TexCmd::FSParams::index<cMaterial>::value] = {submesh.material.cMaterial, cMaterial::frame_count};
 #endif
 			} else {
 				l.posCmd.push_back({});
@@ -117,8 +117,8 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 					++offset;
 				}
 #elif defined(PLATFORM_MAC_OS)
-				cmd.vsBuffers[PosCmd::VSParams::index<cObject>::value] = {l.cObject, cObject::numDesc};
-				cmd.fsBuffers[PosCmd::FSParams::index<cMaterial>::value] = {submesh.material.cMaterial, cMaterial::numDesc};
+				cmd.vsBuffers[PosCmd::VSParams::index<cObject>::value] = {l.cObject, cObject::frame_count};
+				cmd.fsBuffers[PosCmd::FSParams::index<cMaterial>::value] = {submesh.material.cMaterial, cMaterial::frame_count};
 #endif
 			}
 		}
@@ -177,7 +177,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	}
 	++offset;
 #elif defined(PLATFORM_MAC_OS)
-	deferredBuffers.fsBuffers[DeferredBuffers::FSParams::index<cScene>::value] = {shaderResources.cScene, cScene::numDesc};
+	deferredBuffers.fsBuffers[DeferredBuffers::FSParams::index<cScene>::value] = {shaderResources.cScene, cScene::frame_count};
 #endif
 	renderer->SetDeferredBuffers(deferredBuffers);
 

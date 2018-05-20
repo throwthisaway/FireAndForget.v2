@@ -46,7 +46,7 @@ struct desc_count<TCurrent, TRest...> : std::integral_constant<uint32_t, TCurren
 // template order corresponds root parameter order of root signature
 template<typename... T> struct ShaderParamTraits {
 	template<typename S> using index = index<S, T...>;
-	static constexpr auto desc_count = desc_count<T...>::value;
+	static constexpr auto desc_count = ShaderStructures::desc_count<T...>::value;
 	//using numDesc = desc_count<T...>;
 	static constexpr uint16_t count = sizeof...(T);
 };
