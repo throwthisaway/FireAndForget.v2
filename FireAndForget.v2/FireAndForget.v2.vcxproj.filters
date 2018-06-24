@@ -177,6 +177,9 @@
     <None Include="..\source\assets\box.mesh">
       <Filter>Assets</Filter>
     </None>
+    <None Include="..\source\assets\sphere.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">

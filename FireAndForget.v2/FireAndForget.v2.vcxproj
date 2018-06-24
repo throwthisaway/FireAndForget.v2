@@ -272,6 +272,9 @@
     <None Include="..\source\assets\light.mesh">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="..\source\assets\sphere.mesh">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+    </None>
     <None Include="FireAndForget.v2_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>

@@ -100,7 +100,8 @@ void Assets::Init(RendererWrapper* renderer) {
 		LoadMesh(renderer, L"light.mesh", LIGHT),
 		LoadMesh(renderer, L"box.mesh", PLACEHOLDER),
 		LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD),
-		LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN) };
+		LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN),
+		LoadMesh(renderer, L"sphere.mesh", SPHERE),};
 	
 	loadCompleteTask = Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this, renderer]() {
 		return Concurrency::when_all(std::begin(loadTasks), std::end(loadTasks)).then([this, renderer]() {
@@ -112,6 +113,7 @@ void Assets::Init(RendererWrapper* renderer) {
 	LoadMesh(renderer, L"box.mesh", PLACEHOLDER);
 	LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD);
 	LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN);
+	LoadMesh(renderer, L"sphere.mesh", SPHERE);
 	renderer->EndUploadResources();
 #endif
 }

@@ -39,7 +39,8 @@ struct Assets {
 	static constexpr size_t PLACEHOLDER = 1;
 	static constexpr size_t CHECKERBOARD = 2;
 	static constexpr size_t BEETHOVEN = 3;
-	static constexpr size_t STATIC_MODEL_COUNT = 4;
+	static constexpr size_t SPHERE = 4;
+	static constexpr size_t STATIC_MODEL_COUNT = 5;
 	std::array<Mesh, STATIC_MODEL_COUNT> staticModels;
 	std::unordered_map<std::wstring, Img::ImgData> images;
 	std::unordered_map<std::wstring, Material> materials;

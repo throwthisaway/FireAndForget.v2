@@ -140,8 +140,9 @@ void Scene::OnAssetsLoaded() {
 	objects_.emplace_back(renderer_, assets_.staticModels[Assets::CHECKERBOARD], shaderResources, false);
 	objects_.emplace_back(renderer_, assets_.staticModels[Assets::BEETHOVEN], shaderResources, false);
 	// TODO:: remove
-	objects_.back().pos += glm::vec3{0.f, .5f, 0.f};
-
+	objects_.back().pos += glm::vec3{ 0.f, .5f, 0.f };
+	objects_.emplace_back(renderer_, assets_.staticModels[Assets::SPHERE], shaderResources, false);
+	
 	lights_[0] = &debug_[0];
 	lights_[1] = &debug_[1];
 	lights_[0]->pos = ToVec3(shaderStructures.cScene.scene.light[0].pos);
