@@ -11,7 +11,6 @@ using namespace ShaderStructures;
 	MTLPixelFormat pixelFormat_;
 
 	std::vector<PipelineState> pipelines_;
-
 	MTLPixelFormat colorAttachmentFormats_[RenderTargetCount];
 }
 - (nullable instancetype) initWithDevice: (id<MTLDevice> _Nonnull) device andPixelFormat: (MTLPixelFormat) pixelFormat {
@@ -128,6 +127,30 @@ using namespace ShaderStructures;
 		pipelineDescriptor.vertexDescriptor = vertexDesc;
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"deferred_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"deferred_fs_main"];
+		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
+		// debug...
+		pipelineDescriptor.colorAttachments[1].pixelFormat = MTLPixelFormatRGBA32Float;
+
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
+		pipelines_.push_back({pipeline, true});
+		if (error) NSLog(@"%@", [error localizedDescription]);
+	}
+
+	{
+		// DeferredPBR
+		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
+		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
+		vertexDesc.attributes[0].format = MTLVertexFormatFloat2;
+		vertexDesc.attributes[0].bufferIndex = 0;
+		vertexDesc.attributes[0].offset = 0;
+		vertexDesc.attributes[1].format = MTLVertexFormatFloat2;
+		vertexDesc.attributes[1].bufferIndex = 0;
+		vertexDesc.attributes[1].offset = 2 * sizeof(float);
+		vertexDesc.layouts[0].stride = 4 * sizeof(float);
+		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+		pipelineDescriptor.vertexDescriptor = vertexDesc;
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"deferred_pbr_vs_main"];
+		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"deferred_pbr_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
 		// debug...
 		pipelineDescriptor.colorAttachments[1].pixelFormat = MTLPixelFormatRGBA32Float;

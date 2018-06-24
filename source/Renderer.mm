@@ -191,13 +191,13 @@ struct Texture {
 	}
 }
 -(BufferIndex) createBuffer: (size_t) length {
-	id<MTLBuffer> mtlBuffer = [device_ newBufferWithLength: length options: MTLResourceOptionCPUCacheModeDefault];
+	id<MTLBuffer> mtlBuffer = [device_ newBufferWithLength: length options: MTLResourceCPUCacheModeWriteCombined];
 	buffers_.push_back({mtlBuffer, length, 1});
 	return (BufferIndex)buffers_.size() - 1;
 }
 
 -(BufferIndex) createBuffer: (const void* _Nonnull) buffer withLength: (size_t) length withElementSize: (size_t) elementSize {
-	id<MTLBuffer> mtlBuffer = [device_ newBufferWithBytes:buffer length:length options: MTLResourceOptionCPUCacheModeDefault];
+	id<MTLBuffer> mtlBuffer = [device_ newBufferWithBytes:buffer length:length options: MTLResourceCPUCacheModeWriteCombined];
 	buffers_.push_back({mtlBuffer, length, elementSize});
 	return (BufferIndex)buffers_.size() - 1;
 }
@@ -348,7 +348,7 @@ struct Texture {
 
 	id<MTLRenderCommandEncoder> deferredEncoder = [deferredCommandBuffer renderCommandEncoderWithDescriptor: deferredPassDescriptor];
 	[deferredEncoder setCullMode: MTLCullModeBack];
-	[deferredEncoder setRenderPipelineState: [shaders_ selectPipeline: Deferred].pipeline];
+	[deferredEncoder setRenderPipelineState: [shaders_ selectPipeline: DeferredPBR].pipeline];
 	[deferredEncoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
 	NSUInteger fsTexIndex = 0;
 	for (; fsTexIndex < RenderTargetCount; ++fsTexIndex) {

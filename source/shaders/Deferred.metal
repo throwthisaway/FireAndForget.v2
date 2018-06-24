@@ -32,12 +32,7 @@ struct DeferredOut {
 	float4 frag [[color(0)]];
 	float4 debug [[color(1)]];
 };
-float3 WorldPosFormDepth(float2 uv, float4x4 ip, texture2d<float> depth, sampler smp) {
-	float4 projected_pos = float4(uv * 2.f - 1.f, depth.sample(smp, uv).x, 1.f);
-	projected_pos.y = -projected_pos.y;
-	float4 world_pos = ip * projected_pos;
-	return world_pos.xyz / world_pos.w;
-}
+
 fragment DeferredOut deferred_fs_main(FSIn input [[stage_in]],
 							  constant cScene& scene [[buffer(0)]],
 							  texture2d<float> color [[texture(0)]],
@@ -49,8 +44,7 @@ fragment DeferredOut deferred_fs_main(FSIn input [[stage_in]],
 	float3 diffuseColor = color.sample(smp, input.uv).rgb;
 	float3 n = Decode(normal.sample(smp, input.uv).xy);
 	float4 mat = material.sample(smp, input.uv);
-	// TODO:: better one with linear depth and without mat mult: https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
-	float3 world_pos = WorldPosFormDepth(input.uv, scene.ip, depth, smp);
+	float3 world_pos = WorldPosFormDepth(input.uv, scene.ip, depth.sample(smp, input.uv).x);
 
 	float3 diff = float3(0.f, 0.f, 0.f);
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
@@ -58,7 +52,7 @@ fragment DeferredOut deferred_fs_main(FSIn input [[stage_in]],
 										world_pos,
 										n,
 										diffuseColor);
-		diff += ComputePointLight_Phong(scene.light[i],
+		diff += (float3(1.f) - diff) * ComputePointLight_Phong(scene.light[i],
 										scene.eyePos,
 										world_pos,
 										n,

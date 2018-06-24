@@ -12,7 +12,8 @@ const ShaderId Pos = 0;
 const ShaderId Tex = 1;
 const ShaderId Debug = 2;
 const ShaderId Deferred = 3;
-const ShaderId Count = 4;
+const ShaderId DeferredPBR = 4;
+const ShaderId Count = 5;
 const int RenderTargetCount = 4;
 
 // resource types

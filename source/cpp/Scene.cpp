@@ -126,7 +126,7 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 }
 namespace {
 static const float defaultLightRange = 25.f;
-static const ShaderStructures::PointLight defaultLight = { {.4f, .4f, .4f} ,{}/* diffuse */,
+static const ShaderStructures::PointLight defaultLight = { {.4f, .4f, .4f}/*{23.47f, 21.31f, 20.79f} */,{}/* diffuse */,
 	{.0f, .0f, .0f}, {} /* ambient */,
 	{.8f, .8f, .8f}, {} /* specular highlight */,
 	{ 2.f, 2.f, 2.f },{} /* position */,
@@ -163,6 +163,9 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 		shaderStructures.cScene.scene.light[i] = defaultLight;
 	}
 	shaderStructures.cScene.scene.light[0].pos[0] = -2.f;
+//	shaderStructures.cScene.scene.light[1].diffuse[0] = 150.0f;
+//	shaderStructures.cScene.scene.light[1].diffuse[1] = 150.0f;
+//	shaderStructures.cScene.scene.light[1].diffuse[2] = 150.0f;
 
 	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::frame_count);
 	DeferredBuffers deferredBuffers;
