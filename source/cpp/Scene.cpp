@@ -24,9 +24,9 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 		Scene::Object::Layer& l = layers.back();
 		l.pivot = layer.pivot;
 		// pos
-		l.cMVP = renderer->CreateShaderResource(sizeof(ShaderStructures::cMVP), FrameCount);
+		l.cMVP = renderer->CreateShaderResource(sizeof(ShaderStructures::cMVP), ShaderStructures::cMVP::frame_count);
 		// tex
-		l.cObject = renderer->CreateShaderResource(sizeof(ShaderStructures::cObject), FrameCount);
+		l.cObject = renderer->CreateShaderResource(sizeof(ShaderStructures::cObject), ShaderStructures::cObject::frame_count);
 		for (auto& submesh : layer.submeshes) {
 			if (debug) {
 				// debug

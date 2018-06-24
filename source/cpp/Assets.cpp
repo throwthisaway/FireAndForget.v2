@@ -161,14 +161,14 @@ void Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, Mesh& m
 			if (res.second) {
 				Material& gpuMaterial = res.first->second;
 				{
-					gpuMaterial.cColor = renderer->CreateShaderResource(sizeof(ShaderStructures::cColor), 1);
+					gpuMaterial.cColor = renderer->CreateShaderResource(sizeof(ShaderStructures::cColor), ShaderStructures::cColor::frame_count);
 					ShaderStructures::cColor data;
 					data.color[0] = surf.color[0]; data.color[1] = surf.color[1]; data.color[2] = surf.color[2]; data.color[3] = 1.f;// !!! surf.surface_infos[MeshLoader::TRANSPARENCY_MAP].val;
 					// TODO:: !!!surf.surface_infos[MeshLoader::TRANSPARENCY_MAP].val; is 0.000
 					renderer->UpdateShaderResource(gpuMaterial.cColor, &data, sizeof(ShaderStructures::cColor));
 				}
 				{
-					gpuMaterial.cMaterial = renderer->CreateShaderResource(sizeof(ShaderStructures::cMaterial), 1);
+					gpuMaterial.cMaterial = renderer->CreateShaderResource(sizeof(ShaderStructures::cMaterial), ShaderStructures::cMaterial::frame_count);
 					ShaderStructures::cMaterial data;
 					data.material.diffuse[0] = surf.color[0]; data.material.diffuse[1] = surf.color[1]; data.material.diffuse[2] = surf.color[2];
 					data.material.specular = surf.surface_infos[MeshLoader::SPECULARITY_MAP].val;
