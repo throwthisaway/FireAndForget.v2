@@ -125,13 +125,13 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 	}
 }
 namespace {
-static const float defaultLightRange = 25.f;
-static const ShaderStructures::PointLight defaultLight = { {.4f, .4f, .4f}/*{23.47f, 21.31f, 20.79f} */,{}/* diffuse */,
-	{.0f, .0f, .0f}, {} /* ambient */,
-	{.8f, .8f, .8f}, {} /* specular highlight */,
-	{ 2.f, 2.f, 2.f },{} /* position */,
-	{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange) } /* attenuation */, {},
-	defaultLightRange /* range */ };
+	const float defaultLightRange = 25.f;
+	const ShaderStructures::PointLight defaultPointLight = { {300.f, 300.f, 300.f}, /*{.4f, .4f, .4f}*//*{23.47f, 21.31f, 20.79f}*//* diffuse */ {},
+		{.0f, .0f, .0f}, /* ambient */ {},
+		{.8f, .8f, .8f},/* specular highlight */ {},
+		{ 4.f, 4.f, 10.f}, /* position */ {},
+		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange) }, /* attenuation */ {},
+		defaultLightRange /* range */ };
 }
 void Scene::OnAssetsLoaded() {
 	debug_.emplace_back(renderer_, assets_.staticModels[Assets::LIGHT], shaderResources, true);
@@ -141,12 +141,36 @@ void Scene::OnAssetsLoaded() {
 	objects_.emplace_back(renderer_, assets_.staticModels[Assets::BEETHOVEN], shaderResources, false);
 	// TODO:: remove
 	objects_.back().pos += glm::vec3{ 0.f, .5f, 0.f };
-	objects_.emplace_back(renderer_, assets_.staticModels[Assets::SPHERE], shaderResources, false);
+	const float incX = 2.4f, incY = 2.9f;
+	auto pos = glm::vec3{ -3 * incX, -3 * incY, -2.f };
+	for (int i = 0; i < 7; ++i) {
+		for (int j = 0; j < 7; ++j) {
+			objects_.emplace_back(renderer_, assets_.staticModels[Assets::SPHERE], shaderResources, false);
+			objects_.back().pos = pos;
+#ifdef PLATFORM_WIN
+			// TODO::
+#elif defined(PLATFORM_MAC_OS)
+			auto res = assets_.materials.emplace(L"mat_" + std::to_wstring(i) + L'_' + std::to_wstring(j), Material{ });
+			Material& gpuMaterial = res.first->second;
+			gpuMaterial.cMaterial = renderer_->CreateShaderResource(sizeof(ShaderStructures::cMaterial), ShaderStructures::cMaterial::frame_count);
+			ShaderStructures::cMaterial data;
+			data.material.diffuse[0] = .8f; data.material.diffuse[1] = .0f; data.material.diffuse[2] = .0f;
+			data.material.specular = glm::clamp(j / 7.f, 0.025f, 1.f);
+			data.material.power = i / 7.f;
+			renderer_->UpdateShaderResource(gpuMaterial.cMaterial, &data, sizeof(ShaderStructures::cMaterial));
+			objects_.back().layers.front().posCmd.front().fsBuffers[ShaderStructures::PosCmd::FSParams::index<ShaderStructures::cMaterial>::value] =
+				{gpuMaterial.cMaterial, ShaderStructures::cMaterial::frame_count};
+#endif
+			pos.x += incX;
+		}
+		pos.y += incY;
+		pos.x = -3 * incX;
+	}
 	
-	lights_[0] = &debug_[0];
-	lights_[1] = &debug_[1];
-	lights_[0]->pos = ToVec3(shaderStructures.cScene.scene.light[0].pos);
-	lights_[1]->pos = ToVec3(shaderStructures.cScene.scene.light[1].pos);
+	lights_[0].placeholder = &debug_[0];
+	lights_[1].placeholder = &debug_[1];
+	lights_[0].placeholder->pos = ToVec3(lights_[0].pointLight.pos);
+	lights_[1].placeholder->pos = ToVec3(lights_[1].pointLight.pos);
 	// TODO:: remove
 	objects_.back().pos.y += .5f;
 	loadCompleted = true;
@@ -156,14 +180,13 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	renderer_ = renderer;
 	camera_.Perspective(width, height);
 	
-	const float Z = -1.5f;
+	const float Z = -10.5f;
 	camera_.transform.pos = { 0.f, 0.f, Z };
 	camera_.view = ScreenSpaceRotator({}, camera_.transform);
-	FromVec3(camera_.transform.pos, shaderStructures.cScene.scene.eyePos);
-	for (int i = 0; i < sizeof(shaderStructures.cScene.scene.light) / sizeof(shaderStructures.cScene.scene.light[0]); ++i) {
-		shaderStructures.cScene.scene.light[i] = defaultLight;
+	for (int i = 0; i < MAX_LIGHTS; ++i) {
+		lights_[i].pointLight = defaultPointLight;
 	}
-	shaderStructures.cScene.scene.light[0].pos[0] = -2.f;
+	lights_[0].pointLight.pos[0] = lights_[0].pointLight.pos[1]= -4.f;
 //	shaderStructures.cScene.scene.light[1].diffuse[0] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[1] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[2] = 150.0f;
@@ -217,15 +240,16 @@ void Scene::Render() {
 }
 void Scene::UpdateCameraTransform() {
 	camera_.transform.pos += input.dpos;
-	//std::cout<<"cam " << camera_.transform.pos.x << ' ' << camera_.transform.pos.y << ' ' << camera_.transform.pos.z << '\n';
-	camera_.transform.rot += input.drot;
+	// wrong: camera_.transform.rot += input.drot;
+	// TODO:: camera transform is not well maintained...
 	camera_.view = ScreenSpaceRotator(camera_.view, Transform{ camera_.transform.pos, camera_.transform.center, input.drot});
 }
 
 void Scene::UpdateSceneTransform() {
 	transform.pos += input.dpos;
 	auto rot = glm::inverse(glm::mat3(camera_.view)) * input.drot;
-	transform.rot += rot;
+	// wrong: transform.rot += rot;
+	// TODO:: transform is not well maintained...
 	m = ScreenSpaceRotator(m, Transform{ transform.pos, transform.center, rot });
 }
 void Scene::Update(double frame, double total) {
@@ -235,15 +259,23 @@ void Scene::Update(double frame, double total) {
 	// TODO:: remove
 
 	camera_.Update();
-	FromVec3(camera_.transform.pos, shaderStructures.cScene.scene.eyePos);
+	// need to determine it from view because of ScreenSpaceRotator...
+	FromVec3(EyePosFromViewNoScale(camera_.view), shaderStructures.cScene.scene.eyePos);
 	auto ip = glm::inverse(camera_.proj);
 	memcpy(shaderStructures.cScene.scene.ip, &ip, sizeof(shaderStructures.cScene.scene.ip));
+	memcpy(shaderStructures.cScene.scene.ivp, &camera_.ivp, sizeof(shaderStructures.cScene.scene.ivp));
 	shaderStructures.cScene.scene.n = camera_.n; shaderStructures.cScene.scene.f = camera_.f;
+	for (int i = 0; i < MAX_LIGHTS; ++i) {
+		shaderStructures.cScene.scene.light[i] = lights_[i].pointLight;
+		//FromVec3(camera_.view * glm::vec4(ToVec3(lights_[i].pointLight.pos), 1.f), shaderStructures.cScene.scene.light[i].pos);
+	}
+
 	renderer_->UpdateShaderResource(shaderResources.cScene + renderer_->GetCurrenFrameIndex(), &shaderStructures.cScene, sizeof(shaderStructures.cScene));
 	for (auto& o : objects_) {
 		o.Update(frame, total);
 		for (const auto& layer : o.layers) {
-			auto m = this->m * glm::translate(RotationMatrix(glm::translate(glm::mat4{}, layer.pivot), o.rot.x, o.rot.y, o.rot.z), o.pos);
+			auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
+			m[3] += glm::vec4(layer.pivot, 0.f);
 			auto mvp = glm::transpose(camera_.vp * m);
 			// TODO:: update resources according to selected encoderIndex/shaderid
 			ShaderStructures::cMVP cMVP;
@@ -258,12 +290,13 @@ void Scene::Update(double frame, double total) {
 		}
 	}
 	// TODO:: update light pos here if neccessay
-	lights_[0]->pos = ToVec3(shaderStructures.cScene.scene.light[0].pos);
-	lights_[1]->pos = ToVec3(shaderStructures.cScene.scene.light[1].pos);
+	lights_[0].placeholder->pos = ToVec3(lights_[0].pointLight.pos);
+	lights_[1].placeholder->pos = ToVec3(lights_[1].pointLight.pos);
 	for (auto& o : debug_) {
 		o.Update(frame, total);
 		for (const auto& layer : o.layers) {
-			auto m = glm::translate(RotationMatrix(glm::translate(glm::mat4{}, layer.pivot), o.rot.x, o.rot.y, o.rot.z), o.pos);
+			auto m = glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
+			m[3] += glm::vec4(layer.pivot, 0.f);
 			auto mvp = glm::transpose(camera_.vp * m);
 			// TODO:: update resources according to selected encoderIndex/shaderid
 			ShaderStructures::cMVP cMVP;

@@ -19,7 +19,6 @@
 // - rewrite shaders to 5.x
 // - implicit truncation of vector type: 	output.n = normalize(mul(input.n, m));
 struct Time;
-
 struct Scene {
 	struct SceneShaderResources {
 		ShaderResourceIndex cScene;
@@ -57,13 +56,16 @@ private:
 	glm::mat4 m;	// for scene transform
 	Transform transform;
 	Camera camera_;
+	struct Light {
+		ShaderStructures::PointLight pointLight;
+		Object* placeholder;
+	}lights_[MAX_LIGHTS];
 	RendererWrapper* renderer_;
 	Assets assets_;
 	std::vector<Object> objects_, debug_;
 	struct {
 		ShaderStructures::cScene cScene;
 	}shaderStructures;
-	std::array<Object*, MAX_LIGHTS> lights_;
 	SceneShaderResources shaderResources;
 
 	// TODO:: remove

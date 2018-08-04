@@ -25,7 +25,7 @@ struct PointLight {
 };
 #define MAX_LIGHTS 2
 struct Scene {
-	float4x4 ip;
+	float4x4 ip, ivp;
 	PointLight light[MAX_LIGHTS];
 	float3 eyePos;
 	float pad0;

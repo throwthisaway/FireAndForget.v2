@@ -1,14 +1,12 @@
 #include "ShaderStructs.metal"
 
 float3 ComputePointLight_Phong(PointLight l, float3 eyePos, float3 pos, float3 normal, float3 col, float spec, float power) {
-	normal.x = -normal.x; normal.y = -normal.y; normal.z = -normal.z;
 	float3 lv = l.pos - pos;	// vector towards light
 	float l_distance = length(lv);
 	if (l_distance > l.range) return col * l.ambient;
 
 	lv = lv / l_distance;			// light direction vector
 
-	normal = normalize(normal);// TODO:: normalize(n) needed?
 	float l_intensity = dot(lv, normal);	// light intensity
 	if (l_intensity > 0.) {
 		float3 diffuse = l_intensity * l.diffuse * col;	// diffuse term
@@ -28,7 +26,6 @@ float3 ComputePointLight_BlinnPhong(PointLight l, float3 eyePos, float3 pos, flo
 	if (l_distance > l.range) return col * l.ambient;
 
 	lv = lv / l_distance;			// light direction vector
-	normal = normalize(normal);	// TODO:: normalize(n) needed?
 	float l_intensity = dot(lv, normal);	// light intensity
 	if (l_intensity > 0.) {
 		float3 diffuse = l_intensity * l.diffuse * col;	// diffuse term

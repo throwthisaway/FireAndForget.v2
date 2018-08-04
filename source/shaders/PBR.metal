@@ -13,7 +13,7 @@ float NDF_GGXTR(float3 n, float3 h, float roughness) {
 }
 
 float GF_SchlickGGX(float ndotv, float k) {
-	return ndotv / (ndotv * k);
+	return ndotv / (ndotv * (1.f - k) + k);
 }
 
 float GF_Smith(float ndotv, float ndotl, float k) {

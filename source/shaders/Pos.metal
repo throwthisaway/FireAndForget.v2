@@ -11,6 +11,8 @@ struct VIn {
 struct PSIn {
 	float4 pos [[position]];
 	float3 n [[user(normal)]];
+	float4 worldPos [[user(position)]];
+	float2 depthCS;
 };
 
 vertex PSIn pos_vs_main(VIn input[[stage_in]],
@@ -19,7 +21,9 @@ vertex PSIn pos_vs_main(VIn input[[stage_in]],
 	PSIn output;
 	float4 pos = float4(input.pos, 1.f);
 	output.pos = pos * obj.mvp;
+	output.worldPos = pos * obj.m;
 	output.n = float3(float4(input.n, 0.f) * obj.m);// float3x3(obj.m[0].xyz, obj.m[1].xyz, obj.m[2].xyz);
+	output.depthCS = float2(output.pos.z, output.pos.w);
 	return output;
 }
 struct cMaterial {
@@ -31,7 +35,7 @@ fragment FragOut pos_fs_main(PSIn input [[stage_in]],
 	output.albedo = float4(material.mat.diffuse, 1.f);
 	output.normal = Encode(normalize(input.n));
 	output.material = float4(material.mat.specular, material.mat.power, 0.f, 1.f);
-	output.debug = input.pos;
+	output.debug = input.worldPos;
 	return output;
 }
 

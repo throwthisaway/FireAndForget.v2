@@ -29,6 +29,7 @@
 		BD4992F020DE64E1009DA76D /* PBR.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992EF20DE64E1009DA76D /* PBR.metal */; };
 		BD4992F320DE6C79009DA76D /* PBR_include.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992F220DE6C79009DA76D /* PBR_include.metal */; };
 		BD4992F520DE9B12009DA76D /* DeferredPBR.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992F420DE9B12009DA76D /* DeferredPBR.metal */; };
+		BD4992F720DFB351009DA76D /* sphere.mesh in Resources */ = {isa = PBXBuildFile; fileRef = BD4992F620DFB351009DA76D /* sphere.mesh */; };
 		BD6A40E0208230A80027E1D7 /* Phong.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD1DA547206FE61C004EF62A /* Phong.metal */; };
 		BD6A40E1208230AF0027E1D7 /* ShaderStructs.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD1DA548206FE61C004EF62A /* ShaderStructs.metal */; };
 		BD6A40E2208230BA0027E1D7 /* Phong_include.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD6A40DF20822FD80027E1D7 /* Phong_include.metal */; };
@@ -96,6 +97,7 @@
 		BD4992EF20DE64E1009DA76D /* PBR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = PBR.metal; path = shaders/PBR.metal; sourceTree = "<group>"; };
 		BD4992F220DE6C79009DA76D /* PBR_include.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = PBR_include.metal; path = shaders/PBR_include.metal; sourceTree = "<group>"; };
 		BD4992F420DE9B12009DA76D /* DeferredPBR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = DeferredPBR.metal; path = shaders/DeferredPBR.metal; sourceTree = "<group>"; };
+		BD4992F620DFB351009DA76D /* sphere.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = sphere.mesh; path = assets/sphere.mesh; sourceTree = "<group>"; };
 		BD6A40DF20822FD80027E1D7 /* Phong_include.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Phong_include.metal; path = shaders/Phong_include.metal; sourceTree = "<group>"; };
 		BD6A4164208CD9780027E1D7 /* Deferred.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Deferred.metal; path = shaders/Deferred.metal; sourceTree = "<group>"; };
 		BD6A4167208CE5D50027E1D7 /* Common_include.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Common_include.metal; path = shaders/Common_include.metal; sourceTree = "<group>"; };
@@ -252,6 +254,7 @@
 		BD72038D1EEC1A7400B2C914 /* assets */ = {
 			isa = PBXGroup;
 			children = (
+				BD4992F620DFB351009DA76D /* sphere.mesh */,
 				BD1DA54920724064004EF62A /* box.mesh */,
 				BD1DA54A20724064004EF62A /* light.mesh */,
 				BD9FA6BC1F2E2CBE00978F61 /* checkerboard.mesh */,
@@ -340,6 +343,7 @@
 				BD7203941EEC1FDA00B2C914 /* BEETHOVE_object.mesh in Resources */,
 				BD1DA54B20724065004EF62A /* box.mesh in Resources */,
 				BD9FA6BE1F2E2CBE00978F61 /* checkerboard.mesh in Resources */,
+				BD4992F720DFB351009DA76D /* sphere.mesh in Resources */,
 				BD3D1AB81E895BFC00F7311A /* Assets.xcassets in Resources */,
 				BD3D1ABB1E895BFC00F7311A /* Main.storyboard in Resources */,
 			);

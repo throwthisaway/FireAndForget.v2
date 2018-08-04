@@ -48,11 +48,12 @@ fragment DeferredOut deferred_fs_main(FSIn input [[stage_in]],
 
 	float3 diff = float3(0.f, 0.f, 0.f);
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
-		diff += ComputePointLight_Diffuse(scene.light[i],
+		PointLight pl = scene.light[i];
+		diff += ComputePointLight_Diffuse(pl,
 										world_pos,
 										n,
 										diffuseColor);
-		diff += (float3(1.f) - diff) * ComputePointLight_Phong(scene.light[i],
+		diff += ComputePointLight_Phong(pl,
 										scene.eyePos,
 										world_pos,
 										n,
