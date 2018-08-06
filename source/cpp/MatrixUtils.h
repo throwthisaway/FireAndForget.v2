@@ -13,8 +13,3 @@ inline glm::mat4 ScreenSpaceRotator(const glm::mat4& in, const Transform& transf
 	return glm::translate(mat * glm::mat4(glm::mat3(in)), -transform.center);
 }
 
-inline glm::vec3 EyePosFromViewNoScale(const glm::mat4& view) {
-	glm::mat3 rotMat(view);
-	glm::vec3 pos = view[3];
-	return -pos * rotMat;
-}

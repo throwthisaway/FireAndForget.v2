@@ -181,8 +181,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	camera_.Perspective(width, height);
 	
 	const float Z = -10.5f;
-	camera_.transform.pos = { 0.f, 0.f, Z };
-	camera_.view = ScreenSpaceRotator({}, camera_.transform);
+	camera_.Translate({ 0.f, 0.f, Z });
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
 		lights_[i].pointLight = defaultPointLight;
 	}
@@ -239,10 +238,8 @@ void Scene::Render() {
 		}
 }
 void Scene::UpdateCameraTransform() {
-	camera_.transform.pos += input.dpos;
-	// wrong: camera_.transform.rot += input.drot;
-	// TODO:: camera transform is not well maintained...
-	camera_.view = ScreenSpaceRotator(camera_.view, Transform{ camera_.transform.pos, camera_.transform.center, input.drot});
+	camera_.Translate(input.dpos);
+	camera_.RotatePreMultiply(input.drot);
 }
 
 void Scene::UpdateSceneTransform() {
@@ -260,7 +257,7 @@ void Scene::Update(double frame, double total) {
 
 	camera_.Update();
 	// need to determine it from view because of ScreenSpaceRotator...
-	FromVec3(EyePosFromViewNoScale(camera_.view), shaderStructures.cScene.scene.eyePos);
+	FromVec3(camera_.GetEyePos(), shaderStructures.cScene.scene.eyePos);
 	auto ip = glm::inverse(camera_.proj);
 	memcpy(shaderStructures.cScene.scene.ip, &ip, sizeof(shaderStructures.cScene.scene.ip));
 	memcpy(shaderStructures.cScene.scene.ivp, &camera_.ivp, sizeof(shaderStructures.cScene.scene.ivp));
