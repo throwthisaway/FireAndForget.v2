@@ -555,13 +555,13 @@ bool Renderer::Render() {
 	deferredCommandList_->RSSetViewports(1, &viewport);
 	deferredCommandList_->RSSetScissorRects(1, &m_scissorRect);
 	deferredCommandList_->ResourceBarrier(_countof(presentResourceBarriers), presentResourceBarriers);
-	auto& state = pipelineStates_.states_[Deferred];
+	auto& state = pipelineStates_.states_[DeferredPBR];
 	deferredCommandList_->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].Get());
 	deferredCommandList_->SetPipelineState(state.pipelineState.Get());
 	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetView = m_deviceResources->GetRenderTargetView();
 	deferredCommandList_->OMSetRenderTargets(1, &renderTargetView, false, nullptr);
 	ID3D12GraphicsCommandList* commandList = deferredCommandList_.Get();
-	PIXBeginEvent(commandList, 0, L"SubmitDeferredCmd");
+	PIXBeginEvent(commandList, 0, L"SubmitDeferredPBRCmd");
 	{
 		const auto& desc = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].Get(deferredBuffers_.descAllocEntryIndex);
 		ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };

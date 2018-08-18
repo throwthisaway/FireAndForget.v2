@@ -145,7 +145,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks_.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", debugInputLayout, _countof(debugInputLayout)));
 	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::Deferred, L"DeferredVS.cso", L"DeferredPS.cso", deferredInputLayout, _countof(deferredInputLayout)));
 	// TODO:: hack!!! write DeferredPBR
-	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::DeferredPBR, L"DeferredVS.cso", L"DeferredPS.cso", deferredInputLayout, _countof(deferredInputLayout)));
+	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::DeferredPBR, L"DeferredPBRVS.cso", L"DeferredPBRPS.cso", deferredInputLayout, _countof(deferredInputLayout)));
 	shaderTasks_.push_back(DX::ReadDataAsync(L"DeferredRootSig.cso").then([this](std::vector<byte>& fileData) mutable {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, fileData.data(), fileData.size(), IID_PPV_ARGS(&rootSignature)));

@@ -147,20 +147,40 @@ void Scene::OnAssetsLoaded() {
 		for (int j = 0; j < 7; ++j) {
 			objects_.emplace_back(renderer_, assets_.staticModels[Assets::SPHERE], shaderResources, false);
 			objects_.back().pos = pos;
-#ifdef PLATFORM_WIN
-			// TODO::
-#elif defined(PLATFORM_MAC_OS)
-			auto res = assets_.materials.emplace(L"mat_" + std::to_wstring(i) + L'_' + std::to_wstring(j), Material{ });
+
+			auto res = assets_.materials.emplace(L"mat_" + std::to_wstring(i) + L'_' + std::to_wstring(j), Material{});
 			Material& gpuMaterial = res.first->second;
 			gpuMaterial.cMaterial = renderer_->CreateShaderResource(sizeof(ShaderStructures::cMaterial), ShaderStructures::cMaterial::frame_count);
 			ShaderStructures::cMaterial data;
 			data.material.diffuse[0] = .8f; data.material.diffuse[1] = .0f; data.material.diffuse[2] = .0f;
 			data.material.specular = glm::clamp(j / 7.f, 0.025f, 1.f);
 			data.material.power = i / 7.f;
-			renderer_->UpdateShaderResource(gpuMaterial.cMaterial, &data, sizeof(ShaderStructures::cMaterial));
-			objects_.back().layers.front().posCmd.front().fsBuffers[ShaderStructures::PosCmd::FSParams::index<ShaderStructures::cMaterial>::value] =
+			auto& cmd = objects_.back().layers.front().posCmd.front();
+#ifdef PLATFORM_WIN
+			cmd.descAllocEntryIndex = renderer_->AllocDescriptors(ShaderStructures::PosCmd::Params::desc_count);
+			uint16_t offset = 0;
+			{
+				// 1st root parameter, 1st descriptor table with 1 descriptor entry
+				auto rootParamIndex = ShaderStructures::PosCmd::Params::index<ShaderStructures::cObject>::value;
+				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset };
+				for (uint32_t frame = 0; frame < ShaderStructures::cObject::frame_count; ++frame) {
+					renderer_->CreateCBV(cmd.descAllocEntryIndex, offset, frame, objects_.back().layers.front().cObject + frame);
+				}
+				++offset;
+			}
+
+			{
+				auto rootParamIndex = ShaderStructures::PosCmd::Params::index<ShaderStructures::cMaterial>::value;
+				cmd.bindings[rootParamIndex] = ShaderStructures::ResourceBinding{ rootParamIndex, offset };
+				// cMaterial
+				renderer_->CreateCBV(cmd.descAllocEntryIndex, offset, gpuMaterial.cMaterial);
+				++offset;
+			}
+#elif defined(PLATFORM_MAC_OS)
+			cmd.fsBuffers[ShaderStructures::PosCmd::FSParams::index<ShaderStructures::cMaterial>::value] =
 				{gpuMaterial.cMaterial, ShaderStructures::cMaterial::frame_count};
 #endif
+			renderer_->UpdateShaderResource(gpuMaterial.cMaterial, &data, sizeof(ShaderStructures::cMaterial));
 			pos.x += incX;
 		}
 		pos.y += incY;

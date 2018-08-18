@@ -101,8 +101,8 @@ ShaderResourceIndex CBAlloc::Push(uint32_t size, uint16_t count) {
 		++currentBufferIndex_;  currentOffset_ = 0;
 		if (buffers_.size() <= currentBufferIndex_) buffers_.push_back(CreateConstantBuffer(device_, maxSize_));
 
-		currentGPUAddressBase_ = buffers_.front()->GetGPUVirtualAddress();
-		DX::ThrowIfFailed(buffers_.front()->Map(0, &CD3DX12_RANGE(0, 0) /* We do not intend to read from this resource on the CPU.*/, reinterpret_cast<void**>(&currentMappedBufferBase_)));
+		currentGPUAddressBase_ = buffers_.back()->GetGPUVirtualAddress();
+		DX::ThrowIfFailed(buffers_.back()->Map(0, &CD3DX12_RANGE(0, 0) /* We do not intend to read from this resource on the CPU.*/, reinterpret_cast<void**>(&currentMappedBufferBase_)));
 	}
 	auto startIndex = entries_.size();
 	for (size_t i = 0; i < count; ++i)

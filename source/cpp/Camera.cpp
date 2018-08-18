@@ -22,7 +22,7 @@ void Camera::RotatePreMultiply(const vec3_t& rot) {
 vec3_t Camera::GetEyePos() const{
 	// no scale
 	glm::mat3 rotMat(view);
-	glm::vec3 pos = view[3];
+	glm::vec3 pos = glm::vec3(view[3]);
 	return -pos * rotMat;
 }
 
