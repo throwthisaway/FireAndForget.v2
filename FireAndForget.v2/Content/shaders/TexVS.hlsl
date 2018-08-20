@@ -12,6 +12,7 @@ struct PSIn {
 	float4 pos : SV_POSITION;
 	float3 n : NORMAL0;
 	float2 uv0 : TEXCOORD0;
+	float4 worldPos : POSITION0;
 };
 
 PSIn main(VIn input) {
@@ -20,5 +21,6 @@ PSIn main(VIn input) {
 	output.pos = mul(pos, obj.mvp);
 	output.n = normalize(mul(input.n, obj.m));
 	output.uv0 = input.uv0;
+	output.worldPos = mul(pos, obj.m);
 	return output;
 }

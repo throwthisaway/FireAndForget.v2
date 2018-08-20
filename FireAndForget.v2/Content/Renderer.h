@@ -7,6 +7,8 @@
 #include "..\source\cpp\ShaderStructures.h"
 #include "PipelineState.h"
 #include "DescriptorHeapAllocator.h"
+#include "CBFrameAlloc.h"
+#include "DescriptorFrameAlloc.h"
 
 using namespace FireAndForget_v2;
 
@@ -39,6 +41,7 @@ public:
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, BufferIndex textureBufferIndex);
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, ID3D12Resource* resource, DXGI_FORMAT format);
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ID3D12Resource* resource, DXGI_FORMAT format);
+	
 
 	void BeginRender();
 	size_t StartRenderPass();
@@ -55,6 +58,7 @@ public:
 	//ShaderResourceIndex GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex);
 
 	std::shared_ptr<DX::DeviceResources> m_deviceResources;
+	DescriptorFrameAlloc submitDescriptorFrameAlloc_;
 private:
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
@@ -76,8 +80,10 @@ private:
 	std::vector<Buffer> buffers_;
 
 	CBAlloc cbAlloc_;
-	DescriptorAlloc descAlloc_[DX::c_frameCount];
-	
+	DescriptorAlloc descAlloc_[ShaderStructures::FrameCount];
+	CBFrameAlloc cbFrameAlloc_[ShaderStructures::FrameCount];
+	DescriptorFrameAlloc stagingDescriptorFrameAlloc_[ShaderStructures::FrameCount];
+
 	Microsoft::WRL::ComPtr<ID3D12Resource> rtt_[ShaderStructures::RenderTargetCount];
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;
 	UINT rtvDescriptorSize_ = 0;

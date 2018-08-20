@@ -126,11 +126,11 @@ Scene::Object::Object(RendererWrapper* renderer, const Mesh& mesh, const SceneSh
 }
 namespace {
 	const float defaultLightRange = 25.f;
-	const ShaderStructures::PointLight defaultPointLight = { {300.f, 300.f, 300.f}, /*{.4f, .4f, .4f}*//*{23.47f, 21.31f, 20.79f}*//* diffuse */ {},
-		{.0f, .0f, .0f}, /* ambient */ {},
-		{.8f, .8f, .8f},/* specular highlight */ {},
-		{ 4.f, 4.f, 10.f}, /* position */ {},
-		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange) }, /* attenuation */ {},
+	const ShaderStructures::PointLight defaultPointLight = { {300.f, 300.f, 300.f}, /*{.4f, .4f, .4f}*//*{23.47f, 21.31f, 20.79f}*//* diffuse */
+		{.0f, .0f, .0f}, /* ambient */
+		{.8f, .8f, .8f},/* specular highlight */
+		{ 4.f, 4.f, 10.f}, /* position */
+		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange) }, /* attenuation */
 		defaultLightRange /* range */ };
 }
 void Scene::OnAssetsLoaded() {
@@ -153,8 +153,8 @@ void Scene::OnAssetsLoaded() {
 			gpuMaterial.cMaterial = renderer_->CreateShaderResource(sizeof(ShaderStructures::cMaterial), ShaderStructures::cMaterial::frame_count);
 			ShaderStructures::cMaterial data;
 			data.material.diffuse[0] = .8f; data.material.diffuse[1] = .0f; data.material.diffuse[2] = .0f;
-			data.material.specular = glm::clamp(j / 7.f, 0.025f, 1.f);
-			data.material.power = i / 7.f;
+			data.material.specular = glm::clamp(j / 6.f, 0.025f, 1.f);
+			data.material.power = i / 6.f;
 			auto& cmd = objects_.back().layers.front().posCmd.front();
 #ifdef PLATFORM_WIN
 			cmd.descAllocEntryIndex = renderer_->AllocDescriptors(ShaderStructures::PosCmd::Params::desc_count);

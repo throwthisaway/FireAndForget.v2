@@ -222,7 +222,10 @@
     <ClInclude Include="Common\d3dx12.h" />
     <ClInclude Include="Common\DeviceResources.h" />
     <ClInclude Include="Content\BundleLoader.h" />
+    <ClInclude Include="Content\CBFrameAlloc.h" />
+    <ClInclude Include="Content\D3DHelpers.h" />
     <ClInclude Include="Content\DescriptorHeapAllocator.h" />
+    <ClInclude Include="Content\DescriptorFrameAlloc.h" />
     <ClInclude Include="Content\PipelineState.h" />
     <ClInclude Include="Content\Renderer.h" />
     <ClInclude Include="Content\shaders\Common.hlsli" />
@@ -243,7 +246,10 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Content\BundleLoader.cpp" />
+    <ClCompile Include="Content\CBFrameAlloc.cpp" />
+    <ClCompile Include="Content\D3DHelpers.cpp" />
     <ClCompile Include="Content\DescriptorHeapAllocator.cpp" />
+    <ClCompile Include="Content\DescriptorFrameAlloc.cpp" />
     <ClCompile Include="Content\PipelineState.cpp" />
     <ClCompile Include="Content\Renderer.cpp" />
     <ClCompile Include="FireAndForget_v2Main.cpp" />
@@ -281,6 +287,16 @@
     <FxCompile Include="Content\shaders\DebugPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
     </FxCompile>
     <FxCompile Include="Content\shaders\DebugVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>

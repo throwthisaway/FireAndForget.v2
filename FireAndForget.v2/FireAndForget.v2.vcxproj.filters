@@ -94,6 +94,15 @@
     <ClCompile Include="Content\DescriptorHeapAllocator.cpp">
       <Filter>Content</Filter>
     </ClCompile>
+    <ClCompile Include="Content\CBFrameAlloc.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\D3DHelpers.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\DescriptorFrameAlloc.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
@@ -158,6 +167,15 @@
     </ClInclude>
     <ClInclude Include="Content\shaders\Phong.hlsli">
       <Filter>Content\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\CBFrameAlloc.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\D3DHelpers.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\DescriptorFrameAlloc.h">
+      <Filter>Content</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

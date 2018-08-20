@@ -11,6 +11,7 @@
 #endif
 
 struct Material {
+	ShaderStructures::ShaderId id;
 	// pos
 	ShaderResourceIndex cColor = InvalidShaderResource;
 	// tex

@@ -104,7 +104,7 @@ using namespace DirectX;
 using namespace Windows::Foundation;
 
 namespace {
-	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536;
+	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536, defaultCBFrameAllocSize = 16384, defaultDescFrameAllocCount = 16;
 };
 Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
 	pipelineStates_(deviceResources.get()),
@@ -215,6 +215,12 @@ BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes, size_
 
 void Renderer::CreateDeviceDependentResources() {
 	cbAlloc_.Init(m_deviceResources->GetD3DDevice(), defaultBufferSize);
+	for (int i = 0; i < _countof(cbFrameAlloc_); ++i)
+		cbFrameAlloc_[i].Init(m_deviceResources->GetD3DDevice(), defaultCBFrameAllocSize);
+	for (int i = 0; i < _countof(stagingDescriptorFrameAlloc_); ++i)
+		stagingDescriptorFrameAlloc_[i].Init(m_deviceResources->GetD3DDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, true);
+	submitDescriptorFrameAlloc_.Init(m_deviceResources->GetD3DDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, false);
+
 	for (UINT i = 0; i < DX::c_frameCount; ++i) {
 		descAlloc_[i].Init(m_deviceResources->GetD3DDevice(), defaultDescCount);
 	}
@@ -316,6 +322,9 @@ void Renderer::Update(DX::StepTimer const& timer) {
 void Renderer::BeginRender() {
 	if (!loadingComplete_) return;
 
+	cbFrameAlloc_[m_deviceResources->GetCurrentFrameIndex()].Reset();
+	submitDescriptorFrameAlloc_.Reset();
+	stagingDescriptorFrameAlloc_[m_deviceResources->GetCurrentFrameIndex()].Reset();
 	m_deviceResources->GetCommandAllocator()->Reset();
 	size_t i = 0;
 	for (auto& commandList : commandLists_) {

@@ -56,7 +56,8 @@ float4 main(PSIn input) : SV_TARGET{
 	float4 material = tRTT[2].Sample(smp, input.uv0);
 	float depth = tRTT[4].Sample(smp, input.uv0).r;
 	// TODO:: better one with linear depth and without mat mult: https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
-	float3 worldPos = WorldPosFormDepth(input.uv0, scene.ip, depth);
+	float4 debug = tRTT[3].Sample(smp, input.uv0);
+	float3 worldPos = WorldPosFormDepth(input.uv0, scene.ivp, depth);
 	float3 v = normalize(scene.eyePos - worldPos);
 
 	float roughness = material.r;

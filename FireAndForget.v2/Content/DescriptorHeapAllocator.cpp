@@ -1,39 +1,12 @@
 #include "pch.h"
 #include "DescriptorHeapAllocator.h"
+#include "D3DHelpers.h"
 #include "..\Common\DirectXHelper.h"
 #include "..\source\cpp\BufferUtils.h"
 
 using namespace Microsoft::WRL;
 
 namespace {
-	auto CreateDescriptorHeapForCBV_SRV_UAV(ID3D12Device* d3dDevice, UINT numDesc) {
-		ComPtr<ID3D12DescriptorHeap> cbvHeap;
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = numDesc;
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		// This flag indicates that this descriptor heap can be bound to the pipeline and that descriptors contained in it can be referenced by a root table.
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		DX::ThrowIfFailed(d3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&cbvHeap)));
-
-		NAME_D3D12_OBJECT(cbvHeap);
-		return cbvHeap;
-	}
-
-	ComPtr<ID3D12Resource> CreateConstantBuffer(ID3D12Device* d3dDevice, size_t size) {
-		ComPtr<ID3D12Resource> constantBuffer;
-		CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-		CD3DX12_RESOURCE_DESC constantBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size);
-		DX::ThrowIfFailed(d3dDevice->CreateCommittedResource(
-			&uploadHeapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&constantBufferDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&constantBuffer)));
-
-		NAME_D3D12_OBJECT(constantBuffer);
-		return constantBuffer;
-	}
 
 	//https://stackoverflow.com/questions/12024304/c11-number-of-variadic-template-function-parameters
 
@@ -120,7 +93,7 @@ void DescriptorAlloc::Init(ID3D12Device* device, size_t descCount, size_t startH
 	assert(descCount);
 
 	for (size_t i = 0; i < startHeapCount; ++i)
-		descriptorHeaps_.push_back({ CreateDescriptorHeapForCBV_SRV_UAV(device, maxDescCount_) });
+		descriptorHeaps_.push_back({ CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, maxDescCount_, true) });
 }
 DescriptorAlloc::DescriptorHeapIndex DescriptorAlloc::EnsureAvailableHeap(InternalDescriptorIndex count) {
 	for (DescriptorHeapIndex i = 0; i <=/*inclusive*/ currentHeapIndex_; ++i) {
@@ -128,7 +101,7 @@ DescriptorAlloc::DescriptorHeapIndex DescriptorAlloc::EnsureAvailableHeap(Intern
 	}
 	if (maxHeapCount_ && maxHeapCount_ <= currentHeapIndex_) return InvalidDescriptorHeap;
 	++currentHeapIndex_;
-	descriptorHeaps_.push_back({ CreateDescriptorHeapForCBV_SRV_UAV(device_, maxDescCount_) });
+	descriptorHeaps_.push_back({ CreateDescriptorHeap(device_, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, maxDescCount_, true) });
 	return (DescriptorHeapIndex)descriptorHeaps_.size() - 1;
 }
 
