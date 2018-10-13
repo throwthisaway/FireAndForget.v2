@@ -7,20 +7,22 @@ struct ID3D12Device;
 struct ID3D12Resource;
 class CBFrameAlloc {
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> pool_;
-	int currentIndex_ = -1;
-	uint64_t bufferSize_ = 0, currentSize_ = 0;
-	D3D12_GPU_VIRTUAL_ADDRESS currentGPUAddressBase_ = -1;
-	uint8_t* currentMappedBufferBase_ = nullptr;
-	ID3D12Device* device_ = nullptr;
-	void CreateNewBuffer();
+	UINT index_;
+	uint64_t max_, offset_;
+	D3D12_GPU_VIRTUAL_ADDRESS GPUAddressBase_ = -1;
+	uint8_t* mappedBufferBase_ = nullptr;
+	ID3D12Device* device_;
+	void Request();
+	void Map(UINT index);
+	void Unmap(UINT index);
 public:
 	void Init(ID3D12Device* device, uint64_t bufferSize);
 	struct Entry {
 		ID3D12Resource* resource;
 		D3D12_GPU_VIRTUAL_ADDRESS gpuAddress;
 		uint8_t* cpuAddress;
+		UINT size;
 	};
 	Entry Alloc(unsigned int size);
 	void Reset();
-	void Clear();
 };

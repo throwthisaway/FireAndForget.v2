@@ -17,7 +17,7 @@ public:
 	void Init(Renderer* self);
 #endif
 	void BeginUploadResources();
-	BufferIndex CreateBuffer(const void* buffer, size_t sizeInBytes, size_t elementSize);
+	BufferIndex CreateBuffer(const void* buffer, size_t sizeInBytes);
 	TextureIndex CreateTexture(const void* buffer, uint64_t width, uint32_t height, uint8_t bytesPerPixel, Img::PixelFormat format);
 	void EndUploadResources();
 

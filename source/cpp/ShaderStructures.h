@@ -1,13 +1,17 @@
 #pragma once
 #include <vector>
+#include <glm/glm.hpp>
 #include "RendererTypes.h"
 #include "compatibility.h"
 #include "ShaderTypeAliases.h"
 
+namespace assets {
+	struct Submesh;
+	struct Material;
+}
 namespace ShaderStructures {
 #include "ShaderStructs.h"
 const int FrameCount = 3;
-using ShaderId = size_t;
 const ShaderId Pos = 0;
 const ShaderId Tex = 1;
 const ShaderId Debug = 2;
@@ -64,6 +68,13 @@ struct BufferInfo {
 	uint16_t bufferCount;	// one resource per frame
 };
 #endif
+
+struct DrawCmd {
+	const float4x4& m, mvp;
+	const BufferIndex vb, ib;
+	const assets::Submesh& submesh;
+	const assets::Material& material;
+};
 // Debug
 struct cMVP : cFrame<> {
 	float4x4 mvp;

@@ -9,6 +9,7 @@
 #include "DescriptorHeapAllocator.h"
 #include "CBFrameAlloc.h"
 #include "DescriptorFrameAlloc.h"
+#include "..\source\cpp\Assets.hpp"
 
 using namespace FireAndForget_v2;
 
@@ -26,7 +27,7 @@ public:
 	void SaveState();
 
 	void BeginUploadResources();
-	BufferIndex CreateBuffer(const void* buffer, size_t sizeInBytes, size_t elementSize);
+	BufferIndex CreateBuffer(const void* buffer, size_t sizeInBytes);
 	BufferIndex CreateTexture(const void* buffer, UINT64 width, UINT height, UINT bytesPerPixel, DXGI_FORMAT format);
 	void EndUploadResources();
 
@@ -49,7 +50,6 @@ public:
 	void Submit(const CmdT&) {
 		assert(false); // TODO:: implement Submit overload
 	}
-
 	void SetDeferredBuffers(const ShaderStructures::DeferredBuffers& deferredBuffers);
 
 	//ResourceHeapHandle GetStaticShaderResourceHeap(unsigned short descCountNeeded);
@@ -58,7 +58,6 @@ public:
 	//ShaderResourceIndex GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex);
 
 	std::shared_ptr<DX::DeviceResources> m_deviceResources;
-	DescriptorFrameAlloc submitDescriptorFrameAlloc_;
 private:
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
@@ -74,15 +73,17 @@ private:
 	struct Buffer {
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 		D3D12_GPU_VIRTUAL_ADDRESS bufferLocation;
-		size_t size, elementSize;
+		size_t size;
 		DXGI_FORMAT format;
 	};
 	std::vector<Buffer> buffers_;
 
 	CBAlloc cbAlloc_;
 	DescriptorAlloc descAlloc_[ShaderStructures::FrameCount];
-	CBFrameAlloc cbFrameAlloc_[ShaderStructures::FrameCount];
-	DescriptorFrameAlloc stagingDescriptorFrameAlloc_[ShaderStructures::FrameCount];
+	struct {
+		CBFrameAlloc cb;
+		DescriptorFrameAlloc desc;
+	}frame_[ShaderStructures::FrameCount];
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> rtt_[ShaderStructures::RenderTargetCount];
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvHeap_;

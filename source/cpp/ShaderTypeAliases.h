@@ -4,6 +4,6 @@
 #else
 #define ALIGN16
 #endif
-using float4 = ALIGN16 float[4];
-using float3 = ALIGN16 float[3];
-using float4x4 = ALIGN16 float[16];
+using float3 = ALIGN16 glm::vec3;
+using float4 = ALIGN16 glm::vec4;
+using float4x4 = ALIGN16 glm::mat4x4;

@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "..\Common\DirectXHelper.h"
 #include "..\source\cpp\Assets.hpp"
+
 // TODO::
 // - remove deviceResource commandallocators
 // - remove rtvs[framecount]
@@ -25,8 +26,8 @@ void RendererWrapper::BeginUploadResources() {
 	renderer->BeginUploadResources();
 }
 
-BufferIndex RendererWrapper::CreateBuffer(const void* buffer, size_t sizeInBytes, size_t elementSize) {
-	return renderer->CreateBuffer(buffer, sizeInBytes, elementSize);
+BufferIndex RendererWrapper::CreateBuffer(const void* buffer, size_t sizeInBytes) {
+	return renderer->CreateBuffer(buffer, sizeInBytes);
 }
 
 namespace {
@@ -85,6 +86,7 @@ uint32_t RendererWrapper::GetCurrenFrameIndex() {
 void RendererWrapper::SetDeferredBuffers(const ShaderStructures::DeferredBuffers& deferredBuffers) {
 	renderer->SetDeferredBuffers(deferredBuffers);
 }
+
 //
 //ResourceHeapHandle RendererWrapper::GetStaticShaderResourceHeap(unsigned short descCountNeeded) {
 //	return renderer->GetStaticShaderResourceHeap(descCountNeeded);
@@ -104,7 +106,7 @@ using namespace DirectX;
 using namespace Windows::Foundation;
 
 namespace {
-	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536, defaultCBFrameAllocSize = 16384, defaultDescFrameAllocCount = 16;
+	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536, defaultCBFrameAllocSize = 65536, defaultDescFrameAllocCount = 256;
 };
 Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
 	pipelineStates_(deviceResources.get()),
@@ -169,10 +171,10 @@ BufferIndex Renderer::CreateTexture(const void* buffer, UINT64 width, UINT heigh
 			CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		bufferUpload_.cmdList->ResourceBarrier(1, &vertexBufferResourceBarrier);
 	}
-	buffers_.push_back({ resource, 0, 0, 0, format });
+	buffers_.push_back({ resource, 0, 0, format });
 	return (BufferIndex)buffers_.size() - 1;
 }
-BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes, size_t elementSize) {
+BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes) {
 	CD3DX12_RESOURCE_DESC vertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes);
 
 	auto d3dDevice = m_deviceResources->GetD3DDevice();
@@ -209,18 +211,16 @@ BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes, size_
 			CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		bufferUpload_.cmdList->ResourceBarrier(1, &vertexBufferResourceBarrier);
 	}
-	buffers_.push_back({ resource, resource->GetGPUVirtualAddress(), sizeInBytes, elementSize});
+	buffers_.push_back({ resource, resource->GetGPUVirtualAddress(), sizeInBytes});
 	return (BufferIndex)buffers_.size() - 1;
 }
 
 void Renderer::CreateDeviceDependentResources() {
 	cbAlloc_.Init(m_deviceResources->GetD3DDevice(), defaultBufferSize);
-	for (int i = 0; i < _countof(cbFrameAlloc_); ++i)
-		cbFrameAlloc_[i].Init(m_deviceResources->GetD3DDevice(), defaultCBFrameAllocSize);
-	for (int i = 0; i < _countof(stagingDescriptorFrameAlloc_); ++i)
-		stagingDescriptorFrameAlloc_[i].Init(m_deviceResources->GetD3DDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, true);
-	submitDescriptorFrameAlloc_.Init(m_deviceResources->GetD3DDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, false);
-
+	for (int i = 0; i < _countof(frame_); ++i) {
+		frame_[i].cb.Init(m_deviceResources->GetD3DDevice(), defaultCBFrameAllocSize);
+		frame_[i].desc.Init(m_deviceResources->GetD3DDevice(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, true);
+	}
 	for (UINT i = 0; i < DX::c_frameCount; ++i) {
 		descAlloc_[i].Init(m_deviceResources->GetD3DDevice(), defaultDescCount);
 	}
@@ -270,11 +270,8 @@ void Renderer::CreateDeviceDependentResources() {
 
 	BeginUploadResources();
 	// fullscreen quad...
-	struct VertexPUV {
-		DirectX::XMFLOAT2 pos, uv;
-	};
-	VertexPUV quad[] = { { { -1., -1.f },{ 0.f, 1.f } },{ { -1., 1.f },{ 0.f, 0.f } },{ { 1., -1.f },{ 1.f, 1.f } },{ { 1., 1.f },{ 1.f, 0.f } } };
-	fsQuad_ = CreateBuffer(quad, sizeof(quad), sizeof(VertexPUV));
+	assets::VertexPUV quad[] = { { { -1., -1.f },{ 0.f, 1.f } },{ { -1., 1.f },{ 0.f, 0.f } },{ { 1., -1.f },{ 1.f, 1.f } },{ { 1., 1.f },{ 1.f, 0.f } } };
+	fsQuad_ = CreateBuffer(quad, sizeof(quad));
 	EndUploadResources();
 }
 
@@ -322,9 +319,8 @@ void Renderer::Update(DX::StepTimer const& timer) {
 void Renderer::BeginRender() {
 	if (!loadingComplete_) return;
 
-	cbFrameAlloc_[m_deviceResources->GetCurrentFrameIndex()].Reset();
-	submitDescriptorFrameAlloc_.Reset();
-	stagingDescriptorFrameAlloc_[m_deviceResources->GetCurrentFrameIndex()].Reset();
+	frame_[m_deviceResources->GetCurrentFrameIndex()].cb.Reset();
+	frame_[m_deviceResources->GetCurrentFrameIndex()].desc.Reset();
 	m_deviceResources->GetCommandAllocator()->Reset();
 	size_t i = 0;
 	for (auto& commandList : commandLists_) {
@@ -371,7 +367,7 @@ size_t Renderer::StartRenderPass() {
 			commandList->OMSetRenderTargets(RenderTargetCount, rtvs, false, &depthStencilView);
 			commandList->SetPipelineState(state.pipelineState.Get());
 			// Set the graphics root signature and descriptor heaps to be used by this frame.
-			commandList->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].Get());
+			commandList->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].rootSignature.Get());
 		}
 	}
 	return 0;
@@ -379,157 +375,157 @@ size_t Renderer::StartRenderPass() {
 
 template<>
 void Renderer::Submit(const ShaderStructures::DebugCmd& cmd) {
-	if (!loadingComplete_) return;
-	const auto id = ShaderStructures::Debug;
-	auto& state = pipelineStates_.states_[id];
-	auto* commandList = commandLists_[id].Get();
-	PIXBeginEvent(commandList, 0, L"SubmitDebugCmd");
-	{
-		const auto& desc = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].Get(cmd.descAllocEntryIndex);
-		ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
-		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		// Bind the current frame's constant buffer to the pipeline.
-		auto d3dDevice = m_deviceResources->GetD3DDevice();
-		for (auto binding : cmd.bindings) {
-			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].GetGPUHandle(cmd.descAllocEntryIndex, binding.offset);
-			commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
-		}
+	//if (!loadingComplete_) return;
+	//const auto id = ShaderStructures::Debug;
+	//auto& state = pipelineStates_.states_[id];
+	//auto* commandList = commandLists_[id].Get();
+	//PIXBeginEvent(commandList, 0, L"SubmitDebugCmd");
+	//{
+	//	const auto& desc = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].Get(cmd.descAllocEntryIndex);
+	//	ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
+	//	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	//	// Bind the current frame's constant buffer to the pipeline.
+	//	auto d3dDevice = m_deviceResources->GetD3DDevice();
+	//	for (auto binding : cmd.bindings) {
+	//		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].GetGPUHandle(cmd.descAllocEntryIndex, binding.offset);
+	//		commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
+	//	}
 
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		assert(cmd.vb != InvalidBuffer);
-		D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
-		{
-			const auto& buffer = buffers_[cmd.vb];
-			vertexBufferView.BufferLocation = buffer.bufferLocation;
-			vertexBufferView.StrideInBytes = (UINT)buffer.elementSize;
-			vertexBufferView.SizeInBytes = (UINT)buffer.size;
-		}
-		// TODO:: nb and uvb
-		commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
-		if (cmd.ib != InvalidBuffer) {
-			D3D12_INDEX_BUFFER_VIEW	indexBufferView;
-			{
-				const auto& buffer = buffers_[cmd.ib];
-				indexBufferView.BufferLocation = buffer.bufferLocation;
-				indexBufferView.SizeInBytes = (UINT)buffer.size;
-				indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-			}
-			commandList->IASetIndexBuffer(&indexBufferView);
-			commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
-		}
-		else {
-			commandList->DrawInstanced(cmd.count, 1, cmd.offset, 0);
-		}
-	}
-	PIXEndEvent(commandList);
+	//	assert(cmd.vb != InvalidBuffer);
+	//	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+	//	{
+	//		const auto& buffer = buffers_[cmd.vb];
+	//		vertexBufferView.BufferLocation = buffer.bufferLocation;
+	//		vertexBufferView.StrideInBytes = (UINT)buffer.elementSize;
+	//		vertexBufferView.SizeInBytes = (UINT)buffer.size;
+	//	}
+	//	// TODO:: nb and uvb
+	//	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+	//	if (cmd.ib != InvalidBuffer) {
+	//		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
+	//		{
+	//			const auto& buffer = buffers_[cmd.ib];
+	//			indexBufferView.BufferLocation = buffer.bufferLocation;
+	//			indexBufferView.SizeInBytes = (UINT)buffer.size;
+	//			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+	//		}
+	//		commandList->IASetIndexBuffer(&indexBufferView);
+	//		commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
+	//	}
+	//	else {
+	//		commandList->DrawInstanced(cmd.count, 1, cmd.offset, 0);
+	//	}
+	//}
+	//PIXEndEvent(commandList);
 }
 
 template<>
 void Renderer::Submit(const ShaderStructures::PosCmd& cmd) {
-	if (!loadingComplete_) return;
-	const auto id = ShaderStructures::Pos;
-	auto& state = pipelineStates_.states_[id];
-	auto* commandList = commandLists_[id].Get();
-	PIXBeginEvent(commandList, 0, L"SubmitPosCmd");
-	{
-		const auto& desc = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].Get(cmd.descAllocEntryIndex);
-		ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
-		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		// Bind the current frame's constant buffer to the pipeline.
-		auto d3dDevice = m_deviceResources->GetD3DDevice();
-		for (auto binding : cmd.bindings) {
-			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].GetGPUHandle(cmd.descAllocEntryIndex, binding.offset);
-			commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
-		}
+	//if (!loadingComplete_) return;
+	//const auto id = ShaderStructures::Pos;
+	//auto& state = pipelineStates_.states_[id];
+	//auto* commandList = commandLists_[id].Get();
+	//PIXBeginEvent(commandList, 0, L"SubmitPosCmd");
+	//{
+	//	const auto& desc = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].Get(cmd.descAllocEntryIndex);
+	//	ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
+	//	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	//	// Bind the current frame's constant buffer to the pipeline.
+	//	auto d3dDevice = m_deviceResources->GetD3DDevice();
+	//	for (auto binding : cmd.bindings) {
+	//		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].GetGPUHandle(cmd.descAllocEntryIndex, binding.offset);
+	//		commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
+	//	}
 
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		assert(cmd.vb != InvalidBuffer);
-		assert(cmd.nb != InvalidBuffer);
-		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
-			{ buffers_[cmd.vb].bufferLocation,
-			(UINT)buffers_[cmd.vb].size,
-			(UINT)buffers_[cmd.vb].elementSize },
+	//	assert(cmd.vb != InvalidBuffer);
+	//	assert(cmd.nb != InvalidBuffer);
+	//	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
+	//		{ buffers_[cmd.vb].bufferLocation,
+	//		(UINT)buffers_[cmd.vb].size,
+	//		(UINT)buffers_[cmd.vb].elementSize },
 
-			{ buffers_[cmd.nb].bufferLocation,
-			(UINT)buffers_[cmd.nb].size,
-			(UINT)buffers_[cmd.nb].elementSize } };
+	//		{ buffers_[cmd.nb].bufferLocation,
+	//		(UINT)buffers_[cmd.nb].size,
+	//		(UINT)buffers_[cmd.nb].elementSize } };
 
-		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
-		if (cmd.ib != InvalidBuffer) {
-			D3D12_INDEX_BUFFER_VIEW	indexBufferView;
-			{
-				const auto& buffer = buffers_[cmd.ib];
-				indexBufferView.BufferLocation = buffer.bufferLocation;
-				indexBufferView.SizeInBytes = (UINT)buffer.size;
-				indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-			}
-			commandList->IASetIndexBuffer(&indexBufferView);
-			commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
-		}
-		else {
-			commandList->DrawInstanced(cmd.count, 1, cmd.offset, 0);
-		}
-	}
-	PIXEndEvent(commandList);
+	//	commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
+	//	if (cmd.ib != InvalidBuffer) {
+	//		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
+	//		{
+	//			const auto& buffer = buffers_[cmd.ib];
+	//			indexBufferView.BufferLocation = buffer.bufferLocation;
+	//			indexBufferView.SizeInBytes = (UINT)buffer.size;
+	//			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+	//		}
+	//		commandList->IASetIndexBuffer(&indexBufferView);
+	//		commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
+	//	}
+	//	else {
+	//		commandList->DrawInstanced(cmd.count, 1, cmd.offset, 0);
+	//	}
+	//}
+	//PIXEndEvent(commandList);
 }
 
 template<>
 void Renderer::Submit(const ShaderStructures::TexCmd& cmd) {
-	if (!loadingComplete_) return;
-	const auto id = ShaderStructures::Tex;
-	auto& state = pipelineStates_.states_[id];
-	auto* commandList = commandLists_[id].Get();
-	PIXBeginEvent(commandList, 0, L"SubmitTexCmd");
-	{
-		const auto& desc = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].Get(cmd.descAllocEntryIndex);
-		ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
-		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		// Bind the current frame's constant buffer to the pipeline.
-		auto d3dDevice = m_deviceResources->GetD3DDevice();
-		UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		for (auto binding : cmd.bindings) {
-			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].GetGPUHandle(cmd.descAllocEntryIndex, binding.offset);
-			commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
-		}
+	//if (!loadingComplete_) return;
+	//const auto id = ShaderStructures::Tex;
+	//auto& state = pipelineStates_.states_[id];
+	//auto* commandList = commandLists_[id].Get();
+	//PIXBeginEvent(commandList, 0, L"SubmitTexCmd");
+	//{
+	//	const auto& desc = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].Get(cmd.descAllocEntryIndex);
+	//	ID3D12DescriptorHeap* ppHeaps[] = { desc.heap };
+	//	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	//	// Bind the current frame's constant buffer to the pipeline.
+	//	auto d3dDevice = m_deviceResources->GetD3DDevice();
+	//	UINT cbvDescriptorSize = d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//	for (auto binding : cmd.bindings) {
+	//		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle = descAlloc_[m_deviceResources->GetCurrentFrameIndex()].GetGPUHandle(cmd.descAllocEntryIndex, binding.offset);
+	//		commandList->SetGraphicsRootDescriptorTable(binding.paramIndex, gpuHandle);
+	//	}
 
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		assert(cmd.vb != InvalidBuffer);
-		assert(cmd.nb != InvalidBuffer);
-		assert(cmd.uvb != InvalidBuffer);
-		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
-			{ buffers_[cmd.vb].bufferLocation,
-			(UINT)buffers_[cmd.vb].size,
-			(UINT)buffers_[cmd.vb].elementSize },
+	//	assert(cmd.vb != InvalidBuffer);
+	//	assert(cmd.nb != InvalidBuffer);
+	//	assert(cmd.uvb != InvalidBuffer);
+	//	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
+	//		{ buffers_[cmd.vb].bufferLocation,
+	//		(UINT)buffers_[cmd.vb].size,
+	//		(UINT)buffers_[cmd.vb].elementSize },
 
-			{ buffers_[cmd.nb].bufferLocation,
-			(UINT)buffers_[cmd.nb].size,
-			(UINT)buffers_[cmd.nb].elementSize },
+	//		{ buffers_[cmd.nb].bufferLocation,
+	//		(UINT)buffers_[cmd.nb].size,
+	//		(UINT)buffers_[cmd.nb].elementSize },
 
-			{ buffers_[cmd.uvb].bufferLocation,
-			(UINT)buffers_[cmd.uvb].size,
-			(UINT)buffers_[cmd.uvb].elementSize } };
+	//		{ buffers_[cmd.uvb].bufferLocation,
+	//		(UINT)buffers_[cmd.uvb].size,
+	//		(UINT)buffers_[cmd.uvb].elementSize } };
 
-		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
+	//	commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
 
-		if (cmd.ib != InvalidBuffer) {
-			D3D12_INDEX_BUFFER_VIEW	indexBufferView;
-			{
-				const auto& buffer = buffers_[cmd.ib];
-				indexBufferView.BufferLocation = buffer.bufferLocation;
-				indexBufferView.SizeInBytes = (UINT)buffer.size;
-				indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-			}
+	//	if (cmd.ib != InvalidBuffer) {
+	//		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
+	//		{
+	//			const auto& buffer = buffers_[cmd.ib];
+	//			indexBufferView.BufferLocation = buffer.bufferLocation;
+	//			indexBufferView.SizeInBytes = (UINT)buffer.size;
+	//			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+	//		}
 
-			commandList->IASetIndexBuffer(&indexBufferView);
-			commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
-		} else {
-			commandList->DrawInstanced(cmd.count, 1, cmd.offset, 0);
-		}
-	}
-	PIXEndEvent(commandList);
+	//		commandList->IASetIndexBuffer(&indexBufferView);
+	//		commandList->DrawIndexedInstanced(cmd.count, 1, cmd.offset, 0/* reorder vertices to support uint16_t indexing*/, 0);
+	//	} else {
+	//		commandList->DrawInstanced(cmd.count, 1, cmd.offset, 0);
+	//	}
+	//}
+	//PIXEndEvent(commandList);
 }
 
 bool Renderer::Render() {
@@ -565,7 +561,7 @@ bool Renderer::Render() {
 	deferredCommandList_->RSSetScissorRects(1, &m_scissorRect);
 	deferredCommandList_->ResourceBarrier(_countof(presentResourceBarriers), presentResourceBarriers);
 	auto& state = pipelineStates_.states_[DeferredPBR];
-	deferredCommandList_->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].Get());
+	deferredCommandList_->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].rootSignature.Get());
 	deferredCommandList_->SetPipelineState(state.pipelineState.Get());
 	D3D12_CPU_DESCRIPTOR_HANDLE renderTargetView = m_deviceResources->GetRenderTargetView();
 	deferredCommandList_->OMSetRenderTargets(1, &renderTargetView, false, nullptr);
@@ -590,7 +586,7 @@ bool Renderer::Render() {
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
 			{ buffers_[fsQuad_].bufferLocation,
 			(UINT)buffers_[fsQuad_].size,
-			(UINT)buffers_[fsQuad_].elementSize } };
+			(UINT)sizeof(assets::VertexPUV) } };
 
 		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
 		commandList->DrawInstanced(4, 1, 0, 0);
@@ -608,7 +604,118 @@ bool Renderer::Render() {
 
 	return true;
 }
+template<>
+void Renderer::Submit(const DrawCmd& cmd) {
+	if (!loadingComplete_) return;
+	auto id = cmd.submesh.id;
+	auto& state = pipelineStates_.states_[id];
+	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
+	auto& frame = frame_[m_deviceResources->GetCurrentFrameIndex()];
+	PIXBeginEvent(commandList, 0, L"Submit"); {
+		DescriptorFrameAlloc::Entry entry;
+		switch (id) {
+		case ShaderStructures::Debug: {
+			entry = frame.desc.Push(2);
+			UINT offset = 0;
+			{
+				auto cb = frame.cb.Alloc(sizeof(float4x4));
+				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
+				memcpy(cb.cpuAddress, &cmd.mvp, sizeof(float4x4));
+			}
+			offset += frame.desc.GetDescriptorSize();
+			{
+				auto cb = frame.cb.Alloc(sizeof(float4));
+				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
+				memcpy(cb.cpuAddress, &cmd.material.albedo, sizeof(float4));
+			}
+			offset += frame.desc.GetDescriptorSize();
+			break;
+		}
+		case ShaderStructures::Pos: {
+			entry = frame.desc.Push(2);
+			UINT offset = 0;
+			{
+				auto cb = frame.cb.Alloc(sizeof(ShaderStructures::Object));
+				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
+				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
+				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
+			}
+			offset += frame.desc.GetDescriptorSize();
+			{
+				auto cb = frame.cb.Alloc(sizeof(ShaderStructures::Material));
+				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
+				((ShaderStructures::Material*)cb.cpuAddress)->diffuse = cmd.material.albedo;
+				((ShaderStructures::Material*)cb.cpuAddress)->power = cmd.material.metallic;
+				((ShaderStructures::Material*)cb.cpuAddress)->specular = cmd.material.roughness;
+			}
+			offset += frame.desc.GetDescriptorSize();
+			break;
+		}
+		case ShaderStructures::Tex: {
+			entry = frame.desc.Push(3);
+			UINT offset = 0;
+			{
+				auto cb = frame.cb.Alloc(sizeof(ShaderStructures::Object));
+				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
+				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
+				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
+			}
+			offset += frame.desc.GetDescriptorSize();
+			{
+				auto& texture = buffers_[cmd.material.texAlbedo];
+				frame.desc.CreateSRV(entry.cpuHandle.Offset(offset), texture.resource.Get(), texture.format);
+			}
+			offset += frame.desc.GetDescriptorSize();
+			{
+				auto cb = frame.cb.Alloc(sizeof(ShaderStructures::Material));
+				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
+				((ShaderStructures::Material*)cb.cpuAddress)->diffuse = cmd.material.albedo;
+				((ShaderStructures::Material*)cb.cpuAddress)->power = cmd.material.metallic;
+				((ShaderStructures::Material*)cb.cpuAddress)->specular = cmd.material.roughness;
+			}
+			offset += frame.desc.GetDescriptorSize();
+			break;
+		}
+		default: assert(false);
+		}
 
+		ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		auto& rootSignature = pipelineStates_.rootSignatures_[state.rootSignatureId];
+		for (UINT i = 0, offset = 0; i < rootSignature.ranges.size(); ++i) {
+			commandList->SetGraphicsRootDescriptorTable(i, entry.gpuHandle.Offset(offset));
+			offset += frame.desc.GetDescriptorSize() * rootSignature.ranges[i];
+		}
+
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		assert(cmd.vb != InvalidBuffer);
+		assert(cmd.ib != InvalidBuffer);
+		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
+			{ buffers_[cmd.vb].bufferLocation + cmd.submesh.vbByteOffset,
+			(UINT)buffers_[cmd.vb].size - +cmd.submesh.vbByteOffset,
+			cmd.submesh.stride } };
+
+		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
+
+		if (cmd.ib != InvalidBuffer) {
+			D3D12_INDEX_BUFFER_VIEW	indexBufferView;
+			{
+				const auto& buffer = buffers_[cmd.ib];
+				indexBufferView.BufferLocation = buffer.bufferLocation + cmd.submesh.ibByteOffset;
+				indexBufferView.SizeInBytes = (UINT)buffer.size - cmd.submesh.ibByteOffset;
+				indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+			}
+
+			commandList->IASetIndexBuffer(&indexBufferView);
+			commandList->DrawIndexedInstanced(cmd.submesh.count, 1, 0, 0, 0);
+		}
+		else {
+			commandList->DrawInstanced(cmd.submesh.count, 1, cmd.submesh.vbByteOffset, 0);
+		}
+	}
+	PIXEndEvent(commandList);
+}
 ShaderResourceIndex Renderer::CreateShaderResource(uint32_t size, uint16_t count) {
 	return cbAlloc_.Push(size, count);
 }
@@ -658,7 +765,10 @@ template<>
 void RendererWrapper::Submit(const ShaderStructures::TexCmd& cmd) {
 	renderer->Submit(cmd);
 }
-
+template<>
+void RendererWrapper::Submit(const ShaderStructures::DrawCmd& cmd) {
+	renderer->Submit(cmd);
+}
 void Renderer::SetDeferredBuffers(const ShaderStructures::DeferredBuffers& deferredBuffers) {
 	deferredBuffers_ = deferredBuffers;
 	uint16_t offset = 0;	// cScene
@@ -690,4 +800,3 @@ void Renderer::SetDeferredBuffers(const ShaderStructures::DeferredBuffers& defer
 //	shaderResourceDescriptors_.emplace_back(&resources.Get(index));
 //	return shaderResourceDescriptors_.size() - 1;
 //}
-

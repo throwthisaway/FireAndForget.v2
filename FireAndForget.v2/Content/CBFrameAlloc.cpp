@@ -4,44 +4,52 @@
 #include "D3DHelpers.h"
 #include "..\source\cpp\BufferUtils.h"
 #include "..\Common\DirectXHelper.h"
-
-void CBFrameAlloc::CreateNewBuffer() {
-	assert(device_);
-	ID3D12Resource* resource;
-	if (currentIndex_>= 0)
-		pool_[currentIndex_]->Unmap(0, &CD3DX12_RANGE(0, 0));
-
-	if (++currentIndex_ >= pool_.size()) {
-		pool_.push_back(CreateConstantBuffer(device_, bufferSize_, L"CBFrameAlloc"));
-		resource = pool_.back().Get();
-	} else resource = pool_[currentIndex_].Get();
-	
-	currentGPUAddressBase_ = resource->GetGPUVirtualAddress();
-	DX::ThrowIfFailed(resource->Map(0, &CD3DX12_RANGE(0, 0) , reinterpret_cast<void**>(&currentMappedBufferBase_)));
-	currentSize_ = 0;
-}	
+#include <string>
+#undef max
+void CBFrameAlloc::Unmap(UINT index) {
+	assert(index < pool_.size());
+	pool_[index]->Unmap(0, &CD3DX12_RANGE(0, 0));
+}
+void CBFrameAlloc::Map(UINT index) {
+	assert(index < pool_.size());
+	ID3D12Resource* resource = pool_[index].Get();
+	GPUAddressBase_ = resource->GetGPUVirtualAddress();
+	assert(GPUAddressBase_ != -1);
+	DX::ThrowIfFailed(resource->Map(0, &CD3DX12_RANGE(0, 0), reinterpret_cast<void**>(&mappedBufferBase_)));
+}
+void CBFrameAlloc::Request() {
+	pool_.push_back(CreateConstantBuffer(device_, max_, 
+		(std::wstring(L"frame alloc. constant buffer #") + std::to_wstring(pool_.size())).c_str()));
+	index_ = UINT(pool_.size() - 1);
+	Map(index_);
+	offset_ = 0;
+}
+// Call after device acquired
 void CBFrameAlloc::Init(ID3D12Device* device, uint64_t bufferSize) {
-	// TODO:: clear is dangerous after device loss
-	Clear();
+	GPUAddressBase_ = -1;
+	mappedBufferBase_ = nullptr;
 	device_ = device;
-	bufferSize_ = bufferSize;
+	max_ = bufferSize;
+	pool_.clear();
+	Request();
 }
 CBFrameAlloc::Entry CBFrameAlloc::Alloc(unsigned int size) {
 	size = AlignTo<decltype(size), 256>(size);
-	currentSize_ += size;
-	if (currentSize_ > bufferSize_) CreateNewBuffer();
-	Entry result = { pool_[currentIndex_].Get(), currentGPUAddressBase_, currentMappedBufferBase_ };
-	currentGPUAddressBase_ += size;
-	currentMappedBufferBase_ += size;
+	if (offset_ + size > max_) {
+		if (index_ < pool_.size()) Unmap(index_);
+		if (++index_ >= pool_.size()) Request();
+	}
+	Entry result = { pool_[index_].Get(), GPUAddressBase_ + offset_, mappedBufferBase_ + offset_, size};
+	offset_ += size;
 	return result;
 }
+// Call beginning of a frame
 void CBFrameAlloc::Reset() {
-	if (currentIndex_ >= 0)
-		pool_[currentIndex_]->Unmap(0, &CD3DX12_RANGE(0, 0));
-	currentIndex_ = -1;
-	currentSize_ = 0;
-}
-void CBFrameAlloc::Clear() {
-	Reset();
-	pool_.clear();
+	if (index_ != 0) {
+		Unmap(index_);
+		Map(0);
+	}
+	index_ = 0;
+	offset_ = 0;
+	
 }

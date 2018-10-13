@@ -11,3 +11,12 @@ const ShaderResourceIndex InvalidShaderResource = std::numeric_limits<ShaderReso
 
 using DescAllocEntryIndex = uint32_t;
 const DescAllocEntryIndex InvalidDescAllocEntry = std::numeric_limits<DescAllocEntryIndex>::max();
+
+using MaterialIndex = uint32_t;
+const MaterialIndex InvalidMaterial = std::numeric_limits<MaterialIndex>::max();
+
+using ShaderId = uint16_t;
+const ShaderId InvalidShader = std::numeric_limits<ShaderId>::max();
+
+using index_t = uint16_t;	// Index buffer element type
+using offset_t = uint32_t;	// byte offset to an opaque array

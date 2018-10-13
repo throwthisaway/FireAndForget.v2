@@ -23,25 +23,10 @@ struct Scene {
 	struct SceneShaderResources {
 		ShaderResourceIndex cScene;
 	};
+
 	struct Object {
 		vec3_t pos, rot;
-		float scale = 1.f;
-		
-		struct Layer {
-			vec3_t pivot;
-			// debug
-			ShaderResourceIndex cMVP;
-			std::vector<ShaderStructures::DebugCmd> debugCmd;
-			// pos-tex
-			ShaderResourceIndex cObject;
-			//pos
-			std::vector<ShaderStructures::PosCmd> posCmd;
-			// tex
-			std::vector<ShaderStructures::TexCmd> texCmd;
-		};
-		std::vector<Layer> layers;
-	
-		Object(RendererWrapper* renderer, const Mesh& mesh, const SceneShaderResources& sceneShaderResources, bool debug);
+		index_t mesh;
 		void Update(double frame, double total);
 	};
 	void Init(RendererWrapper*, int, int);
@@ -58,19 +43,13 @@ private:
 	Camera camera_;
 	struct Light {
 		ShaderStructures::PointLight pointLight;
-		Object* placeholder;
+		index_t placeholder;
 	}lights_[MAX_LIGHTS];
 	RendererWrapper* renderer_;
-	Assets assets_;
-	std::vector<Object> objects_, debug_;
+	assets::Assets assets_;
+	std::vector<Object> objects_;
 	struct {
 		ShaderStructures::cScene cScene;
 	}shaderStructures;
 	SceneShaderResources shaderResources;
-
-	// TODO:: remove
-	float	m_radiansPerSecond;
-	float	m_angle;
-	bool	m_tracking;
-	// TODO:: remove
 };

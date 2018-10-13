@@ -1,11 +1,9 @@
 #include "Common.hlsli"
 #include "../../../source/cpp/ShaderStructs.h"
 
-Texture2D tColor : register(t0);
+Texture2D<float4> tColor : register(t0);
 
-cbuffer cMaterial : register(b0) {
-	Material mat;
-};
+ConstantBuffer<Material> mat : register(b0);
 
 SamplerState smp : register(s0) {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -26,6 +24,6 @@ MRTOut main(PSIn input) {
 	output.albedo = diffuseColor;
 	output.normal = Encode(input.n);
 	output.material = float4(mat.specular, mat.power, 0.f, 1.f);
-	output.debug = input.worldPos;
+	output.debug = float4(input.n, 1.f);
 	return output;
 }

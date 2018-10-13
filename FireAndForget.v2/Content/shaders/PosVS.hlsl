@@ -1,7 +1,5 @@
 #include "../../../source/cpp/ShaderStructs.h"
-cbuffer cObject : register(b0) {
-	Object obj;
-};
+ConstantBuffer<Object> obj : register(b0);
 
 struct VIn {
 	float3 pos : POSITION0;

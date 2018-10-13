@@ -1,8 +1,13 @@
 
+struct VIn {
+	float3 pos : POSITION0;
+	float3 n : NORMAL0;
+};
+
 cbuffer cMVP : register(b0) {
 	float4x4 mvp;
 };
 
-float4 main(float3 pos : POSITION) : SV_POSITION {
-	return mul(float4(pos, 1.0f), mvp);
+float4 main(VIn input) : SV_POSITION {
+	return mul(float4(input.pos, 1.0f), mvp);
 }

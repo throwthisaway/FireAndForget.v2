@@ -7,16 +7,16 @@ using namespace Microsoft::WRL;
 using namespace concurrency;
 
 namespace {
-	const D3D12_INPUT_ELEMENT_DESC debugInputLayout[] = {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
-	const D3D12_INPUT_ELEMENT_DESC posInputLayout[] = {
+	/*const D3D12_INPUT_ELEMENT_DESC debugInputLayout[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };*/
+	const D3D12_INPUT_ELEMENT_DESC pnLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }};
-	const D3D12_INPUT_ELEMENT_DESC texInputLayout[] = {
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }};
+	const D3D12_INPUT_ELEMENT_DESC pntLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }};
-	const D3D12_INPUT_ELEMENT_DESC deferredInputLayout[] = {
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }};
+	const D3D12_INPUT_ELEMENT_DESC ptLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
 	//PipelineStates::CBuffer SetupDescriptorHeap(ID3D12Device* d3dDevice, ID3D12DescriptorHeap* cbvHeap, ID3D12Resource* constantBuffer, size_t size, size_t numDesc, size_t repeatCount, size_t indexOffset) {
@@ -70,12 +70,13 @@ void PipelineStates::CreateDeviceDependentResources() {
 		// ROOT_VS_1CB_PS_1CB
 		CD3DX12_ROOT_PARAMETER parameter[2];
 		CD3DX12_DESCRIPTOR_RANGE range0;
+		std::vector<UINT> ranges{ 1, 1 };
 		range0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		parameter[0].InitAsDescriptorTable(1, &range0, D3D12_SHADER_VISIBILITY_VERTEX);
+		parameter[0].InitAsDescriptorTable(ranges[0], &range0, D3D12_SHADER_VISIBILITY_VERTEX);
 
 		CD3DX12_DESCRIPTOR_RANGE range1;
 		range1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		parameter[1].InitAsDescriptorTable(1, &range1, D3D12_SHADER_VISIBILITY_PIXEL);
+		parameter[1].InitAsDescriptorTable(ranges[1], &range1, D3D12_SHADER_VISIBILITY_PIXEL);
 
 		D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
@@ -92,18 +93,19 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
-		rootSignatures_[ROOT_VS_1CB_PS_1CB] = rootSignature;
+		rootSignatures_[ROOT_VS_1CB_PS_1CB] = { rootSignature, std::move(ranges) };
 	}
 
 	{
 		// ROOT_VS_1CB_PS_1TX_1CB
 		CD3DX12_ROOT_PARAMETER parameter[2];
 		CD3DX12_DESCRIPTOR_RANGE range[3];
+		std::vector<UINT> ranges{ 1, 2 };
 		range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		parameter[0].InitAsDescriptorTable(1, range, D3D12_SHADER_VISIBILITY_VERTEX);
+		parameter[0].InitAsDescriptorTable(ranges[0], range, D3D12_SHADER_VISIBILITY_VERTEX);
 		range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 		range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		parameter[1].InitAsDescriptorTable(2, range + 1, D3D12_SHADER_VISIBILITY_PIXEL);
+		parameter[1].InitAsDescriptorTable(ranges[1], range + 1, D3D12_SHADER_VISIBILITY_PIXEL);
 
 		D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
@@ -135,22 +137,32 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
-		rootSignatures_[ROOT_VS_1CB_PS_1TX_1CB] = rootSignature;
+		rootSignatures_[ROOT_VS_1CB_PS_1TX_1CB] = { rootSignature, std::move(ranges) };
 	}
 
 
 
-	shaderTasks_.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", posInputLayout, _countof(posInputLayout)));
-	shaderTasks_.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_1CB, L"TexVS.cso", L"TexPS.cso", texInputLayout, _countof(texInputLayout)));
-	shaderTasks_.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", debugInputLayout, _countof(debugInputLayout)));
-	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::Deferred, L"DeferredVS.cso", L"DeferredPS.cso", deferredInputLayout, _countof(deferredInputLayout)));
+	shaderTasks_.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", pnLayout, _countof(pnLayout)));
+	shaderTasks_.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_1CB, L"TexVS.cso", L"TexPS.cso", pntLayout, _countof(pntLayout)));
+	shaderTasks_.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", pnLayout, _countof(pnLayout)));
+	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::Deferred, ROOT_VS_0CB_PS_1CB_5TX, L"DeferredVS.cso", L"DeferredPS.cso", ptLayout, _countof(ptLayout)));
 	// TODO:: hack!!! write DeferredPBR
-	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::DeferredPBR, L"DeferredPBRVS.cso", L"DeferredPBRPS.cso", deferredInputLayout, _countof(deferredInputLayout)));
+	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::DeferredPBR, ROOT_VS_0CB_PS_1CB_5TX, L"DeferredPBRVS.cso", L"DeferredPBRPS.cso", ptLayout, _countof(ptLayout)));
 	shaderTasks_.push_back(DX::ReadDataAsync(L"DeferredRootSig.cso").then([this](std::vector<byte>& fileData) mutable {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, fileData.data(), fileData.size(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
-		rootSignatures_[ROOT_VS_0CB_PS_1CB_5TX] = rootSignature;
+		ComPtr<ID3D12RootSignatureDeserializer> deserializer;
+		DX::ThrowIfFailed(D3D12CreateRootSignatureDeserializer(fileData.data(), fileData.size(), __uuidof(ID3D12RootSignatureDeserializer), &deserializer));
+		assert(deserializer);
+		const D3D12_ROOT_SIGNATURE_DESC* desc = deserializer->GetRootSignatureDesc();
+		assert(desc);
+		std::vector<UINT> ranges(desc->NumParameters);
+		for (UINT i = 0; i < desc->NumParameters; ++i) {
+			assert(desc->pParameters[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE);
+			ranges[i] = desc->pParameters[i].DescriptorTable.NumDescriptorRanges;
+		}
+		rootSignatures_[ROOT_VS_0CB_PS_1CB_5TX] = { rootSignature, std::move(ranges) };
 	}));
 	completionTask_ = Concurrency::when_all(std::begin(shaderTasks_), std::end(shaderTasks_)).then([this]() {
 		shaderTasks_.clear();
@@ -158,7 +170,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	});
 }
 
-Concurrency::task<void> PipelineStates::CreateShader(ShaderStructures::ShaderId id, size_t rootSignatureIndex, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count) {
+Concurrency::task<void> PipelineStates::CreateShader(ShaderId id, size_t rootSignatureIndex, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count) {
 	std::shared_ptr<std::vector<byte>> vertexShader = std::make_shared<std::vector<byte>>(),
 		pixelShader = std::make_shared<std::vector<byte>>();
 	auto createVSTask = DX::ReadDataAsync(vs).then([vertexShader](std::vector<byte>& fileData) mutable {
@@ -173,7 +185,7 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderStructures::ShaderId 
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
 		state.InputLayout = { inputLayout, count };
-		state.pRootSignature = rootSignatures_[rootSignatureIndex].Get();
+		state.pRootSignature = rootSignatures_[rootSignatureIndex].rootSignature.Get();
 		state.VS = CD3DX12_SHADER_BYTECODE(&vertexShader->front(), vertexShader->size());
 		state.PS = CD3DX12_SHADER_BYTECODE(&pixelShader->front(), pixelShader->size());
 		state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -188,10 +200,10 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderStructures::ShaderId 
 		state.SampleDesc.Count = 1;
 
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-		states_[id] = { rootSignatureIndex, pipelineState, false };
+		states_[id] = { rootSignatureIndex, pipelineState, false};
 	});
 }
-Concurrency::task<void> PipelineStates::CreateDeferredShader(ShaderStructures::ShaderId id, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count) {
+Concurrency::task<void> PipelineStates::CreateDeferredShader(ShaderId id, size_t rootSignatureIndex, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count) {
 	std::shared_ptr<std::vector<byte>> vertexShader = std::make_shared<std::vector<byte>>(),
 		pixelShader = std::make_shared<std::vector<byte>>();
 	auto createVSTask = DX::ReadDataAsync(vs).then([vertexShader](std::vector<byte>& fileData) mutable {
@@ -201,7 +213,7 @@ Concurrency::task<void> PipelineStates::CreateDeferredShader(ShaderStructures::S
 		*pixelShader = std::move(fileData);
 	});
 
-	return (createPSTask && createVSTask).then([this, id, inputLayout, count, vertexShader, pixelShader]() mutable {
+	return (createPSTask && createVSTask).then([this, id, rootSignatureIndex, inputLayout, count, vertexShader, pixelShader]() mutable {
 		ComPtr<ID3D12PipelineState> pipelineState;
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
@@ -221,6 +233,6 @@ Concurrency::task<void> PipelineStates::CreateDeferredShader(ShaderStructures::S
 		state.SampleDesc.Count = 1;
 
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-		states_[id] = { ROOT_VS_0CB_PS_1CB_5TX, pipelineState, true};
+		states_[id] = { rootSignatureIndex, pipelineState, true};
 	});
 }

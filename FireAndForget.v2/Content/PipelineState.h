@@ -20,8 +20,8 @@ public:
 	PipelineStates(const DX::DeviceResources*);
 	~PipelineStates();
 	void CreateDeviceDependentResources();
-	Concurrency::task<void> CreateShader(ShaderStructures::ShaderId id, size_t rootSignatureIndex, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count);
-	Concurrency::task<void> CreateDeferredShader(ShaderStructures::ShaderId id, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count);
+	Concurrency::task<void> CreateShader(ShaderId id, size_t rootSignatureIndex, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count);
+	Concurrency::task<void> CreateDeferredShader(ShaderId id, size_t rootSignatureIndex, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count);
 	struct CBuffer {
 		Microsoft::WRL::ComPtr<ID3D12Resource> constantBuffer;
 		UINT cbvDescriptorSize, alignedConstantBufferSize;
@@ -31,17 +31,21 @@ public:
 		~CBuffer();
 	};
 
+	static const size_t ROOT_VS_1CB_PS_1CB = 0;
+	static const size_t ROOT_VS_1CB_PS_1TX_1CB = 1;
+	static const size_t ROOT_VS_0CB_PS_1CB_5TX = 2;
+	static const size_t ROOT_SIG_COUNT = 3;
+	struct RootSig {
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+		std::vector<UINT> ranges;
+	};
+	std::vector<RootSig> rootSignatures_;
 	struct State {
 		size_t rootSignatureId;
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
 		bool deferred;
 		//std::function<ShaderResource(ID3D12Device*, unsigned short)> createShaderResource;
 	};
-	static const size_t ROOT_VS_1CB_PS_1CB = 0;
-	static const size_t ROOT_VS_1CB_PS_1TX_1CB = 1;
-	static const size_t ROOT_VS_0CB_PS_1CB_5TX = 2;
-	static const size_t ROOT_SIG_COUNT = 3;
-	std::vector<Microsoft::WRL::ComPtr<ID3D12RootSignature>> rootSignatures_;
 	std::vector<State> states_;
 
 	std::vector<Concurrency::task<void>> shaderTasks_;
