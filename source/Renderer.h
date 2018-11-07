@@ -6,8 +6,8 @@ struct Mesh;
 
 @interface Renderer : NSObject
 - (nullable instancetype) initWithDevice: (id<MTLDevice> _Nonnull) device andPixelFormat: (MTLPixelFormat) pixelFormat;
-- (BufferIndex) createBuffer: (const void* _Nonnull) buffer withLength: (size_t) length withElementSize: (size_t) elementSize;
-- (TextureIndex) createTexture: (const void* _Nonnull) buffer withWidth: (uint64_t) width withHeight: (uint32_t) height withBytesPerPixel: (uint8_t) bytesPerPixel withPixelFormat: (MTLPixelFormat) format withLabel: (NSString* _Nullable) label;
+- (BufferIndex) createBuffer: (const void* _Nonnull) data withLength: (size_t) length;
+- (TextureIndex) createTexture: (const void* _Nonnull) data withWidth: (uint64_t) width withHeight: (uint32_t) height withBytesPerPixel: (uint8_t) bytesPerPixel withPixelFormat: (MTLPixelFormat) format withLabel: (NSString* _Nullable) label;
 - (void) beginRender;
 - (void) startRenderPass: (id<MTLTexture> _Nonnull) texture;
 - (void) renderTo: (id<CAMetalDrawable> _Nonnull) drawable;
@@ -18,5 +18,6 @@ struct Mesh;
 -(void) submitDebugCmd: (const ShaderStructures::DebugCmd&) cmd;
 -(void) submitPosCmd: (const ShaderStructures::PosCmd&) cmd;
 -(void) submitTexCmd: (const ShaderStructures::TexCmd&) cmd;
+-(void) submitDrawCmd: (const ShaderStructures::DrawCmd&) cmd;
 -(void) setDeferredBuffers: (const ShaderStructures::DeferredBuffers&) buffers;
 @end

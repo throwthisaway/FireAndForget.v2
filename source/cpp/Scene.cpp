@@ -3,16 +3,6 @@
 #include "MatrixUtils.h"
 #include "CreateShaderParams.h"
 
-namespace{
-inline vec3_t ToVec3(const float* v) {
-	return { v[0], v[1], v[2] };
-}
-
-inline void FromVec3(const vec3_t& v, float* out) {
-	out[0] = v.x; out[1] = v.y; out[2] = v.z;
-}
-}
-
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
 }
@@ -23,8 +13,7 @@ namespace {
 		{.0f, .0f, .0f}, /* ambient */
 		{.8f, .8f, .8f},/* specular highlight */
 		{ 4.f, 4.f, 10.f}, /* position */
-		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange) }, /* attenuation */
-		defaultLightRange /* range */ };
+		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange), defaultLightRange }, /* attenuation and range */};
 }
 void Scene::OnAssetsLoaded() {
 	objects_.push_back({ lights_[0].pointLight.pos, {}, assets::Assets::LIGHT });
@@ -135,7 +124,7 @@ void Scene::Update(double frame, double total) {
 	// TODO:: WTF?
 	shaderStructures.cScene.scene.ip = glm::inverse(camera_.proj);
 	shaderStructures.cScene.scene.ivp = camera_.ivp;
-	shaderStructures.cScene.scene.n = camera_.n; shaderStructures.cScene.scene.f = camera_.f;
+	shaderStructures.cScene.scene.nf.x = camera_.n; shaderStructures.cScene.scene.nf.y = camera_.f;
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
 		shaderStructures.cScene.scene.light[i] = lights_[i].pointLight;
 		//FromVec3(camera_.view * glm::vec4(ToVec3(lights_[i].pointLight.pos), 1.f), shaderStructures.cScene.scene.light[i].pos);

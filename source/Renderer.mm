@@ -4,13 +4,15 @@
 #include <simd/vector_types.h>
 #include "cpp/Assets.hpp"
 #include "cpp/BufferUtils.h"
+#include "CBFrameAlloc.hpp"
+
 using namespace ShaderStructures;
 
 void RendererWrapper::Init(void* renderer) {
 	this->renderer = renderer;
 }
-BufferIndex RendererWrapper::CreateBuffer(const void* buffer, size_t length, size_t elementSize) {
-	return [(__bridge Renderer*)renderer createBuffer:buffer withLength:length withElementSize:elementSize];
+BufferIndex RendererWrapper::CreateBuffer(const void* data, size_t length) {
+	return [(__bridge Renderer*)renderer createBuffer:data withLength:length];
 }
 
 template<>
@@ -24,6 +26,10 @@ void RendererWrapper::Submit(const ShaderStructures::PosCmd& cmd) {
 template<>
 void RendererWrapper::Submit(const ShaderStructures::TexCmd& cmd) {
 	[(__bridge Renderer*)renderer submitTexCmd: cmd];
+}
+template<>
+void RendererWrapper::Submit(const ShaderStructures::DrawCmd& cmd) {
+	[(__bridge Renderer*)renderer submitDrawCmd: cmd];
 }
 void RendererWrapper::SetDeferredBuffers(const ShaderStructures::DeferredBuffers& deferredBuffers) {
 	[(__bridge Renderer*)renderer setDeferredBuffers: deferredBuffers];
@@ -41,8 +47,8 @@ namespace {
 		return MTLPixelFormatInvalid;
 	}
 }
-TextureIndex RendererWrapper::CreateTexture(const void* buffer, uint64_t width, uint32_t height, uint8_t bytesPerPixel, Img::PixelFormat format) {
-	return [(__bridge Renderer*)renderer createTexture: buffer withWidth: width withHeight: height withBytesPerPixel: bytesPerPixel withPixelFormat: PixelFormatToMTLPixelFormat(format) withLabel: nullptr];
+TextureIndex RendererWrapper::CreateTexture(const void* data, uint64_t width, uint32_t height, uint8_t bytesPerPixel, Img::PixelFormat format) {
+	return [(__bridge Renderer*)renderer createTexture: data withWidth: width withHeight: height withBytesPerPixel: bytesPerPixel withPixelFormat: PixelFormatToMTLPixelFormat(format) withLabel: nullptr];
 }
 void RendererWrapper::BeginRender() {
 	[(__bridge Renderer*)renderer beginRender];
@@ -69,10 +75,6 @@ void RendererWrapper::UpdateShaderResource(ShaderResourceIndex shaderResourceInd
 	return [(__bridge Renderer*)renderer updateShaderResource: shaderResourceIndex withData: data andSize: size];
 }
 
-struct Buffer {
-	id<MTLBuffer> buffer;
-	size_t size, elementSize;
-};
 struct Texture {
 	id<MTLTexture> texture;
 	uint64_t width;
@@ -81,12 +83,15 @@ struct Texture {
 	MTLPixelFormat format;
 
 };
+namespace {
+	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536, defaultCBFrameAllocSize = 65536, defaultDescFrameAllocCount = 256;
+};
 @implementation Renderer {
 	id<MTLDevice> device_;
 	id<MTLCommandQueue> commandQueue_;
 	id<MTLTexture> depthTextures_[FrameCount];
 	id<MTLTexture> colorAttachmentTextures_[FrameCount][RenderTargetCount];
-	std::vector<Buffer> buffers_;
+	std::vector<id<MTLBuffer>> buffers_;
 	std::vector<Texture> textures_;
 	std::vector<id<MTLRenderCommandEncoder>> encoders_;
 	std::vector<id<MTLCommandBuffer>> commandBuffers_;
@@ -100,6 +105,8 @@ struct Texture {
 
 	dispatch_semaphore_t frameBoundarySemaphore_;
 	uint32_t currentFrameIndex_;
+
+	CBFrameAlloc frame_[FrameCount];
 }
 
 - (nullable instancetype) initWithDevice: (id<MTLDevice> _Nonnull) device andPixelFormat: (MTLPixelFormat) pixelFormat {
@@ -144,6 +151,8 @@ struct Texture {
 		// top: uv.y = 0
 		PosUV quad[] = {{{-1., -1.f}, {0.f, 1.f}}, {{-1., 1.f}, {0.f, 0.f}}, {{1., -1.f}, {1.f, 1.f}}, {{1., 1.f}, {1.f, 0.f}}};
 		fullscreenTexturedQuad_ = [device_ newBufferWithBytes:quad length:sizeof(quad) options: MTLResourceOptionCPUCacheModeDefault];
+		for (int i = 0; i < FrameCount; ++i)
+			frame_[i].Init(device, defaultBufferSize);
 	}
 	return self;
 }
@@ -192,16 +201,16 @@ struct Texture {
 }
 -(BufferIndex) createBuffer: (size_t) length {
 	id<MTLBuffer> mtlBuffer = [device_ newBufferWithLength: length options: MTLResourceCPUCacheModeWriteCombined];
-	buffers_.push_back({mtlBuffer, length, 1});
+	buffers_.push_back(mtlBuffer);
 	return (BufferIndex)buffers_.size() - 1;
 }
 
--(BufferIndex) createBuffer: (const void* _Nonnull) buffer withLength: (size_t) length withElementSize: (size_t) elementSize {
-	id<MTLBuffer> mtlBuffer = [device_ newBufferWithBytes:buffer length:length options: MTLResourceCPUCacheModeWriteCombined];
-	buffers_.push_back({mtlBuffer, length, elementSize});
+-(BufferIndex) createBuffer: (const void* _Nonnull) data withLength: (size_t) length {
+	id<MTLBuffer> mtlBuffer = [device_ newBufferWithBytes:data length:length options: MTLResourceCPUCacheModeWriteCombined];
+	buffers_.push_back(mtlBuffer);
 	return (BufferIndex)buffers_.size() - 1;
 }
-- (TextureIndex) createTexture: (const void* _Nonnull) buffer withWidth: (uint64_t) width withHeight: (uint32_t) height withBytesPerPixel: (uint8_t) bytesPerPixel withPixelFormat: (MTLPixelFormat) format withLabel: (NSString* _Nullable) label{
+- (TextureIndex) createTexture: (const void* _Nonnull) data withWidth: (uint64_t) width withHeight: (uint32_t) height withBytesPerPixel: (uint8_t) bytesPerPixel withPixelFormat: (MTLPixelFormat) format withLabel: (NSString* _Nullable) label{
 	MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format
 																								 width:width
 																								height:height
@@ -213,7 +222,7 @@ struct Texture {
 	textures_.push_back({texture, width, height, bytesPerPixel, format});
 	MTLRegion region = MTLRegionMake2D(0, 0, width, height);
 	const NSUInteger bytesPerRow = bytesPerPixel * width;
-	[texture replaceRegion:region mipmapLevel:0 withBytes:buffer bytesPerRow:bytesPerRow];
+	[texture replaceRegion:region mipmapLevel:0 withBytes:data bytesPerRow:bytesPerRow];
 	return (TextureIndex)textures_.size() - 1;
 }
 - (void) beginRender {
@@ -221,7 +230,7 @@ struct Texture {
 	for (size_t i = 0; i < [shaders_ getPipelineCount]; ++i)
 		commandBuffers_.push_back([commandQueue_ commandBuffer]);
 	dispatch_semaphore_wait(frameBoundarySemaphore_, DISPATCH_TIME_FOREVER);
-
+	frame_[currentFrameIndex_].Reset();
 }
 - (void) startRenderPass: (id<MTLTexture> _Nonnull) texture {
 //	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
@@ -267,29 +276,29 @@ struct Texture {
 	};
 }
 
-- (void) submitToEncoder: (size_t) encoderIndex withPipeline: (size_t) pipelineIndex vsUniforms: (const std::vector<size_t>&) vsBuffers fsUniforms: (const std::vector<size_t>&) fsBuffers withMesh: (const Mesh&)mesh {
-	id<MTLRenderCommandEncoder> commandEncoder = encoders_[encoderIndex];
-
-	size_t vsAttribIndex = 0, fsAttribIndex = 0;
-	// attribs
-	[commandEncoder setVertexBuffer: buffers_[mesh.vb].buffer offset: 0 atIndex: vsAttribIndex++];
-	// TODO:: if (mesh.nb != InvalidBufferIndex) [commandEncoder setVertexBuffer: buffers_[mesh.nb].buffer offset: 0 atIndex: vsAttribIndex++];
-
-	// uniforms
-	for (const auto& index : vsBuffers) {
-		[commandEncoder setVertexBuffer: buffers_[index].buffer offset: 0 atIndex: vsAttribIndex++];
-	}
-	for (const auto& index : fsBuffers) {
-		[commandEncoder setFragmentBuffer: buffers_[index].buffer offset: 0 atIndex: fsAttribIndex++];
-	}
-	for (const auto& layer : mesh.layers)
-		for (const auto& submesh : layer.submeshes) {
-//	TODO::
-//			if (submesh.material.color_uvb ! = InvalidBufferIndex)
-//				[commandEncoder setVertexBuffer: buffers_[submesh.material.color_uvb].buffer offset: 0 atIndex: attribIndex++];
-			[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[mesh.ib].buffer indexBufferOffset: submesh.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
-		}
-}
+//- (void) submitToEncoder: (size_t) encoderIndex withPipeline: (size_t) pipelineIndex vsUniforms: (const std::vector<size_t>&) vsBuffers fsUniforms: (const std::vector<size_t>&) fsBuffers withMesh: (const Mesh&)mesh {
+//	id<MTLRenderCommandEncoder> commandEncoder = encoders_[encoderIndex];
+//
+//	size_t vsAttribIndex = 0, fsAttribIndex = 0;
+//	// attribs
+//	[commandEncoder setVertexBuffer: buffers_[mesh.vb].buffer offset: 0 atIndex: vsAttribIndex++];
+//	// TODO:: if (mesh.nb != InvalidBufferIndex) [commandEncoder setVertexBuffer: buffers_[mesh.nb].buffer offset: 0 atIndex: vsAttribIndex++];
+//
+//	// uniforms
+//	for (const auto& index : vsBuffers) {
+//		[commandEncoder setVertexBuffer: buffers_[index].buffer offset: 0 atIndex: vsAttribIndex++];
+//	}
+//	for (const auto& index : fsBuffers) {
+//		[commandEncoder setFragmentBuffer: buffers_[index].buffer offset: 0 atIndex: fsAttribIndex++];
+//	}
+//	for (const auto& layer : mesh.layers)
+//		for (const auto& submesh : layer.submeshes) {
+////	TODO::
+////			if (submesh.material.color_uvb ! = InvalidBufferIndex)
+////				[commandEncoder setVertexBuffer: buffers_[submesh.material.color_uvb].buffer offset: 0 atIndex: attribIndex++];
+//			[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[mesh.ib].buffer indexBufferOffset: submesh.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
+//		}
+//}
 
 - (void) renderTo: (id<CAMetalDrawable> _Nonnull) drawable {
 
@@ -362,11 +371,11 @@ struct Texture {
 	size_t vsIndex = 0, fsIndex = 0;
 	for (const auto& info : deferredBuffers_.vsBuffers) {
 		auto offset = currentFrameIndex_ % info.bufferCount;
-		[deferredEncoder setVertexBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: vsIndex++];
+		[deferredEncoder setVertexBuffer: buffers_[info.bufferIndex + offset] offset: 0 atIndex: vsIndex++];
 	}
 	for (const auto& info : deferredBuffers_.fsBuffers) {
 		auto offset = currentFrameIndex_ % info.bufferCount;
-		[deferredEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: fsIndex++];
+		[deferredEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset] offset: 0 atIndex: fsIndex++];
 	}
 
 	[deferredEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
@@ -397,15 +406,15 @@ struct Texture {
 	// TODO:: create stack allocator here as well
 	length = AlignTo<decltype(length), 16>(length);
 	for (uint16_t i = 0; i < count; ++i) {
-		id<MTLBuffer> mtlBuffer = [device_ newBufferWithLength: length options: MTLResourceOptionCPUCacheModeDefault];
-		buffers_.push_back({mtlBuffer, length, 1});
+		id<MTLBuffer> buffer = [device_ newBufferWithLength: length options: MTLResourceOptionCPUCacheModeDefault];
+		buffers_.push_back(buffer);
 	}
 	return (ShaderResourceIndex)buffers_.size() - count;
 }
 
 - (void) updateShaderResource: (ShaderResourceIndex)shaderResourceIndex withData: (const void* _Null_unspecified)data andSize: (size_t)size {
 	// TODO:: currently one buffer for each uniform
-	memcpy([buffers_[shaderResourceIndex].buffer contents], data, size);
+	memcpy([buffers_[shaderResourceIndex] contents], data, size);
 }
 
 -(void) submitDebugCmd: (const ShaderStructures::DebugCmd&) cmd {
@@ -413,19 +422,19 @@ struct Texture {
 
 	size_t vsAttribIndex = 0, fsAttribIndex = 0;
 	// attribs
-	[commandEncoder setVertexBuffer: buffers_[cmd.vb].buffer offset: 0 atIndex: vsAttribIndex++];
+	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: 0 atIndex: vsAttribIndex++];
 
 	// uniforms
 	for (const auto& info : cmd.vsBuffers) {
 		auto offset = currentFrameIndex_ % info.bufferCount;
-		[commandEncoder setVertexBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: vsAttribIndex++];
+		[commandEncoder setVertexBuffer: buffers_[info.bufferIndex + offset] offset: 0 atIndex: vsAttribIndex++];
 	}
 	for (const auto& info : cmd.fsBuffers) {
 		auto offset = currentFrameIndex_ % info.bufferCount;
-		[commandEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: fsAttribIndex++];
+		[commandEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset] offset: 0 atIndex: fsAttribIndex++];
 	}
 	if (cmd.ib != InvalidBuffer)
-		[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib].buffer indexBufferOffset: cmd.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
+		[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 	else
 		[commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart: cmd.offset vertexCount: cmd.count instanceCount: 1 baseInstance: 0];
 }
@@ -436,20 +445,20 @@ struct Texture {
 
 	size_t vsAttribIndex = 0, fsAttribIndex = 0;
 	// attribs
-	[commandEncoder setVertexBuffer: buffers_[cmd.vb].buffer offset: 0 atIndex: vsAttribIndex++];
-	[commandEncoder setVertexBuffer: buffers_[cmd.nb].buffer offset: 0 atIndex: vsAttribIndex++];
+	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: 0 atIndex: vsAttribIndex++];
+	[commandEncoder setVertexBuffer: buffers_[cmd.nb] offset: 0 atIndex: vsAttribIndex++];
 
 	// uniforms
 	for (const auto& info : cmd.vsBuffers) {
 		auto offset = currentFrameIndex_ % info.bufferCount;
-		[commandEncoder setVertexBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: vsAttribIndex++];
+		[commandEncoder setVertexBuffer: buffers_[info.bufferIndex + offset] offset: 0 atIndex: vsAttribIndex++];
 	}
 	for (const auto& info : cmd.fsBuffers) {
 		auto offset = currentFrameIndex_ % info.bufferCount;
-		[commandEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: fsAttribIndex++];
+		[commandEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset] offset: 0 atIndex: fsAttribIndex++];
 	}
 	if (cmd.ib != InvalidBuffer)
-		[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib].buffer indexBufferOffset: cmd.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
+		[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 	else
 		[commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart: cmd.offset vertexCount: cmd.count instanceCount: 1 baseInstance: 0];
 }
@@ -459,18 +468,18 @@ struct Texture {
 
 	size_t vsAttribIndex = 0, fsAttribIndex = 0;
 	// attribs
-	[commandEncoder setVertexBuffer: buffers_[cmd.vb].buffer offset: 0 atIndex: vsAttribIndex++];
-	[commandEncoder setVertexBuffer: buffers_[cmd.nb].buffer offset: 0 atIndex: vsAttribIndex++];
-	[commandEncoder setVertexBuffer: buffers_[cmd.uvb].buffer offset: 0 atIndex: vsAttribIndex++];
+	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: 0 atIndex: vsAttribIndex++];
+	[commandEncoder setVertexBuffer: buffers_[cmd.nb] offset: 0 atIndex: vsAttribIndex++];
+	[commandEncoder setVertexBuffer: buffers_[cmd.uvb] offset: 0 atIndex: vsAttribIndex++];
 
 	// uniforms
 	for (const auto& info : cmd.vsBuffers) {
 		auto offset = currentFrameIndex_ % info.bufferCount;
-		[commandEncoder setVertexBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: vsAttribIndex++];
+		[commandEncoder setVertexBuffer: buffers_[info.bufferIndex + offset] offset: 0 atIndex: vsAttribIndex++];
 	}
 	for (const auto& info : cmd.fsBuffers) {
 		auto offset = currentFrameIndex_ % info.bufferCount;
-		[commandEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset].buffer offset: 0 atIndex: fsAttribIndex++];
+		[commandEncoder setFragmentBuffer: buffers_[info.bufferIndex + offset] offset: 0 atIndex: fsAttribIndex++];
 	}
 	NSUInteger atIndex = 0;
 	for (const auto& textureIndex : cmd.textures) {
@@ -479,10 +488,74 @@ struct Texture {
 	[commandEncoder setFragmentSamplerState:self->defaultSamplerState_ atIndex:0];
 
 	if (cmd.ib != InvalidBuffer)
-		[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib].buffer indexBufferOffset: cmd.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
+		[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 	else
 		[commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart: cmd.offset vertexCount: cmd.count instanceCount: 1 baseInstance: 0];
 }
+
+-(void) submitDrawCmd: (const ShaderStructures::DrawCmd&) cmd {
+	ShaderId shaderId = cmd.submesh.id;
+	id<MTLRenderCommandEncoder> commandEncoder = encoders_[shaderId];
+
+	NSUInteger vsAttribIndex = 0, fsAttribIndex = 0, atIndex = 0;
+	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: cmd.submesh.vbByteOffset atIndex: vsAttribIndex++];
+
+	CBFrameAlloc& frame = frame_[currentFrameIndex_];
+	switch (shaderId) {
+		case ShaderStructures::Debug: {
+			{
+				auto cb = frame.Alloc(sizeof(float4x4));
+				memcpy(cb.address, &cmd.mvp, sizeof(float4x4));
+				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
+			}
+			{
+				auto cb = frame.Alloc(sizeof(float4));
+				memcpy(cb.address, &cmd.material.albedo, sizeof(float4));
+				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
+			}
+			break;
+		}
+		case ShaderStructures::Pos: {
+			{
+				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
+				((ShaderStructures::Object*)cb.address)->m = cmd.m;
+				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
+			}
+			{
+				auto cb = frame.Alloc(sizeof(ShaderStructures::Material));
+				((ShaderStructures::Material*)cb.address)->diffuse = cmd.material.albedo;
+				((ShaderStructures::Material*)cb.address)->specular_power = {cmd.material.metallic, cmd.material.roughness};
+				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
+			}
+			break;
+		}
+		case ShaderStructures::Tex: {
+			{
+				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
+				((ShaderStructures::Object*)cb.address)->m = cmd.m;
+				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
+			}
+			{
+				auto& texture = textures_[cmd.material.texAlbedo];
+				[commandEncoder setFragmentTexture: texture.texture atIndex:0];
+				[commandEncoder setFragmentSamplerState:self->defaultSamplerState_ atIndex:0];
+				++atIndex;
+			}
+			{
+				auto cb = frame.Alloc(sizeof(ShaderStructures::Material));
+				((ShaderStructures::Material*)cb.address)->diffuse = cmd.material.albedo;
+				((ShaderStructures::Material*)cb.address)->specular_power = {cmd.material.metallic, cmd.material.roughness};
+				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
+			}
+			break;
+		}
+		default: assert(false);
+	}
+	[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.submesh.ibByteOffset instanceCount: 1 baseVertex: 0 baseInstance: 0];
+}
+
 -(void) setDeferredBuffers: (const ShaderStructures::DeferredBuffers&) buffers {
 	deferredBuffers_ = buffers;
 }

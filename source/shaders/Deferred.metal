@@ -1,7 +1,6 @@
 #include <metal_stdlib>
-#include "Common_include.metal"
-#include "Phong_include.metal"
-using namespace metal;
+#include "Common.h.metal"
+#include "Phong.h.metal"
 
 struct PosUV {
 	float2 pos;
@@ -21,20 +20,13 @@ vertex FSIn deferred_vs_main(constant PosUV* input [[buffer(0)]],
 	return res;
 }
 
-#define MAX_LIGHTS 2
-struct cScene {
-	float4x4 ip;
-	PointLight light[MAX_LIGHTS];
-	float3 eyePos;
-	float n, f;
-};
 struct DeferredOut {
 	float4 frag [[color(0)]];
 	float4 debug [[color(1)]];
 };
 
 fragment DeferredOut deferred_fs_main(FSIn input [[stage_in]],
-							  constant cScene& scene [[buffer(0)]],
+							  constant Scene& scene [[buffer(0)]],
 							  texture2d<float> color [[texture(0)]],
 							  texture2d<float> normal [[texture(1)]],
 							  texture2d<float> material [[texture(2)]],

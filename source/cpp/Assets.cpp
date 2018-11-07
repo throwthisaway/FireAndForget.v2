@@ -14,7 +14,12 @@
 #include "MeshLoader.h"
 #include "Tga.h"
 #include "StringUtil.h"
+#include "BufferUtils.h"
+#ifdef PLATFORM_MAC_OS
+#include "../../../3rdparty/meshoptimizer/src/meshoptimizer.h"
+#else
 #include "meshoptimizer.h"
+#endif
 //#define INDEXED_DRAWING
 namespace {
 #ifdef PLATFORM_MAC_OS
@@ -88,11 +93,11 @@ namespace assets {
 	}
 #elif defined(PLATFORM_MAC_OS)
 	void Assets::LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id) {
-		auto data = LoadFromBundle(fname);
+		auto data = ::LoadFromBundle(fname);
 		MeshLoader::Mesh mesh;
 		mesh.data = std::move(data);
 		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-		CreateModel(fname, renderer, staticModels[id], mesh);
+		models[id] = CreateModel(fname, renderer, mesh);
 	}
 #endif
 	void Assets::Init(RendererWrapper* renderer) {
@@ -239,7 +244,7 @@ namespace assets {
 					pn.Remap();
 					l.submeshes.back().count = (index_t)pn.indices.size();
 					auto vSize = pn.GetVerticesByteSize(), iSize = pn.GetIndicesByteSize();
-					vb.resize(vb.size() + vSize);
+					vb.resize(vb.size() + AlignTo<decltype(vSize), 16>(vSize));
 					ib.resize(ib.size() + iSize);
 					memcpy(vb.data() + vOffset, pn.vertices.data(), vSize);
 					memcpy(ib.data() + iOffset, pn.indices.data(), iSize);
@@ -258,7 +263,7 @@ namespace assets {
 					pnt.Remap();
 					l.submeshes.back().count = (index_t)pnt.indices.size();
 					auto vSize = pnt.GetVerticesByteSize(), iSize = pnt.GetIndicesByteSize();
-					vb.resize(vb.size() + vSize);
+					vb.resize(vb.size() + AlignTo<decltype(vSize), 16>(vSize));
 					ib.resize(ib.size() + iSize);
 					memcpy(vb.data() + vOffset, pnt.vertices.data(), vSize);
 					memcpy(ib.data() + iOffset, pnt.indices.data(), iSize);

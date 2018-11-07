@@ -1,12 +1,12 @@
 #include <metal_stdlib>
 #include <metal_math>
-#include "Common_include.metal"
+#include "Common.h.metal"
 #include "PBR_include.metal"
-using namespace metal;
+
 
 struct PosUV {
-	float2 pos;
-	float2 uv;
+	packed_float2 pos;
+	packed_float2 uv;
 };
 
 struct FSIn {
@@ -22,19 +22,12 @@ vertex FSIn deferred_pbr_vs_main(constant PosUV* input [[buffer(0)]],
 	return res;
 }
 
-#define MAX_LIGHTS 2
-struct cScene {
-	float4x4 ip, ivp;
-	PointLight light[MAX_LIGHTS];
-	float3 eyePos;
-	float near, far;
-};
 struct DeferredOut {
 	float4 frag [[color(0)]];
 	float4 debug [[color(1)]];
 };
 fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
-									  constant cScene& scene [[buffer(0)]],
+									  constant Scene& scene [[buffer(0)]],
 									  texture2d<float> albedoTx [[texture(0)]],
 									  texture2d<float> normal [[texture(1)]],
 									  texture2d<float> materialTx [[texture(2)]],

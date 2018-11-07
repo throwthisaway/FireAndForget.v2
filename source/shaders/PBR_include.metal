@@ -1,6 +1,7 @@
 #include <metal_stdlib>
-#include "ShaderStructs.metal"
 using namespace metal;
+#include "../cpp/ShaderStructs.h"
+
 float NDF_GGXTR(float3 n, float3 h, float roughness);
 float GF_Smith(float ndotv, float ndotl, float k);
 float3 Fresnel_Schlick(float cosTheta, float3 f0);
