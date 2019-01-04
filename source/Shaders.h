@@ -1,8 +1,9 @@
 #import <Metal/Metal.h>
 
+enum class RenderPass {Pre, Main, Post};
 struct PipelineState {
 	id<MTLRenderPipelineState> _Nonnull pipeline;
-	bool defferedPass;
+	RenderPass renderPass;
 };
 
 @interface Shaders : NSObject

@@ -15,10 +15,13 @@
 #include "Tga.h"
 #include "StringUtil.h"
 #include "BufferUtils.h"
+#define STB_IMAGE_IMPLEMENTATION
 #ifdef PLATFORM_MAC_OS
 #include "../../../3rdparty/meshoptimizer/src/meshoptimizer.h"
+#include "../../../3rdparty/stb/stb_image.h"
 #else
 #include "meshoptimizer.h"
+#include "stb_image.h"
 #endif
 //#define INDEXED_DRAWING
 namespace {
@@ -79,27 +82,69 @@ namespace {
 		return data;
 	}
 #endif
+//	assets::Mesh CreateUnitCube(RendererWrapper* renderer) {
+//		const float x = 1.f, y = 1.f, z = 1.f;
+//		const float v[] = {x, y, -z,
+//							x,-y,-z,
+//							-x,y,-z,
+//							-x,-y,-z,
+//							-x,-y,z,
+//							x,-y,z,
+//							x,y,z,
+//							-x, y, z};
+//		const uint16_t i[] = { 3, 2, 0, 0, 1, 3,
+//								7, 0, 2, 6, 0, 7,
+//								1, 0, 6, 1, 6, 5,
+//								3, 1, 5, 5, 4, 3,
+//								2, 3, 4, 4, 7, 2,
+//								3, 1, 4, 1, 5, 4};
+//		assets::Mesh mesh;
+//		mesh.vb = renderer->CreateBuffer(v, sizeof(v));
+//		mesh.ib = renderer->CreateBuffer(i, sizeof(i));
+//		mesh.layers.push_back({{/*pivot*/}, {{ InvalidMaterial, 0, 0, sizeof(assets::VertexPT), sizeof(i) / sizeof(i[0]), EnvCubeMapShader}}});
+//		return mesh;
+//	}
 }
 namespace assets {
 	Assets::~Assets() = default;
 #ifdef PLATFORM_WIN
 	Concurrency::task<void> Assets::LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id) {
 		return DX::ReadDataAsync(fname).then([this, renderer, fname, id](std::vector<byte>& data) {
-			MeshLoader::Mesh mesh;
-			mesh.data = std::move(data);
-			MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-			models[id] = CreateModel(fname, renderer, mesh);
+			InternalLoadMesh(renderer, fname, id, data);
+		});
+	}
+	Concurrency::task<Img::ImgData> Assets::LoadImage(RendererWrapper* renderer, const wchar_t* fname) {
+		return DX::ReadDataAsync(fname).then([renderer, pf](std::vector<byte>& data) {
+			return DecodeImageFromData(data);
 		});
 	}
 #elif defined(PLATFORM_MAC_OS)
 	void Assets::LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id) {
 		auto data = ::LoadFromBundle(fname);
+		InternalLoadMesh(renderer, fname, id, data);
+	}
+	Img::ImgData Assets::LoadImage(const wchar_t* fname) {
+		std::vector<uint8_t> data = ::LoadFromBundle(fname);
+		return DecodeImageFromData(data);
+	}
+#endif
+//	namespace {
+//		struct StbDeleter {
+//			void operator()(uint8_t* p) { stbi_image_free((stbi_uc*)p);	}
+//		};
+//	}
+	Img::ImgData Assets::DecodeImageFromData(const std::vector<uint8_t>& data) {
+		int w, h, channels;
+		float* image = stbi_loadf_from_memory(data.data(), (int)data.size(), &w, &h, &channels, 4);
+		Img::PixelFormat pf = Img::PixelFormat::RGBAF32;
+		return {std::unique_ptr<uint8_t/*, StbDeleter default deleter should be fine*/>((uint8_t*)image), (uint16_t)w, (uint16_t)h, BytesPerPixel(pf), pf};
+	}
+	void Assets::InternalLoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id, const std::vector<uint8_t>& data) {
 		MeshLoader::Mesh mesh;
 		mesh.data = std::move(data);
 		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
 		models[id] = CreateModel(fname, renderer, mesh);
 	}
-#endif
 	void Assets::Init(RendererWrapper* renderer) {
 		renderer->BeginUploadResources();
 		models.resize(STATIC_MODEL_COUNT);
@@ -109,7 +154,9 @@ namespace assets {
 			LoadMesh(renderer, L"box.mesh", PLACEHOLDER),
 			LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD),
 			LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN),
-			LoadMesh(renderer, L"sphere.mesh", SPHERE), };
+			LoadMesh(renderer, L"sphere.mesh", SPHERE),
+			LoadMesh(renderer, L"textured_unit_cube.mesh", UNITCUBE),
+		};
 
 		loadCompleteTask = Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this, renderer]() {
 			return Concurrency::when_all(std::begin(loadTasks), std::end(loadTasks)).then([this, renderer]() {
@@ -122,6 +169,7 @@ namespace assets {
 		LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD);
 		LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN);
 		LoadMesh(renderer, L"sphere.mesh", SPHERE);
+		LoadMesh(renderer, L"textured_unit_cube.mesh", UNITCUBE);
 		renderer->EndUploadResources();
 #endif
 	}
@@ -153,9 +201,7 @@ namespace assets {
 	}
 	void Assets::LoadFromBundle(const char * path, const ImageLoadCB& cb) {
 		auto fname = extractFilename(s2ws(path));
-		auto res = images.emplace(fname, Img::ImgData{});
-		if (!res.second) return;
-		Img::ImgData& image = res.first->second;
+		Img::ImgData image;
 #ifdef PLATFORM_MAC_OS
 		auto data = ::LoadFromBundle(fname.c_str());
 		bool success = DecodeImage(fname, data, image);
@@ -163,7 +209,7 @@ namespace assets {
 #elif defined(PLATFORM_WIN)
 		auto load = DX::ReadDataAsync(fname).then([fname, cb, &image](std::vector<uint8_t>& data) {
 			bool success = DecodeImage(fname, data, image);
-			cb(success, image);
+			cb(success, fname, image);
 		});
 		loadTasks.push_back(load);
 #endif
@@ -219,14 +265,21 @@ namespace assets {
 					materials.push_back(material);
 					if (colLayers && colLayers->image && colLayers->image->path) {
 						id = ShaderStructures::Tex;
-						LoadFromBundle(colLayers->image->path, [this, renderer, materialIndex](bool success, Img::ImgData& image) {
-							assert(success);
-							if (success) materials[materialIndex].texAlbedo = renderer->CreateTexture(image.data.get(),
-								image.width,
-								image.height,
-								image.bytesPerPixel,
-								image.pf);
-						});
+						auto inserted = textures.emplace(s2ws(colLayers->image->path), InvalidTexture);
+						TextureIndex& texRef = inserted.first->second;
+						if (inserted.second) {
+							LoadFromBundle(colLayers->image->path, [this, renderer, materialIndex, texRef](bool success, Img::ImgData& image) mutable {
+								assert(success);
+								if (success) {
+									auto tex = renderer->CreateTexture(image.data.get(),
+																	  image.width,
+																	  image.height,
+																	  image.pf);
+									materials[materialIndex].texAlbedo = tex;
+									texRef = tex;
+								}
+							});
+						} else materials[materialIndex].texAlbedo = texRef;
 					}
 				}
 				auto vOffset = (offset_t)vb.size(), iOffset = (offset_t)ib.size();

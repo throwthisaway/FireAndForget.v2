@@ -31,12 +31,14 @@ struct Scene {
 	};
 	void Init(RendererWrapper*, int, int);
 	void OnAssetsLoaded();
+	void PrepareScene();
 	void Render();
 	void Update(double frame, double total);
 	void UpdateCameraTransform();
 	void UpdateSceneTransform();
 	Input input;
-	bool loadCompleted = false;
+	enum class State{Start, AssetsLoading, AssetsLoaded, PrepareScene, Ready};
+	State state = State::Start;
 private:
 	glm::mat4 m;	// for scene transform
 	Transform transform;

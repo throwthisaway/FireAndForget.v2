@@ -23,6 +23,7 @@ void Scene::OnAssetsLoaded() {
 	objects_.push_back({ {}, {}, assets::Assets::PLACEHOLDER });
 	objects_.push_back({ {}, {}, assets::Assets::CHECKERBOARD });
 	objects_.push_back({ { 0.f, .5f, 0.f }, {}, assets::Assets::BEETHOVEN });
+	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
 	const float incX = 2.4f, incY = 2.9f;
 	auto pos = glm::vec3{ -3 * incX, -3 * incY, -2.f };
 	for (int i = 0; i < 7; ++i) {
@@ -42,13 +43,15 @@ void Scene::OnAssetsLoaded() {
 		pos.y += incY;
 		pos.x = -3 * incX;
 	}
-	loadCompleted = true;
+	state = State::AssetsLoaded;
+	PrepareScene();
 }
 void Scene::Init(RendererWrapper* renderer, int width, int height) {
+	state = State::Start;
 	using namespace ShaderStructures;
 	renderer_ = renderer;
 	camera_.Perspective(width, height);
-	
+
 	const float Z = -10.5f;
 	camera_.Translate({ 0.f, 0.f, Z });
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
@@ -76,6 +79,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 #endif
 	renderer->SetDeferredBuffers(deferredBuffers);
 
+	state = State::AssetsLoading;
 	assets_.Init(renderer);
 #ifdef PLATFORM_WIN
 	assets_.loadCompleteTask.then([this, renderer](Concurrency::task<void>& assetsWhenAllCompletion) {
@@ -85,8 +89,21 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	OnAssetsLoaded();
 #endif
 }
+void Scene::PrepareScene() {
+	state = State::PrepareScene;
+	Img::ImgData img = assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/);
+	const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
+	auto& l = mesh.layers.front();
+	TextureIndex envMap = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
+	TextureIndex cubeTex = renderer_->CreateCubeTextureFromEnvMap(envMap, mesh.vb, mesh.ib, l.submeshes.front());
+	//shaderStructures.cScene.scene.envMap = cubeTex;
+	state = State::Ready;
+}
+
 void Scene::Render() {
-	if (!loadCompleted) return;
+	if (state == State::AssetsLoaded) PrepareScene();
+	if (state != State::Ready) return;
+	renderer_->StartDeferredPass();
 	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
 		const auto& mesh = assets_.models[o.mesh];
@@ -114,7 +131,8 @@ void Scene::UpdateSceneTransform() {
 	m = ScreenSpaceRotator(m, Transform{ transform.pos, transform.center, rot });
 }
 void Scene::Update(double frame, double total) {
-	if (!loadCompleted) return;
+	if (state == State::AssetsLoaded) PrepareScene();
+	if (state != State::Ready) return;
 	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
 	}

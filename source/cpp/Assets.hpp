@@ -20,7 +20,10 @@ namespace assets {
 		vec3_t pos, n;
 		vec2_t uv;
 	};
-
+	struct VertexPT {
+		vec3_t pos;
+		vec2_t uv;
+	};
 	struct Material {
 		vec3_t albedo;
 		float metallic, roughness;
@@ -40,6 +43,7 @@ namespace assets {
 		BufferIndex vb = InvalidBuffer, ib = InvalidBuffer;
 		std::vector<Layer> layers;
 	};
+
 	struct Assets {
 		~Assets();
 		void Init(RendererWrapper* renderer);
@@ -48,23 +52,32 @@ namespace assets {
 		static constexpr size_t CHECKERBOARD = 2;
 		static constexpr size_t BEETHOVEN = 3;
 		static constexpr size_t SPHERE = 4;
-		static constexpr size_t STATIC_MODEL_COUNT = 5;
+		static constexpr size_t UNITCUBE = 5;
+		static constexpr size_t STATIC_MODEL_COUNT = 6;
+
 		std::vector<Mesh> models;
-		std::unordered_map<std::wstring, Img::ImgData> images;
+		std::unordered_map<std::wstring, TextureIndex> textures;
 		std::unordered_map<std::wstring, MaterialIndex> materialMap;
 		std::vector<Material> materials;
+#if defined(PLATFORM_WIN)
+		static Concurrency::task<void> LoadImage(const wchar_t* fname);
+#elif defined(PLATFORM_MAC_OS)
+		static Img::ImgData LoadImage(const wchar_t* fname);
+#endif
 #if defined(PLATFORM_WIN)
 		std::vector<Concurrency::task<void>> loadTasks;
 		Concurrency::task<void> loadCompleteTask;
 #endif
 	private:
 		using ImageLoadCB = std::function<void(bool, Img::ImgData&)>;
-		void LoadFromBundle(const char * path, const ImageLoadCB&);
-		Mesh CreateModel(const wchar_t* name, RendererWrapper* renderer, MeshLoader::Mesh& mesh);
 #if defined(PLATFORM_WIN)
 		Concurrency::task<void> LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id);
 #elif defined(PLATFORM_MAC_OS)
 		void LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id);
 #endif
+		void LoadFromBundle(const char * path, const ImageLoadCB&);
+		Mesh CreateModel(const wchar_t* name, RendererWrapper* renderer, MeshLoader::Mesh& mesh);
+		void InternalLoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id, const std::vector<uint8_t>& data);
+		static Img::ImgData DecodeImageFromData(const std::vector<uint8_t>& data);
 	};
 }

@@ -106,8 +106,7 @@
 		// TODO:: triple buffering!!!
 		id<CAMetalDrawable> drawable = [[metalView getMetalLayer] nextDrawable];
 		id<MTLTexture> texture = drawable.texture;
-		[renderer_ beginRender];
-		[renderer_ startRenderPass: texture];
+		[renderer_ beginRender: texture];
 		scene_.Render();
 		[renderer_ renderTo: drawable];
 	}

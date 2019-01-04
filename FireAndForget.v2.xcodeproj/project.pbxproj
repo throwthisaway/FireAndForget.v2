@@ -17,6 +17,9 @@
 		BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD28F6FC1F09753300B07CBD /* Input.cpp */; };
 		BD28F7001F0A5E9B00B07CBD /* Shaders.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD28F6FF1F0A5E9B00B07CBD /* Shaders.mm */; };
 		BD2BB2A41EB4A9F600B82284 /* Sphere.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD2BB2A21EB4A9F600B82284 /* Sphere.cpp */; };
+		BD2E31DA21D3CD900085F6DA /* textured_unit_cube.mesh in Resources */ = {isa = PBXBuildFile; fileRef = BD2E31D521D3CD900085F6DA /* textured_unit_cube.mesh */; };
+		BD2E31DC21DA3D1F0085F6DA /* CubeEnvMap.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD2E31DB21DA3D1F0085F6DA /* CubeEnvMap.metal */; };
+		BD2E31DE21DA3DD20085F6DA /* VertexTypes.h.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD2E31DD21DA3DD20085F6DA /* VertexTypes.h.metal */; };
 		BD3D1AB01E895BFC00F7311A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1AAF1E895BFC00F7311A /* AppDelegate.m */; };
 		BD3D1AB31E895BFC00F7311A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1AB21E895BFC00F7311A /* main.m */; };
 		BD3D1AB61E895BFC00F7311A /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1AB51E895BFC00F7311A /* ViewController.mm */; };
@@ -25,6 +28,7 @@
 		BD3D1ACA1E8A682D00F7311A /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD3D1AC91E8A682D00F7311A /* Metal.framework */; };
 		BD3D1ACC1E8A684000F7311A /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD3D1ACB1E8A684000F7311A /* QuartzCore.framework */; };
 		BD3D1ACF1E8A689800F7311A /* MetalView.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1ACE1E8A689800F7311A /* MetalView.mm */; };
+		BD45E01721CFA23800ABBD5B /* Serpentine_Valley_3k.hdr in Resources */ = {isa = PBXBuildFile; fileRef = BD45E01621CFA23800ABBD5B /* Serpentine_Valley_3k.hdr */; };
 		BD4992F020DE64E1009DA76D /* PBR.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992EF20DE64E1009DA76D /* PBR.metal */; };
 		BD4992F320DE6C79009DA76D /* PBR_include.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992F220DE6C79009DA76D /* PBR_include.metal */; };
 		BD4992F520DE9B12009DA76D /* DeferredPBR.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992F420DE9B12009DA76D /* DeferredPBR.metal */; };
@@ -41,6 +45,7 @@
 		BD9FA6BE1F2E2CBE00978F61 /* checkerboard.mesh in Resources */ = {isa = PBXBuildFile; fileRef = BD9FA6BC1F2E2CBE00978F61 /* checkerboard.mesh */; };
 		BD9FA6BF1F2E2CBE00978F61 /* checkerboard.tga in Resources */ = {isa = PBXBuildFile; fileRef = BD9FA6BD1F2E2CBE00978F61 /* checkerboard.tga */; };
 		BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD9FA6C01F31E8B100978F61 /* Camera.cpp */; };
+		BDCD08EC21DE8B0D00F37C01 /* Alexs_Apt_2k.hdr in Resources */ = {isa = PBXBuildFile; fileRef = BDCD08E721DE8B0D00F37C01 /* Alexs_Apt_2k.hdr */; };
 		BDE816F52191B11C00B091F1 /* CBFrameAlloc.mm in Sources */ = {isa = PBXBuildFile; fileRef = BDE816F32191B11C00B091F1 /* CBFrameAlloc.mm */; };
 		BDE817032191F8EB00B091F1 /* libmeshoptimizer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BDE817022191F8EB00B091F1 /* libmeshoptimizer.a */; };
 		BDE817042192216F00B091F1 /* Tex.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD0E83621FF010FA005A2F8A /* Tex.metal */; };
@@ -86,6 +91,9 @@
 		BD28F7011F0A5F5100B07CBD /* Shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Shaders.h; sourceTree = "<group>"; };
 		BD2BB2A21EB4A9F600B82284 /* Sphere.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Sphere.cpp; path = cpp/Sphere.cpp; sourceTree = "<group>"; };
 		BD2BB2A31EB4A9F600B82284 /* Sphere.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Sphere.hpp; path = cpp/Sphere.hpp; sourceTree = "<group>"; };
+		BD2E31D521D3CD900085F6DA /* textured_unit_cube.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = textured_unit_cube.mesh; path = assets/textured_unit_cube.mesh; sourceTree = "<group>"; };
+		BD2E31DB21DA3D1F0085F6DA /* CubeEnvMap.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = CubeEnvMap.metal; path = shaders/CubeEnvMap.metal; sourceTree = "<group>"; };
+		BD2E31DD21DA3DD20085F6DA /* VertexTypes.h.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = VertexTypes.h.metal; path = shaders/VertexTypes.h.metal; sourceTree = "<group>"; };
 		BD33FCA51F35D5F100162D00 /* MeshLoader.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = MeshLoader.xcodeproj; path = ../MeshLoader/MeshLoader/MeshLoader.xcodeproj; sourceTree = "<group>"; };
 		BD33FCAE1F35E4E800162D00 /* MatrixUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MatrixUtils.h; path = cpp/MatrixUtils.h; sourceTree = "<group>"; };
 		BD3D1AAB1E895BFB00F7311A /* FireAndForget.v2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FireAndForget.v2.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -101,6 +109,7 @@
 		BD3D1ACB1E8A684000F7311A /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		BD3D1ACD1E8A689800F7311A /* MetalView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MetalView.h; sourceTree = "<group>"; };
 		BD3D1ACE1E8A689800F7311A /* MetalView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MetalView.mm; sourceTree = "<group>"; };
+		BD45E01621CFA23800ABBD5B /* Serpentine_Valley_3k.hdr */ = {isa = PBXFileReference; lastKnownFileType = file; name = Serpentine_Valley_3k.hdr; path = assets/Serpentine_Valley_3k.hdr; sourceTree = "<group>"; };
 		BD4992EF20DE64E1009DA76D /* PBR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = PBR.metal; path = shaders/PBR.metal; sourceTree = "<group>"; };
 		BD4992F220DE6C79009DA76D /* PBR_include.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = PBR_include.metal; path = shaders/PBR_include.metal; sourceTree = "<group>"; };
 		BD4992F420DE9B12009DA76D /* DeferredPBR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = DeferredPBR.metal; path = shaders/DeferredPBR.metal; sourceTree = "<group>"; };
@@ -120,6 +129,7 @@
 		BD9FA6C01F31E8B100978F61 /* Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Camera.cpp; path = cpp/Camera.cpp; sourceTree = "<group>"; };
 		BD9FA6C11F31E8B100978F61 /* Camera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Camera.hpp; path = cpp/Camera.hpp; sourceTree = "<group>"; };
 		BDC40B872078E99800A550BE /* BufferUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BufferUtils.h; path = cpp/BufferUtils.h; sourceTree = "<group>"; };
+		BDCD08E721DE8B0D00F37C01 /* Alexs_Apt_2k.hdr */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Alexs_Apt_2k.hdr; path = assets/Alexs_Apt_2k.hdr; sourceTree = "<group>"; };
 		BDE816F32191B11C00B091F1 /* CBFrameAlloc.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CBFrameAlloc.mm; sourceTree = "<group>"; };
 		BDE816F42191B11C00B091F1 /* CBFrameAlloc.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CBFrameAlloc.hpp; sourceTree = "<group>"; };
 		BDE816F72191BDF900B091F1 /* Transform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Transform.h; path = cpp/Transform.h; sourceTree = "<group>"; };
@@ -159,6 +169,8 @@
 				BD6A4169208CE7DD0027E1D7 /* Common.metal */,
 				BD4992EF20DE64E1009DA76D /* PBR.metal */,
 				BD4992F220DE6C79009DA76D /* PBR_include.metal */,
+				BD2E31DB21DA3D1F0085F6DA /* CubeEnvMap.metal */,
+				BD2E31DD21DA3DD20085F6DA /* VertexTypes.h.metal */,
 			);
 			name = shaders;
 			sourceTree = "<group>";
@@ -275,6 +287,9 @@
 		BD72038D1EEC1A7400B2C914 /* assets */ = {
 			isa = PBXGroup;
 			children = (
+				BDCD08E721DE8B0D00F37C01 /* Alexs_Apt_2k.hdr */,
+				BD2E31D521D3CD900085F6DA /* textured_unit_cube.mesh */,
+				BD45E01621CFA23800ABBD5B /* Serpentine_Valley_3k.hdr */,
 				BD4992F620DFB351009DA76D /* sphere.mesh */,
 				BD1DA54920724064004EF62A /* box.mesh */,
 				BD1DA54A20724064004EF62A /* light.mesh */,
@@ -378,13 +393,16 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BD45E01721CFA23800ABBD5B /* Serpentine_Valley_3k.hdr in Resources */,
 				BD9FA6BF1F2E2CBE00978F61 /* checkerboard.tga in Resources */,
 				BD1DA54C20724065004EF62A /* light.mesh in Resources */,
 				BD7203941EEC1FDA00B2C914 /* BEETHOVE_object.mesh in Resources */,
 				BD1DA54B20724065004EF62A /* box.mesh in Resources */,
 				BD9FA6BE1F2E2CBE00978F61 /* checkerboard.mesh in Resources */,
+				BD2E31DA21D3CD900085F6DA /* textured_unit_cube.mesh in Resources */,
 				BD4992F720DFB351009DA76D /* sphere.mesh in Resources */,
 				BD3D1AB81E895BFC00F7311A /* Assets.xcassets in Resources */,
+				BDCD08EC21DE8B0D00F37C01 /* Alexs_Apt_2k.hdr in Resources */,
 				BD3D1ABB1E895BFC00F7311A /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -399,8 +417,10 @@
 				BD6A4168208CE5D50027E1D7 /* Common.h.metal in Sources */,
 				BD4992F020DE64E1009DA76D /* PBR.metal in Sources */,
 				BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */,
+				BD2E31DE21DA3DD20085F6DA /* VertexTypes.h.metal in Sources */,
 				BDE817042192216F00B091F1 /* Tex.metal in Sources */,
 				BD6A40E0208230A80027E1D7 /* Phong.metal in Sources */,
+				BD2E31DC21DA3D1F0085F6DA /* CubeEnvMap.metal in Sources */,
 				BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */,
 				BD4992F520DE9B12009DA76D /* DeferredPBR.metal in Sources */,
 				BD1DA545206FDABC004EF62A /* Debug.metal in Sources */,
@@ -486,9 +506,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../3rdparty/meshoptimizer/src\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../3rdparty/meshoptimizer/src\"",
+					"\"$(SRCROOT)/../3rdparty/stb\"",
+				);
 				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../3rdparty/meshoptimizer/Debug\"";
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRELINK_LIBS = "";
@@ -538,9 +561,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../3rdparty/meshoptimizer/src\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../3rdparty/meshoptimizer/src\"",
+					"\"$(SRCROOT)/../3rdparty/stb\"",
+				);
 				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../3rdparty/meshoptimizer/Debug\"";
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRELINK_LIBS = "";
 				SDKROOT = macosx;

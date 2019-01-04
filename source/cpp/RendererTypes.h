@@ -15,6 +15,9 @@ const DescAllocEntryIndex InvalidDescAllocEntry = std::numeric_limits<DescAllocE
 using MaterialIndex = uint32_t;
 const MaterialIndex InvalidMaterial = std::numeric_limits<MaterialIndex>::max();
 
+using ImageIndex = uint32_t;
+const ImageIndex InvalidImage = std::numeric_limits<ImageIndex>::max();
+
 using ShaderId = uint16_t;
 const ShaderId InvalidShader = std::numeric_limits<ShaderId>::max();
 

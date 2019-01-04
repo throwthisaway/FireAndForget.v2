@@ -18,7 +18,8 @@ public:
 #endif
 	void BeginUploadResources();
 	BufferIndex CreateBuffer(const void* data, size_t sizeInBytes);
-	TextureIndex CreateTexture(const void* data, uint64_t width, uint32_t height, uint8_t bytesPerPixel, Img::PixelFormat format);
+	TextureIndex CreateTexture(const void* data, uint64_t width, uint32_t height, Img::PixelFormat format);
+	TextureIndex CreateCubeTextureFromEnvMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh);
 	void EndUploadResources();
 
 	// Shader resources
@@ -32,7 +33,7 @@ public:
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ShaderResourceIndex resourceIndex);
 #endif
 	void BeginRender();
-	size_t StartRenderPass();
+	void StartDeferredPass();
 	template<typename CmdT>
 	void Submit(const CmdT&);
 

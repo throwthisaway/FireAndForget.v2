@@ -5,6 +5,7 @@
 #include "cpp/Assets.hpp"
 #include "cpp/BufferUtils.h"
 #include "CBFrameAlloc.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
 using namespace ShaderStructures;
 
@@ -41,22 +42,27 @@ namespace {
 				return MTLPixelFormatRGBA8Unorm;
 			case Img::PixelFormat::BGRA8:
 				return MTLPixelFormatBGRA8Unorm;
+			case Img::PixelFormat::RGBAF32:
+				return MTLPixelFormatRGBA32Float;
+			case Img::PixelFormat::RGBAF16:
+				return MTLPixelFormatRGBA16Float;
 			default:
 				assert(false);
 		}
 		return MTLPixelFormatInvalid;
 	}
 }
-TextureIndex RendererWrapper::CreateTexture(const void* data, uint64_t width, uint32_t height, uint8_t bytesPerPixel, Img::PixelFormat format) {
-	return [(__bridge Renderer*)renderer createTexture: data withWidth: width withHeight: height withBytesPerPixel: bytesPerPixel withPixelFormat: PixelFormatToMTLPixelFormat(format) withLabel: nullptr];
+TextureIndex RendererWrapper::CreateTexture(const void* data, uint64_t width, uint32_t height, Img::PixelFormat format) {
+	return [(__bridge Renderer*)renderer createTexture: data withWidth: width withHeight: height withBytesPerPixel: Img::BytesPerPixel(format) withPixelFormat: PixelFormatToMTLPixelFormat(format) withLabel: nullptr];
+}
+TextureIndex RendererWrapper::CreateCubeTextureFromEnvMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh) {
+	return [(__bridge Renderer*)renderer createCubeTextureFromEnvMap: tex withVB: vb withIB: ib withSubmesh: submesh withLabel:nullptr];
 }
 void RendererWrapper::BeginRender() {
-	[(__bridge Renderer*)renderer beginRender];
+	//[(__bridge Renderer*)renderer beginRender];
 }
-size_t RendererWrapper::StartRenderPass() {
-	// TODO::
-	//return 	[(__bridge Renderer*)renderer startRenderPass:];
-	return 0u;
+void RendererWrapper::StartDeferredPass() {
+	[(__bridge Renderer*)renderer startDeferredPass];
 }
 void RendererWrapper::BeginUploadResources() {
 	// TODO::
@@ -84,10 +90,11 @@ struct Texture {
 
 };
 namespace {
-	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536, defaultCBFrameAllocSize = 65536, defaultDescFrameAllocCount = 256;
+	static constexpr size_t defaultCBFrameAllocSize = 65536;
 };
 @implementation Renderer {
 	id<MTLDevice> device_;
+	id<MTLTexture> surface_;
 	id<MTLCommandQueue> commandQueue_;
 	id<MTLTexture> depthTextures_[FrameCount];
 	id<MTLTexture> colorAttachmentTextures_[FrameCount][RenderTargetCount];
@@ -126,8 +133,9 @@ namespace {
 		{
 			// create default sampler state
 			MTLSamplerDescriptor *samplerDesc = [MTLSamplerDescriptor new];
-			samplerDesc.sAddressMode = MTLSamplerAddressModeClampToEdge;
-			samplerDesc.tAddressMode = MTLSamplerAddressModeClampToEdge;
+			samplerDesc.rAddressMode = MTLSamplerAddressModeRepeat;
+			samplerDesc.sAddressMode = MTLSamplerAddressModeRepeat;
+			samplerDesc.tAddressMode = MTLSamplerAddressModeRepeat;
 			samplerDesc.minFilter = MTLSamplerMinMagFilterLinear;
 			samplerDesc.magFilter = MTLSamplerMinMagFilterLinear;
 			samplerDesc.mipFilter = MTLSamplerMipFilterNotMipmapped;
@@ -152,7 +160,7 @@ namespace {
 		PosUV quad[] = {{{-1., -1.f}, {0.f, 1.f}}, {{-1., 1.f}, {0.f, 0.f}}, {{1., -1.f}, {1.f, 1.f}}, {{1., 1.f}, {1.f, 0.f}}};
 		fullscreenTexturedQuad_ = [device_ newBufferWithBytes:quad length:sizeof(quad) options: MTLResourceOptionCPUCacheModeDefault];
 		for (int i = 0; i < FrameCount; ++i)
-			frame_[i].Init(device, defaultBufferSize);
+			frame_[i].Init(device, defaultCBFrameAllocSize);
 	}
 	return self;
 }
@@ -210,7 +218,7 @@ namespace {
 	buffers_.push_back(mtlBuffer);
 	return (BufferIndex)buffers_.size() - 1;
 }
-- (TextureIndex) createTexture: (const void* _Nonnull) data withWidth: (uint64_t) width withHeight: (uint32_t) height withBytesPerPixel: (uint8_t) bytesPerPixel withPixelFormat: (MTLPixelFormat) format withLabel: (NSString* _Nullable) label{
+- (TextureIndex) createTexture: (const void*_Nullable) data withWidth: (uint64_t) width withHeight: (uint32_t) height withBytesPerPixel: (uint8_t) bytesPerPixel withPixelFormat: (MTLPixelFormat) format withLabel: (NSString* _Nullable) label{
 	MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format
 																								 width:width
 																								height:height
@@ -220,30 +228,86 @@ namespace {
 	id<MTLTexture> texture = [device_ newTextureWithDescriptor:textureDescriptor];
 	if (label) [texture setLabel:label];
 	textures_.push_back({texture, width, height, bytesPerPixel, format});
-	MTLRegion region = MTLRegionMake2D(0, 0, width, height);
-	const NSUInteger bytesPerRow = bytesPerPixel * width;
-	[texture replaceRegion:region mipmapLevel:0 withBytes:data bytesPerRow:bytesPerRow];
+	if (data) {
+		MTLRegion region = MTLRegionMake2D(0, 0, width, height);
+		const NSUInteger bytesPerRow = bytesPerPixel * width;
+		[texture replaceRegion:region mipmapLevel:0 withBytes:data bytesPerRow:bytesPerRow];
+	}
 	return (TextureIndex)textures_.size() - 1;
 }
-- (void) beginRender {
+- (TextureIndex) createCubeTextureFromEnvMap: (TextureIndex) tex withVB: (BufferIndex) vb withIB: (BufferIndex) ib withSubmesh: (const assets::Submesh&) submesh withLabel: (NSString* _Nullable) label {
+	constexpr NSUInteger size = 512;
+	constexpr MTLPixelFormat format = MTLPixelFormatRGBA16Float;
+	constexpr uint8_t bytesPerPixel = 8;
+	MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat: format
+																									size: size
+																							   mipmapped: false];
+
+	textureDescriptor.usage = MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget;
+	id<MTLTexture> cubeTexture = [device_ newTextureWithDescriptor:textureDescriptor];
+	if (label) [cubeTexture setLabel:label];
+	textures_.push_back({cubeTexture, size, (uint32_t)size, bytesPerPixel, format});
+
+	const glm::vec3 at[] = {{1.f, 0.f, 0.f},{-1.f, 0.f, 0.f},{0.f, 1.f, 0.f},{0.f, -1.f, 0.f},{0.f, 0.f, 1.f},{0.f, 0.f, -1.f}},
+		up[] = {{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}};
+	const int count = 6, inc = AlignTo<int, 256>(sizeof(glm::mat4x4));
+	id<MTLBuffer> buffer = [device_ newBufferWithLength: inc * count options: MTLResourceCPUCacheModeWriteCombined];
+	auto ptr = (uint8_t*)[buffer contents];
+	for (int i = 0; i < count; ++i) {
+		glm::mat4x4 v = glm::lookAt({0.f, 0.f, 0.f}, at[i], up[i]);
+		memcpy(ptr, &v, sizeof(v));
+		ptr += inc;
+	}
+//	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
+//	[capManager startCaptureWithCommandQueue:commandQueue_];
+
+	id<MTLCommandBuffer> commandBuffer = [commandQueue_ commandBuffer];
+	auto& pipeline = [shaders_ selectPipeline: ShaderStructures::CubeEnvMap];
+	for (int i = 0, offset = 0; i < count; ++i, offset += inc) {
+		MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+		passDescriptor.colorAttachments[0].texture = cubeTexture;
+		passDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+		passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+		passDescriptor.colorAttachments[0].slice = i;
+		id<MTLRenderCommandEncoder> encoder = [commandBuffer renderCommandEncoderWithDescriptor: passDescriptor];
+		[encoder setRenderPipelineState: pipeline.pipeline];
+		[encoder setCullMode: MTLCullModeNone];
+		[encoder setVertexBuffer: buffers_[vb] offset: 0 atIndex: 0];
+		[encoder setVertexBuffer: buffer offset: offset atIndex: 1];
+		[encoder setFragmentTexture: textures_[tex].texture atIndex:0];
+		[encoder setFragmentSamplerState: self->defaultSamplerState_ atIndex:0];
+
+		[encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[ib] indexBufferOffset: 0 instanceCount: 1 baseVertex: 0 baseInstance: 0];
+		[encoder endEncoding];
+
+	}
+	[commandBuffer commit];
+	[commandBuffer waitUntilCompleted];
+
+//	[capManager stopCapture];
+
+	return (TextureIndex)textures_.size() - 1;
+}
+- (void) beginRender: (id<MTLTexture> _Nonnull) surface {
+	dispatch_semaphore_wait(frameBoundarySemaphore_, DISPATCH_TIME_FOREVER);
+	[self makeDepthTexture: surface.width withHeight: surface.height];
+	[self makeColorAttachmentTextures: surface.width withHeight: surface.height];
+	surface_ = surface;
 	commandBuffers_.reserve([shaders_ getPipelineCount]);
 	for (size_t i = 0; i < [shaders_ getPipelineCount]; ++i)
 		commandBuffers_.push_back([commandQueue_ commandBuffer]);
-	dispatch_semaphore_wait(frameBoundarySemaphore_, DISPATCH_TIME_FOREVER);
 	frame_[currentFrameIndex_].Reset();
 }
-- (void) startRenderPass: (id<MTLTexture> _Nonnull) texture {
+- (void) startDeferredPass {
 //	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
 //	if (![capManager isCapturing]) [capManager startCaptureWithCommandQueue:commandQueue_];
 
-	[self makeDepthTexture:texture.width withHeight:texture.height];
-	[self makeColorAttachmentTextures:texture.width withHeight:texture.height];
 	MTLRenderPassDescriptor *firstPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 	for (int i = 0; i < RenderTargetCount; ++i) {
 		firstPassDescriptor.colorAttachments[i].texture = colorAttachmentTextures_[currentFrameIndex_][i];
 		firstPassDescriptor.colorAttachments[i].loadAction = MTLLoadActionClear;
 		firstPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
-		firstPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(0., 0., 0., 0.);
+		firstPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(1.f, 0., 0., 1.f);
 	}
 	firstPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
 	firstPassDescriptor.depthAttachment.clearDepth = 1.0;
@@ -263,9 +327,7 @@ namespace {
 
 	for (size_t i = 0; i < [shaders_ getPipelineCount]; ++i) {
 		auto& pipeline = [shaders_ selectPipeline: i];
-		if (pipeline.defferedPass) {
-			// skip
-		} else {
+		if (pipeline.renderPass == RenderPass::Main) {
 			MTLRenderPassDescriptor * passDesc = (i == 0) ? firstPassDescriptor : followingPassDescriptor;
 			auto encoder = [commandBuffers_[i] renderCommandEncoderWithDescriptor: passDesc];
 			encoders_.push_back(encoder);
