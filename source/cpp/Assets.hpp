@@ -5,25 +5,14 @@
 #include <glm/glm.hpp>
 #include "MeshLoader.h"
 #include "Img.h"
+#include "ShaderTypeAliases.h"
 #include "ShaderStructures.h"
+#include "VertexTypes.h"
 #if defined(PLATFORM_WIN)
 #include <ppltasks.h>
 #endif
 namespace assets {
-	struct VertexPUV {
-		vec2_t pos, uv;
-	};
-	struct VertexPN {
-		vec3_t pos, n;
-	};
-	struct VertexPNT {
-		vec3_t pos, n;
-		vec2_t uv;
-	};
-	struct VertexPT {
-		vec3_t pos;
-		vec2_t uv;
-	};
+	enum class VertexType{PUV, PN, PT, PNT};
 	struct Material {
 		vec3_t albedo;
 		float metallic, roughness;
@@ -33,7 +22,7 @@ namespace assets {
 		MaterialIndex material;
 		offset_t vbByteOffset, ibByteOffset, stride;
 		index_t count;
-		ShaderId id;
+		VertexType vertexType;
 	};
 	struct Layer {
 		vec3_t pivot;

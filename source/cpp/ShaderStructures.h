@@ -18,7 +18,8 @@ const ShaderId Debug = 2;
 const ShaderId Deferred = 3;
 const ShaderId DeferredPBR = 4;
 const ShaderId CubeEnvMap = 5;
-const ShaderId Count = 6;
+const ShaderId Bg = 6;
+const ShaderId Count = 7;
 const int RenderTargetCount = 4;
 
 // resource types
@@ -72,9 +73,17 @@ struct BufferInfo {
 
 struct DrawCmd {
 	const float4x4& m, mvp;
-	const BufferIndex vb, ib;
 	const assets::Submesh& submesh;
 	const assets::Material& material;
+	BufferIndex vb, ib;
+	ShaderId shader;
+};
+struct BgCmd {
+	const float4x4& vp;
+	const assets::Submesh& submesh;
+	BufferIndex vb, ib;
+	ShaderId shader;
+	TextureIndex cubeEnv;
 };
 // Debug
 struct cMVP : cFrame<> {
@@ -110,6 +119,10 @@ struct cMaterial : cStatic<> {
 
 struct cScene : cFrame<> {
 	Scene scene;
+};
+
+struct cMatrix : cFrame<> {
+	float4x4 matrix;
 };
 // Pos
 

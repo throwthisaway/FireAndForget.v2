@@ -19,6 +19,7 @@ struct Mesh;
 								 withSubmesh: (const assets::Submesh&) submesh
 								   withLabel: (NSString* _Nullable) label;
 - (void) beginRender: (id<MTLTexture> _Nonnull) surface;
+- (void) startForwardPass;
 - (void) startDeferredPass;
 - (void) renderTo: (id<CAMetalDrawable> _Nonnull) drawable;
 - (ShaderResourceIndex) createShaderResource: (uint32_t) length withCount: (uint16_t) count;
@@ -28,6 +29,7 @@ struct Mesh;
 -(void) submitDebugCmd: (const ShaderStructures::DebugCmd&) cmd;
 -(void) submitPosCmd: (const ShaderStructures::PosCmd&) cmd;
 -(void) submitTexCmd: (const ShaderStructures::TexCmd&) cmd;
+-(void) submitBgCmd: (const ShaderStructures::BgCmd&) cmd;
 -(void) submitDrawCmd: (const ShaderStructures::DrawCmd&) cmd;
 -(void) setDeferredBuffers: (const ShaderStructures::DeferredBuffers&) buffers;
 @end

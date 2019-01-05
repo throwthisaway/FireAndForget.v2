@@ -54,4 +54,5 @@ private:
 		ShaderStructures::cScene cScene;
 	}shaderStructures;
 	SceneShaderResources shaderResources;
+	TextureIndex cubeEnv_ = InvalidTexture;
 };

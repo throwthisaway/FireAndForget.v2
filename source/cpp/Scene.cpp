@@ -95,7 +95,7 @@ void Scene::PrepareScene() {
 	const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
 	auto& l = mesh.layers.front();
 	TextureIndex envMap = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
-	TextureIndex cubeTex = renderer_->CreateCubeTextureFromEnvMap(envMap, mesh.vb, mesh.ib, l.submeshes.front());
+	cubeEnv_ = renderer_->CreateCubeTextureFromEnvMap(envMap, mesh.vb, mesh.ib, l.submeshes.front());
 	//shaderStructures.cScene.scene.envMap = cubeTex;
 	state = State::Ready;
 }
@@ -103,6 +103,14 @@ void Scene::PrepareScene() {
 void Scene::Render() {
 	if (state == State::AssetsLoaded) PrepareScene();
 	if (state != State::Ready) return;
+	// bg
+	if (cubeEnv_ != InvalidTexture) {
+		const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
+		auto& l = mesh.layers.front();
+		ShaderStructures::BgCmd cmd{ glm::transpose(camera_.vp), l.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, cubeEnv_};
+		renderer_->Submit(cmd);
+	}
+
 	renderer_->StartDeferredPass();
 	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
@@ -112,7 +120,9 @@ void Scene::Render() {
 			m[3] += float4(l.pivot, 0.f);
 			auto mvp = glm::transpose(camera_.vp * m);
 			for (const auto& submesh : l.submeshes) {
-				ShaderStructures::DrawCmd cmd{ m, mvp, mesh.vb, mesh.ib, submesh, assets_.materials[submesh.material] };
+				const auto& material = assets_.materials[submesh.material];
+				ShaderId shader = (material.texAlbedo != InvalidTexture && submesh.vertexType == assets::VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
+				ShaderStructures::DrawCmd cmd{ m, mvp, submesh, material, mesh.vb, mesh.ib, shader};
 				renderer_->Submit(cmd);
 			}
 		}

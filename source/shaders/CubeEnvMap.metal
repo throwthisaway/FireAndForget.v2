@@ -6,7 +6,7 @@ struct FSIn {
 	float4 pos [[position]];
 	float3 p;
 };
-vertex FSIn cubeenv_vs_main(const device VPN* input [[buffer(0)]],
+vertex FSIn cubeenv_vs_main(const device VertexPN* input [[buffer(0)]],
 						constant float4x4& mvp [[buffer(1)]],
 						uint id [[vertex_id]]) {
 	FSIn output;

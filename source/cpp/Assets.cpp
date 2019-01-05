@@ -18,7 +18,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #ifdef PLATFORM_MAC_OS
 #include "../../../3rdparty/meshoptimizer/src/meshoptimizer.h"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcomma"
 #include "../../../3rdparty/stb/stb_image.h"
+#pragma clang diagnostic pop
 #else
 #include "meshoptimizer.h"
 #include "stb_image.h"
@@ -254,17 +257,16 @@ namespace assets {
 				auto colLayers = surf.surface_infos[MeshLoader::COLOR_MAP].layers;
 
 				auto res = materialMap.emplace(std::wstring{ name } + L'_' + std::wstring{ s2ws(surf.name) }, (MaterialIndex)materials.size());
-				ShaderId id = InvalidShader;
+				VertexType vertexType = VertexType::PN;
 				MaterialIndex materialIndex = res.first->second;
 				if (res.second) {
-					id = ShaderStructures::Pos;
 					Material material;
 					material.albedo = { surf.color[0], surf.color[1], surf.color[2] };
 					material.metallic = surf.surface_infos[MeshLoader::SPECULARITY_MAP].val;
 					material.roughness = surf.surface_infos[MeshLoader::GLOSSINESS_MAP].val;
 					materials.push_back(material);
 					if (colLayers && colLayers->image && colLayers->image->path) {
-						id = ShaderStructures::Tex;
+						vertexType = VertexType::PNT;
 						auto inserted = textures.emplace(s2ws(colLayers->image->path), InvalidTexture);
 						TextureIndex& texRef = inserted.first->second;
 						if (inserted.second) {
@@ -283,8 +285,8 @@ namespace assets {
 					}
 				}
 				auto vOffset = (offset_t)vb.size(), iOffset = (offset_t)ib.size();
-				l.submeshes.push_back({ materialIndex, vOffset, iOffset, 0/*stride*/, 0/*count*/, id });
-				if (id == ShaderStructures::Pos) {
+				l.submeshes.push_back({ materialIndex, vOffset, iOffset, 0/*stride*/, 0/*count*/, vertexType });
+				if (vertexType == VertexType::PN) {
 					MeshGen<VertexPN> pn;
 					l.submeshes.back().stride = sizeof(decltype(pn)::VertexType);
 					for (MeshLoader::index_t i = section.offset, end = section.offset + section.count; i < end; ++i) {
@@ -302,7 +304,7 @@ namespace assets {
 					memcpy(vb.data() + vOffset, pn.vertices.data(), vSize);
 					memcpy(ib.data() + iOffset, pn.indices.data(), iSize);
 				}
-				else if (id == ShaderStructures::Tex) {
+				else if (vertexType == VertexType::PNT) {
 					MeshGen<VertexPNT> pnt;
 					l.submeshes.back().stride = sizeof(decltype(pnt)::VertexType);
 					const auto& uv = mesh.uvs.uvmaps[surfaceIndex][colLayers->uvmap];

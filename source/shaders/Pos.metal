@@ -9,7 +9,7 @@ struct PSIn {
 	float2 depthCS;
 };
 
-vertex PSIn pos_vs_main(const device VPN* input[[buffer(0)]],
+vertex PSIn pos_vs_main(const device VertexPN* input[[buffer(0)]],
 						// TODO:: apparently the count depends on how the vertex buffers attached, 1 for vb, 1 for nb
 						constant Object& obj [[buffer(1)]],
 						uint id [[vertex_id]]) {
