@@ -68,6 +68,9 @@ void RendererWrapper::BeginRender() {
 void RendererWrapper::StartDeferredPass() {
 	[(__bridge Renderer*)renderer startDeferredPass];
 }
+void RendererWrapper::StartForwardPass() {
+	[(__bridge Renderer*)renderer startForwardPass];
+}
 void RendererWrapper::BeginUploadResources() {
 	// TODO::
 }
@@ -130,7 +133,7 @@ namespace {
 		frameBoundarySemaphore_ = dispatch_semaphore_create(ShaderStructures::FrameCount);
 
 		MTLDepthStencilDescriptor *depthStencilDescriptor = [MTLDepthStencilDescriptor new];
-		depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLess;
+		depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLessEqual;	// less AND equal bc. of bg. shader xyww trick, depth write/test should jut be turned off instead
 		depthStencilDescriptor.depthWriteEnabled = YES;
 		depthStencilState_ = [device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
 
@@ -252,8 +255,8 @@ namespace {
 	if (label) [cubeTexture setLabel:label];
 	textures_.push_back({cubeTexture, size, (uint32_t)size, bytesPerPixel, format});
 
-	const glm::vec3 at[] = {{1.f, 0.f, 0.f},{-1.f, 0.f, 0.f},{0.f, 1.f, 0.f},{0.f, -1.f, 0.f},{0.f, 0.f, 1.f},{0.f, 0.f, -1.f}},
-		up[] = {{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}};
+	const glm::vec3 at[] = {{1.f, 0.f, 0.f},{-1.f, 0.f, 0.f},{0.f, 1.f, 0.f},{0.f, -1.f, 0.f},{0.f, 0.f, -1.f},{0.f, 0.f, 1.f}},
+		up[] = {{0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, 1.f}, {0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}};
 	const int count = 6, inc = AlignTo<int, 256>(sizeof(glm::mat4x4));
 	id<MTLBuffer> buffer = [device_ newBufferWithLength: inc * count options: MTLResourceCPUCacheModeWriteCombined];
 	auto ptr = (uint8_t*)[buffer contents];
@@ -307,37 +310,35 @@ namespace {
 }
 - (void) startForwardPass {
 	MTLRenderPassDescriptor *firstPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-	for (int i = 0; i < RenderTargetCount; ++i) {
-		firstPassDescriptor.colorAttachments[i].texture = surface_;
-		firstPassDescriptor.colorAttachments[i].loadAction = MTLLoadActionClear;
-		firstPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
-		firstPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(0.f, 0., 0., 0.f);
-	}
-	firstPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
-	firstPassDescriptor.depthAttachment.clearDepth = 1.0;
-	firstPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
-	firstPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
+	firstPassDescriptor.colorAttachments[0].texture = surface_;
+	firstPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
+	firstPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+	firstPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.f, 0., 0., 0.f);
+//	firstPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
+//	firstPassDescriptor.depthAttachment.clearDepth = 1.f;
+//	firstPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
+//	firstPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 
 	MTLRenderPassDescriptor *followingPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-	for (int i = 0; i < RenderTargetCount; ++i) {
-		followingPassDescriptor.colorAttachments[i].texture = surface_;
-		followingPassDescriptor.colorAttachments[i].loadAction = MTLLoadActionDontCare;
-		followingPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
-	}
-	followingPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
-	followingPassDescriptor.depthAttachment.clearDepth = 1.0;
-	followingPassDescriptor.depthAttachment.loadAction = MTLLoadActionDontCare;
-	followingPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
+	followingPassDescriptor.colorAttachments[0].texture = surface_;
+	followingPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+	followingPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+//	followingPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
+//	followingPassDescriptor.depthAttachment.clearDepth = 1.f;
+//	followingPassDescriptor.depthAttachment.loadAction = MTLLoadActionDontCare;
+//	followingPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 
+	bool first = true;
 	for (size_t i = 0; i < [shaders_ getPipelineCount]; ++i) {
 		auto& pipeline = [shaders_ selectPipeline: i];
 		if (pipeline.renderPass == RenderPass::Forward) {
-			MTLRenderPassDescriptor * passDesc = (i == 0) ? firstPassDescriptor : followingPassDescriptor;
+			MTLRenderPassDescriptor * passDesc = (first) ? firstPassDescriptor : followingPassDescriptor;
 			auto encoder = [commandBuffers_[i] renderCommandEncoderWithDescriptor: passDesc];
 			encoders_[i] = encoder;
 			[encoder setRenderPipelineState: pipeline.pipeline];
-			[encoder setDepthStencilState: depthStencilState_];
-			[encoder setCullMode: MTLCullModeBack];
+			//[encoder setDepthStencilState: depthStencilState_];
+			[encoder setCullMode: MTLCullModeNone];
+			first = false;
 		}
 	};
 }
@@ -353,7 +354,7 @@ namespace {
 		firstPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(0.f, 0., 0., 0.f);
 	}
 	firstPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
-	firstPassDescriptor.depthAttachment.clearDepth = 1.0;
+	firstPassDescriptor.depthAttachment.clearDepth = 1.f;
 	firstPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
 	firstPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 
@@ -364,19 +365,21 @@ namespace {
 		followingPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
 	}
 	followingPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
-	followingPassDescriptor.depthAttachment.clearDepth = 1.0;
+	followingPassDescriptor.depthAttachment.clearDepth = 1.f;
 	followingPassDescriptor.depthAttachment.loadAction = MTLLoadActionDontCare;
 	followingPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 
+	bool first = true;
 	for (size_t i = 0; i < [shaders_ getPipelineCount]; ++i) {
 		auto& pipeline = [shaders_ selectPipeline: i];
 		if (pipeline.renderPass == RenderPass::Deferred) {
-			MTLRenderPassDescriptor * passDesc = (i == 0) ? firstPassDescriptor : followingPassDescriptor;
+			MTLRenderPassDescriptor * passDesc = (first) ? firstPassDescriptor : followingPassDescriptor;
 			auto encoder = [commandBuffers_[i] renderCommandEncoderWithDescriptor: passDesc];
 			encoders_[i] = encoder;
 			[encoder setRenderPipelineState: pipeline.pipeline];
 			[encoder setDepthStencilState: depthStencilState_];
 			[encoder setCullMode: MTLCullModeBack];
+			first = false;
 		}
 	};
 }
@@ -440,15 +443,20 @@ namespace {
 	for (auto commandEncoder : encoders_) {
 		[commandEncoder endEncoding];
 	}
-
+// @@@ Test fwd rendering pass
 //	assert(!commandBuffers_.empty());
 //	[commandBuffers_.back() presentDrawable:drawable];
-
+//
+//	__weak dispatch_semaphore_t semaphore = frameBoundarySemaphore_;
+//	[commandBuffers_.back() addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
+//		// GPU work is complete
+//		// Signal the semaphore to start the CPU work
+//		dispatch_semaphore_signal(semaphore);
+//	}];
+// @@@
 	for (auto commandBuffer : commandBuffers_) {
 		[commandBuffer commit];
 	}
-
-//	[commandBuffers_.back() waitUntilCompleted];
 
 	id<MTLCommandBuffer> deferredCommandBuffer = [commandQueue_ commandBuffer];
 	MTLRenderPassDescriptor *deferredPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];

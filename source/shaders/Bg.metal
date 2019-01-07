@@ -10,10 +10,11 @@ vertex FSIn bg_vs_main(const device VertexPN* input [[buffer(0)]],
 					  constant float4x4& vp [[buffer(1)]],
 					  uint id [[vertex_id]]) {
 
-	float4 pos = vp * float4(input[id].pos, 0.f/*ignore translation*/);
+	float4 pos = float4(input[id].pos, 0.f/*ignore translation*/) * vp;
 	FSIn output;
 	output.pos = pos.xyww;	// render at depth 1.
-	output.p = float3(pos);
+	//output.p = float3(pos);
+	output.p = input[id].pos;
 	return output;
 }
 

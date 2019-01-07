@@ -38,13 +38,13 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	//float3 worldPos = debug.sample(smp, input.uv).xyz;
 	float3 n = Decode(normal.sample(smp, input.uv).xy);
 	float4 material = materialTx.sample(smp, input.uv);
-	float3 albedo = albedoTx.sample(smp, input.uv).rgb;
+	float4 albedo = albedoTx.sample(smp, input.uv);
 	float3 v = normalize(scene.eyePos - worldPos);
 
 	float roughness = material.r;
 	float metallic = material.g;
 	float3 f0 = float3(.04f, .04f, .04f);
-	f0 = mix(f0, albedo, metallic);
+	f0 = mix(f0, albedo.rgb, metallic);
 	float r = roughness + 1.f;
 	float k = (r*r) / 8.f;
 	float ndotv = max(dot(n, v), 0.f);
@@ -72,20 +72,20 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 		float3 kS = F;
 		float3 kD = float3(1.f, 1.f, 1.f) - kS;
 		kD *= 1.f - metallic;
-		Lo += (kD * albedo / M_PI_F + specular) * radiance * ndotl;
+		Lo += (kD * albedo.rgb / M_PI_F + specular) * radiance * ndotl;
 	}
 	DeferredOut res;
 	// TODO:: calc ao;
 	float ao = 1.f;
-	float3 ambient = float3(.03f, .03f, .03f) * albedo * ao;
+	float3 ambient = float3(.03f, .03f, .03f) * albedo.rgb * ao;
 	float3 color = ambient + Lo;
 	// gamma correction
 	color = color / (color + float3(1.f, 1.f, 1.f));
 	float gamma = 1.f/2.2f;
 	color = pow(color, float3(gamma, gamma, gamma));
-	res.frag = float4(color, 1.f);
+	res.frag = float4(color, albedo.a);
 	float4 debug_n = debug.sample(smp, input.uv);
 	res.debug = debug_n;
-	//res.frag = float4(worldPos, 1.f);
+	//res.frag = float4(float3(debug_n), 1.f);
 	return res;
 }

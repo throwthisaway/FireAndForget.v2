@@ -104,6 +104,7 @@ void Scene::Render() {
 	if (state == State::AssetsLoaded) PrepareScene();
 	if (state != State::Ready) return;
 	// bg
+	renderer_->StartForwardPass();
 	if (cubeEnv_ != InvalidTexture) {
 		const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
 		auto& l = mesh.layers.front();
@@ -119,6 +120,7 @@ void Scene::Render() {
 			auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
 			m[3] += float4(l.pivot, 0.f);
 			auto mvp = glm::transpose(camera_.vp * m);
+			m = glm::transpose(m);
 			for (const auto& submesh : l.submeshes) {
 				const auto& material = assets_.materials[submesh.material];
 				ShaderId shader = (material.texAlbedo != InvalidTexture && submesh.vertexType == assets::VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;

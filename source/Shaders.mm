@@ -201,7 +201,7 @@ using namespace ShaderStructures;
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"bg_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"bg_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
-		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
+		//pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
 		pipelines_.push_back({pipeline, RenderPass::Forward});
 		if (error) NSLog(@"Bg %@", [error localizedDescription]);

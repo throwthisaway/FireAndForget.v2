@@ -34,6 +34,7 @@ public:
 #endif
 	void BeginRender();
 	void StartDeferredPass();
+	void StartForwardPass();
 	template<typename CmdT>
 	void Submit(const CmdT&);
 
