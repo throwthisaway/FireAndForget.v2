@@ -206,6 +206,27 @@ using namespace ShaderStructures;
 		pipelines_.push_back({pipeline, RenderPass::Forward});
 		if (error) NSLog(@"Bg %@", [error localizedDescription]);
 	}
+
+	{
+		// Ir
+		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
+		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
+		vertexDesc.attributes[0].format = MTLVertexFormatFloat3;
+		vertexDesc.attributes[0].bufferIndex = 0;
+		vertexDesc.attributes[0].offset = 0;
+		vertexDesc.attributes[1].format = MTLVertexFormatFloat3;
+		vertexDesc.attributes[1].bufferIndex = 0;
+		vertexDesc.attributes[1].offset = 3 * sizeof(float);
+		vertexDesc.layouts[0].stride = 3 * sizeof(float) + 3 * sizeof(float);
+		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+		pipelineDescriptor.vertexDescriptor = vertexDesc;
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"cubeenv_vs_main"];
+		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"cubeir_fs_main"];
+		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA16Float;
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
+		pipelines_.push_back({pipeline, RenderPass::Pre});
+		if (error) NSLog(@"Irradiance %@", [error localizedDescription]);
+	}
 }
 
 - (const PipelineState&) selectPipeline: (size_t) index {

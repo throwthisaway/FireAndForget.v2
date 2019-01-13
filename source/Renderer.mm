@@ -56,11 +56,11 @@ namespace {
 		return MTLPixelFormatInvalid;
 	}
 }
-TextureIndex RendererWrapper::CreateTexture(const void* data, uint64_t width, uint32_t height, Img::PixelFormat format) {
-	return [(__bridge Renderer*)renderer createTexture: data withWidth: width withHeight: height withBytesPerPixel: Img::BytesPerPixel(format) withPixelFormat: PixelFormatToMTLPixelFormat(format) withLabel: nullptr];
+TextureIndex RendererWrapper::CreateTexture(const void* data, uint64_t width, uint32_t height, Img::PixelFormat format, const char* label) {
+	return [(__bridge Renderer*)renderer createTexture: data withWidth: width withHeight: height withBytesPerPixel: Img::BytesPerPixel(format) withPixelFormat: PixelFormatToMTLPixelFormat(format) withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
 }
-TextureIndex RendererWrapper::CreateCubeTextureFromEnvMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh) {
-	return [(__bridge Renderer*)renderer createCubeTextureFromEnvMap: tex withVB: vb withIB: ib withSubmesh: submesh withLabel:nullptr];
+TextureIndex RendererWrapper::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, const char* label) {
+	return [(__bridge Renderer*)renderer genCubeMap: tex withVB: vb withIB: ib withSubmesh: submesh withDimension: dim withShader: shader withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
 }
 void RendererWrapper::BeginRender() {
 	//[(__bridge Renderer*)renderer beginRender];
@@ -242,26 +242,31 @@ namespace {
 	}
 	return (TextureIndex)textures_.size() - 1;
 }
-- (TextureIndex) createCubeTextureFromEnvMap: (TextureIndex) tex withVB: (BufferIndex) vb withIB: (BufferIndex) ib withSubmesh: (const assets::Submesh&) submesh withLabel: (NSString* _Nullable) label {
-	constexpr NSUInteger size = 512;
+- (TextureIndex) genCubeMap: (TextureIndex) tex
+							  withVB: (BufferIndex) vb
+							  withIB: (BufferIndex) ib
+						 withSubmesh: (const assets::Submesh&) submesh
+					   withDimension: (NSUInteger) dim
+						  withShader: (ShaderId) shader
+						   withLabel: (NSString* _Nullable) label {
 	constexpr MTLPixelFormat format = MTLPixelFormatRGBA16Float;
 	constexpr uint8_t bytesPerPixel = 8;
 	MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat: format
-																									size: size
+																									size: dim
 																							   mipmapped: false];
 
 	textureDescriptor.usage = MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget;
 	id<MTLTexture> cubeTexture = [device_ newTextureWithDescriptor:textureDescriptor];
 	if (label) [cubeTexture setLabel:label];
-	textures_.push_back({cubeTexture, size, (uint32_t)size, bytesPerPixel, format});
+	textures_.push_back({cubeTexture, dim, (uint32_t)dim, bytesPerPixel, format});
 
 	const glm::vec3 at[] = {{1.f, 0.f, 0.f},{-1.f, 0.f, 0.f},{0.f, 1.f, 0.f},{0.f, -1.f, 0.f},{0.f, 0.f, -1.f},{0.f, 0.f, 1.f}},
-		up[] = {{0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, 1.f}, {0.f, -1.f, 0.f}, {0.f, -1.f, 0.f}};
+		up[] = {{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}};
 	const int count = 6, inc = AlignTo<int, 256>(sizeof(glm::mat4x4));
 	id<MTLBuffer> buffer = [device_ newBufferWithLength: inc * count options: MTLResourceCPUCacheModeWriteCombined];
 	auto ptr = (uint8_t*)[buffer contents];
 	for (int i = 0; i < count; ++i) {
-		glm::mat4x4 v = glm::lookAt({0.f, 0.f, 0.f}, at[i], up[i]);
+		glm::mat4x4 v = glm::lookAt({0.f, 0.f, 0.f}, at[i], up[i] * -1.f/* TODO:: why???*/);
 		memcpy(ptr, &v, sizeof(v));
 		ptr += inc;
 	}
@@ -269,7 +274,7 @@ namespace {
 //	[capManager startCaptureWithCommandQueue:commandQueue_];
 
 	id<MTLCommandBuffer> commandBuffer = [commandQueue_ commandBuffer];
-	auto& pipeline = [shaders_ selectPipeline: ShaderStructures::CubeEnvMap];
+	auto& pipeline = [shaders_ selectPipeline: shader];
 	// TODO:: do the same with 1 drawcall and mrt
 	for (int i = 0, offset = 0; i < count; ++i, offset += inc) {
 		MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
@@ -292,7 +297,7 @@ namespace {
 	[commandBuffer commit];
 	[commandBuffer waitUntilCompleted];
 
-//	[capManager stopCapture];
+	//[capManager stopCapture];
 
 	return (TextureIndex)textures_.size() - 1;
 }
@@ -477,7 +482,8 @@ namespace {
 		[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][fsTexIndex] atIndex:fsTexIndex];
 	}
 	[deferredEncoder setFragmentTexture: depthTextures_[currentFrameIndex_] atIndex:fsTexIndex++];
-
+	assert(deferredBuffers_.irradiance != InvalidTexture);
+	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.irradiance].texture atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentSamplerState:self->deferredSamplerState_ atIndex:0];
 
 	// uniforms

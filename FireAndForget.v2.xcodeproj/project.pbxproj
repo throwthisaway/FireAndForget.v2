@@ -30,7 +30,7 @@
 		BD3D1ACF1E8A689800F7311A /* MetalView.mm in Sources */ = {isa = PBXBuildFile; fileRef = BD3D1ACE1E8A689800F7311A /* MetalView.mm */; };
 		BD45E01721CFA23800ABBD5B /* Serpentine_Valley_3k.hdr in Resources */ = {isa = PBXBuildFile; fileRef = BD45E01621CFA23800ABBD5B /* Serpentine_Valley_3k.hdr */; };
 		BD4992F020DE64E1009DA76D /* PBR.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992EF20DE64E1009DA76D /* PBR.metal */; };
-		BD4992F320DE6C79009DA76D /* PBR_include.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992F220DE6C79009DA76D /* PBR_include.metal */; };
+		BD4992F320DE6C79009DA76D /* PBR.h.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992F220DE6C79009DA76D /* PBR.h.metal */; };
 		BD4992F520DE9B12009DA76D /* DeferredPBR.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD4992F420DE9B12009DA76D /* DeferredPBR.metal */; };
 		BD4992F720DFB351009DA76D /* sphere.mesh in Resources */ = {isa = PBXBuildFile; fileRef = BD4992F620DFB351009DA76D /* sphere.mesh */; };
 		BD6A40E0208230A80027E1D7 /* Phong.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD1DA547206FE61C004EF62A /* Phong.metal */; };
@@ -112,7 +112,7 @@
 		BD3D1ACE1E8A689800F7311A /* MetalView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MetalView.mm; sourceTree = "<group>"; };
 		BD45E01621CFA23800ABBD5B /* Serpentine_Valley_3k.hdr */ = {isa = PBXFileReference; lastKnownFileType = file; name = Serpentine_Valley_3k.hdr; path = assets/Serpentine_Valley_3k.hdr; sourceTree = "<group>"; };
 		BD4992EF20DE64E1009DA76D /* PBR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = PBR.metal; path = shaders/PBR.metal; sourceTree = "<group>"; };
-		BD4992F220DE6C79009DA76D /* PBR_include.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = PBR_include.metal; path = shaders/PBR_include.metal; sourceTree = "<group>"; };
+		BD4992F220DE6C79009DA76D /* PBR.h.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = PBR.h.metal; path = shaders/PBR.h.metal; sourceTree = "<group>"; };
 		BD4992F420DE9B12009DA76D /* DeferredPBR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = DeferredPBR.metal; path = shaders/DeferredPBR.metal; sourceTree = "<group>"; };
 		BD4992F620DFB351009DA76D /* sphere.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = sphere.mesh; path = assets/sphere.mesh; sourceTree = "<group>"; };
 		BD6A40DF20822FD80027E1D7 /* Phong.h.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Phong.h.metal; path = shaders/Phong.h.metal; sourceTree = "<group>"; };
@@ -171,7 +171,7 @@
 				BD6A4167208CE5D50027E1D7 /* Common.h.metal */,
 				BD6A4169208CE7DD0027E1D7 /* Common.metal */,
 				BD4992EF20DE64E1009DA76D /* PBR.metal */,
-				BD4992F220DE6C79009DA76D /* PBR_include.metal */,
+				BD4992F220DE6C79009DA76D /* PBR.h.metal */,
 				BD2E31DB21DA3D1F0085F6DA /* CubeEnvMap.metal */,
 				BD2E31DD21DA3DD20085F6DA /* VertexTypes.h.metal */,
 				BDCD08ED21E0CB9F00F37C01 /* Bg.metal */,
@@ -432,7 +432,7 @@
 				BD1DA545206FDABC004EF62A /* Debug.metal in Sources */,
 				BD0E83601FF010D9005A2F8A /* Shaders.metal in Sources */,
 				BD6A40E2208230BA0027E1D7 /* Phong.h.metal in Sources */,
-				BD4992F320DE6C79009DA76D /* PBR_include.metal in Sources */,
+				BD4992F320DE6C79009DA76D /* PBR.h.metal in Sources */,
 				BD6A416A208CE7DD0027E1D7 /* Common.metal in Sources */,
 				BD28F7001F0A5E9B00B07CBD /* Shaders.mm in Sources */,
 				BD6A4165208CD9780027E1D7 /* Deferred.metal in Sources */,

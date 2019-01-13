@@ -18,8 +18,8 @@ public:
 #endif
 	void BeginUploadResources();
 	BufferIndex CreateBuffer(const void* data, size_t sizeInBytes);
-	TextureIndex CreateTexture(const void* data, uint64_t width, uint32_t height, Img::PixelFormat format);
-	TextureIndex CreateCubeTextureFromEnvMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh);
+	TextureIndex CreateTexture(const void* data, uint64_t width, uint32_t height, Img::PixelFormat format, const char* label = nullptr);
+	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, const char* label = nullptr);
 	void EndUploadResources();
 
 	// Shader resources

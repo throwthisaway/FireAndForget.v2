@@ -13,11 +13,13 @@ struct Mesh;
 			 withBytesPerPixel: (uint8_t) bytesPerPixel
 			   withPixelFormat: (MTLPixelFormat) format
 					 withLabel: (NSString* _Nullable) label;
-- (TextureIndex) createCubeTextureFromEnvMap: (TextureIndex) tex
-									  withVB: (BufferIndex) vb
-									  withIB: (BufferIndex) ib
-								 withSubmesh: (const assets::Submesh&) submesh
-								   withLabel: (NSString* _Nullable) label;
+- (TextureIndex) genCubeMap: (TextureIndex) tex
+							  withVB: (BufferIndex) vb
+							  withIB: (BufferIndex) ib
+						 withSubmesh: (const assets::Submesh&) submesh
+						 withDimension: (NSUInteger) dim
+						  withShader: (ShaderId) shader
+						   withLabel: (NSString* _Nullable) label;
 - (void) beginRender: (id<MTLTexture> _Nonnull) surface;
 - (void) startForwardPass;
 - (void) startDeferredPass;

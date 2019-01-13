@@ -26,14 +26,15 @@ void Scene::OnAssetsLoaded() {
 	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
 	const float incX = 2.4f, incY = 2.9f;
 	auto pos = glm::vec3{ -3 * incX, -3 * incY, -2.f };
-	for (int i = 0; i < 7; ++i) {
-		for (int j = 0; j < 7; ++j) {
+	const int count = 7;
+	for (int i = 0; i < count; ++i) {
+		for (int j = 0; j < count; ++j) {
 			auto model = assets_.models[assets::Assets::SPHERE];
 			assets_.models.push_back(model);
 			objects_.push_back({ pos, {}, index_t(assets_.models.size() - 1) });
 			assets_.materials.push_back({ { .8f, .0f, .0f },
-				glm::clamp(j / 6.f, 0.025f, 1.f),
-				i / 6.f,
+				glm::clamp((float)j / count, .05f, 1.f),
+				(float)i / count,
 				InvalidTexture });
 			pos.x += incX;
 			auto& submesh = assets_.models[objects_.back().mesh].layers.front().submeshes.front();
@@ -63,21 +64,19 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 //	shaderStructures.cScene.scene.light[1].diffuse[2] = 150.0f;
 
 	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::frame_count);
-	DeferredBuffers deferredBuffers;
 #ifdef PLATFORM_WIN
 	deferredBuffers.descAllocEntryIndex = renderer->AllocDescriptors(DeferredBuffers::Params::desc_count);
 	uint16_t offset = 0;
 	// cScene
 	auto rootParamIndex = DeferredBuffers::Params::index<cScene>::value;
-	deferredBuffers.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
+	deferredBuffers_.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
 	for (uint32_t frame = 0; frame < cScene::frame_count; ++frame) {
-		renderer->CreateCBV(deferredBuffers.descAllocEntryIndex, offset, frame, shaderResources.cScene + frame);
+		renderer->CreateCBV(deferredBuffers_.descAllocEntryIndex, offset, frame, shaderResources.cScene + frame);
 	}
 	++offset;
 #elif defined(PLATFORM_MAC_OS)
-	deferredBuffers.fsBuffers[DeferredBuffers::FSParams::index<cScene>::value] = {shaderResources.cScene, cScene::frame_count};
+	deferredBuffers_.fsBuffers[DeferredBuffers::FSParams::index<cScene>::value] = {shaderResources.cScene, cScene::frame_count};
 #endif
-	renderer->SetDeferredBuffers(deferredBuffers);
 
 	state = State::AssetsLoading;
 	assets_.Init(renderer);
@@ -95,8 +94,11 @@ void Scene::PrepareScene() {
 	const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
 	auto& l = mesh.layers.front();
 	TextureIndex envMap = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
-	cubeEnv_ = renderer_->CreateCubeTextureFromEnvMap(envMap, mesh.vb, mesh.ib, l.submeshes.front());
-	//shaderStructures.cScene.scene.envMap = cubeTex;
+	const uint64_t cubeEnvMapDim = 512;
+	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, "CubeEnvMap");
+	const uint64_t irradianceDim = 32;
+	deferredBuffers_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, "Irradiance");
+	renderer_->SetDeferredBuffers(deferredBuffers_);
 	state = State::Ready;
 }
 
@@ -108,7 +110,7 @@ void Scene::Render() {
 	if (cubeEnv_ != InvalidTexture) {
 		const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
 		auto& l = mesh.layers.front();
-		ShaderStructures::BgCmd cmd{ glm::transpose(camera_.vp), l.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, cubeEnv_};
+		ShaderStructures::BgCmd cmd{ camera_.vp, l.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, cubeEnv_};
 		renderer_->Submit(cmd);
 	}
 

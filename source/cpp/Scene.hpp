@@ -55,4 +55,5 @@ private:
 	}shaderStructures;
 	SceneShaderResources shaderResources;
 	TextureIndex cubeEnv_ = InvalidTexture;
+	ShaderStructures::DeferredBuffers deferredBuffers_;
 };
