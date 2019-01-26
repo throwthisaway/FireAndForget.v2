@@ -270,8 +270,8 @@ namespace {
 		memcpy(ptr, &v, sizeof(v));
 		ptr += inc;
 	}
-//	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
-//	[capManager startCaptureWithCommandQueue:commandQueue_];
+	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
+	[capManager startCaptureWithCommandQueue:commandQueue_];
 
 	id<MTLCommandBuffer> commandBuffer = [commandQueue_ commandBuffer];
 	auto& pipeline = [shaders_ selectPipeline: shader];
@@ -297,7 +297,7 @@ namespace {
 	[commandBuffer commit];
 	[commandBuffer waitUntilCompleted];
 
-	//[capManager stopCapture];
+	[capManager stopCapture];
 
 	return (TextureIndex)textures_.size() - 1;
 }
