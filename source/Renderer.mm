@@ -62,6 +62,9 @@ TextureIndex RendererWrapper::CreateTexture(const void* data, uint64_t width, ui
 TextureIndex RendererWrapper::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, const char* label) {
 	return [(__bridge Renderer*)renderer genCubeMap: tex withVB: vb withIB: ib withSubmesh: submesh withDimension: dim withShader: shader withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
 }
+TextureIndex RendererWrapper::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, const char* label) {
+	return [(__bridge Renderer*)renderer genPrefilteredEnvCubeMap: tex withVB: vb withIB: ib withSubmesh: submesh withDimension: dim withShader: shader withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
+}
 void RendererWrapper::BeginRender() {
 	//[(__bridge Renderer*)renderer beginRender];
 }
@@ -112,8 +115,9 @@ namespace {
 	Shaders* shaders_;
 	id<MTLDepthStencilState> depthStencilState_;
 
-	id<MTLSamplerState> defaultSamplerState_, deferredSamplerState_;
-	id<MTLBuffer> fullscreenTexturedQuad_;
+	id<MTLSamplerState> defaultSamplerState_, deferredSamplerState_, mipmapSamplerState_;
+	id<MTLBuffer> fullscreenTexturedQuad_, cubeViews_;
+	int cubeViewBufInc_;
 	ShaderStructures::DeferredBuffers deferredBuffers_;
 	id<MTLTexture> deferredDebugColorAttachments_[FrameCount];
 
@@ -158,7 +162,17 @@ namespace {
 			samplerDesc.mipFilter = MTLSamplerMipFilterNotMipmapped;
 			deferredSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
 		}
-
+		{
+			// create mimpapped sampler state
+			MTLSamplerDescriptor *samplerDesc = [MTLSamplerDescriptor new];
+			samplerDesc.rAddressMode = MTLSamplerAddressModeRepeat;
+			samplerDesc.sAddressMode = MTLSamplerAddressModeRepeat;
+			samplerDesc.tAddressMode = MTLSamplerAddressModeRepeat;
+			samplerDesc.minFilter = MTLSamplerMinMagFilterLinear;
+			samplerDesc.magFilter = MTLSamplerMinMagFilterLinear;
+			samplerDesc.mipFilter = MTLSamplerMipFilterLinear;
+			mipmapSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
+		}
 		struct PosUV {
 			simd::float2 pos;
 			simd::float2 uv;
@@ -168,6 +182,18 @@ namespace {
 		fullscreenTexturedQuad_ = [device_ newBufferWithBytes:quad length:sizeof(quad) options: MTLResourceOptionCPUCacheModeDefault];
 		for (int i = 0; i < FrameCount; ++i)
 			frame_[i].Init(device, defaultCBFrameAllocSize);
+
+		const glm::vec3 at[] = {{1.f, 0.f, 0.f},{-1.f, 0.f, 0.f},{0.f, 1.f, 0.f},{0.f, -1.f, 0.f},{0.f, 0.f, -1.f},{0.f, 0.f, 1.f}},
+		up[] = {{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}};
+		const int faceCount = 6;
+		cubeViewBufInc_ = AlignTo<int, 256>(sizeof(glm::mat4x4));
+		cubeViews_ = [device_ newBufferWithLength: cubeViewBufInc_ * faceCount options: MTLResourceCPUCacheModeWriteCombined];
+		auto ptr = (uint8_t*)[cubeViews_ contents];
+		for (int i = 0; i < faceCount; ++i) {
+			glm::mat4x4 v = glm::lookAt({0.f, 0.f, 0.f}, at[i], up[i] * -1.f/* TODO:: why???*/);
+			memcpy(ptr, &v, sizeof(v));
+			ptr += cubeViewBufInc_;
+		}
 	}
 	return self;
 }
@@ -260,23 +286,14 @@ namespace {
 	if (label) [cubeTexture setLabel:label];
 	textures_.push_back({cubeTexture, dim, (uint32_t)dim, bytesPerPixel, format});
 
-	const glm::vec3 at[] = {{1.f, 0.f, 0.f},{-1.f, 0.f, 0.f},{0.f, 1.f, 0.f},{0.f, -1.f, 0.f},{0.f, 0.f, -1.f},{0.f, 0.f, 1.f}},
-		up[] = {{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}};
-	const int count = 6, inc = AlignTo<int, 256>(sizeof(glm::mat4x4));
-	id<MTLBuffer> buffer = [device_ newBufferWithLength: inc * count options: MTLResourceCPUCacheModeWriteCombined];
-	auto ptr = (uint8_t*)[buffer contents];
-	for (int i = 0; i < count; ++i) {
-		glm::mat4x4 v = glm::lookAt({0.f, 0.f, 0.f}, at[i], up[i] * -1.f/* TODO:: why???*/);
-		memcpy(ptr, &v, sizeof(v));
-		ptr += inc;
-	}
-	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
-	[capManager startCaptureWithCommandQueue:commandQueue_];
+//	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
+//	[capManager startCaptureWithCommandQueue:commandQueue_];
 
 	id<MTLCommandBuffer> commandBuffer = [commandQueue_ commandBuffer];
 	auto& pipeline = [shaders_ selectPipeline: shader];
 	// TODO:: do the same with 1 drawcall and mrt
-	for (int i = 0, offset = 0; i < count; ++i, offset += inc) {
+	const int count = 6;
+	for (int i = 0, cubeViewsBuffOffset = 0; i < count; ++i, cubeViewsBuffOffset += cubeViewBufInc_) {
 		MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 		passDescriptor.colorAttachments[0].texture = cubeTexture;
 		passDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
@@ -286,7 +303,7 @@ namespace {
 		[encoder setRenderPipelineState: pipeline.pipeline];
 		[encoder setCullMode: MTLCullModeNone];
 		[encoder setVertexBuffer: buffers_[vb] offset: 0 atIndex: 0];
-		[encoder setVertexBuffer: buffer offset: offset atIndex: 1];
+		[encoder setVertexBuffer: cubeViews_ offset: cubeViewsBuffOffset atIndex: 1];
 		[encoder setFragmentTexture: textures_[tex].texture atIndex:0];
 		[encoder setFragmentSamplerState: self->defaultSamplerState_ atIndex:0];
 
@@ -297,10 +314,70 @@ namespace {
 	[commandBuffer commit];
 	[commandBuffer waitUntilCompleted];
 
-	[capManager stopCapture];
+//	[capManager stopCapture];
 
 	return (TextureIndex)textures_.size() - 1;
 }
+
+- (TextureIndex) genPrefilteredEnvCubeMap: (TextureIndex) tex
+								   withVB: (BufferIndex) vb
+								   withIB: (BufferIndex) ib
+							  withSubmesh: (const assets::Submesh&) submesh
+							withDimension: (NSUInteger) dim
+							   withShader: (ShaderId) shader
+								withLabel: (NSString* _Nullable) label {
+	constexpr MTLPixelFormat format = MTLPixelFormatRGBA16Float;
+	constexpr uint8_t bytesPerPixel = 8;
+	constexpr int mipLevelCount = 5;
+	MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat: format
+																									size: dim
+																							   mipmapped: true];
+	textureDescriptor.mipmapLevelCount = mipLevelCount;
+	textureDescriptor.usage = MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget;
+	id<MTLTexture> cubeTexture = [device_ newTextureWithDescriptor:textureDescriptor];
+	if (label) [cubeTexture setLabel:label];
+	textures_.push_back({cubeTexture, dim, (uint32_t)dim, bytesPerPixel, format});
+
+	//	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
+	//	[capManager startCaptureWithCommandQueue:commandQueue_];
+
+	id<MTLCommandBuffer> commandBuffer = [commandQueue_ commandBuffer];
+	auto& pipeline = [shaders_ selectPipeline: shader];
+	// TODO:: do the same with 1 drawcall and mrt
+	constexpr int faceCount = 6;
+	id<MTLBuffer> roughnessBuff = [device_ newBufferWithLength: sizeof(float) options: MTLResourceCPUCacheModeWriteCombined];
+	float* pRoughness = (float*)[roughnessBuff contents];
+	for (int mipLevel = 0; mipLevel < mipLevelCount; ++mipLevel) {
+		*pRoughness = (float)mipLevel / (mipLevelCount - 1);
+		for (int i = 0, cubeViewsBuffOffset = 0; i < faceCount; ++i, cubeViewsBuffOffset += cubeViewBufInc_) {
+			MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+			passDescriptor.colorAttachments[0].texture = cubeTexture;
+			passDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+			passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+			passDescriptor.colorAttachments[0].slice = i;
+			passDescriptor.colorAttachments[0].level = mipLevel;
+			id<MTLRenderCommandEncoder> encoder = [commandBuffer renderCommandEncoderWithDescriptor: passDescriptor];
+			[encoder setRenderPipelineState: pipeline.pipeline];
+			[encoder setCullMode: MTLCullModeNone];
+			[encoder setVertexBuffer: buffers_[vb] offset: 0 atIndex: 0];
+			[encoder setVertexBuffer: cubeViews_ offset: cubeViewsBuffOffset atIndex: 1];
+			[encoder setFragmentTexture: textures_[tex].texture atIndex:0];
+			[encoder setFragmentSamplerState: self->mipmapSamplerState_ atIndex:0];
+			[encoder setFragmentBuffer: roughnessBuff offset:0 atIndex:0];
+
+			[encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[ib] indexBufferOffset: 0 instanceCount: 1 baseVertex: 0 baseInstance: 0];
+			[encoder endEncoding];
+
+	}
+	}
+	[commandBuffer commit];
+	[commandBuffer waitUntilCompleted];
+
+	//	[capManager stopCapture];
+
+	return (TextureIndex)textures_.size() - 1;
+}
+
 - (void) beginRender: (id<MTLTexture> _Nonnull) surface {
 	dispatch_semaphore_wait(frameBoundarySemaphore_, DISPATCH_TIME_FOREVER);
 	[self makeDepthTexture: surface.width withHeight: surface.height];
@@ -484,6 +561,8 @@ namespace {
 	[deferredEncoder setFragmentTexture: depthTextures_[currentFrameIndex_] atIndex:fsTexIndex++];
 	assert(deferredBuffers_.irradiance != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.irradiance].texture atIndex:fsTexIndex++];
+	assert(deferredBuffers_.prefilteredEnvMap != InvalidTexture);
+	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.prefilteredEnvMap].texture atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentSamplerState:self->deferredSamplerState_ atIndex:0];
 
 	// uniforms

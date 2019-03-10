@@ -20,7 +20,8 @@ const ShaderId DeferredPBR = 4;
 const ShaderId CubeEnvMap = 5;
 const ShaderId Bg = 6;
 const ShaderId Irradiance = 7;
-const ShaderId Count = 8;
+const ShaderId PrefilterEnv = 8;
+const ShaderId Count = 9;
 const int RenderTargetCount = 4;
 
 // resource types
@@ -171,7 +172,7 @@ struct DeferredBuffers {
 	using VSParams = ShaderParamTraits<>;
 	using FSParams = ShaderParamTraits<cScene>;
 	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
-	TextureIndex irradiance = InvalidTexture;
+	TextureIndex irradiance = InvalidTexture, prefilteredEnvMap = InvalidTexture;
 #endif
 };
 //using TexVSSParams = ShaderParamTraits<cObjectVS>;

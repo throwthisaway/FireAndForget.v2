@@ -4,7 +4,7 @@ using namespace metal;
 
 struct FSIn {
 	float4 pos [[position]];
-	float3 p;
+	float3 p; // localpos
 };
 vertex FSIn cubeenv_vs_main(const device VertexPN* input [[buffer(0)]],
 						constant float4x4& mvp [[buffer(1)]],

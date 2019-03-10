@@ -4,6 +4,8 @@
 using namespace metal;
 
 // https://learnopengl.com/PBR/Theory
+
+// Trowbridge-Reitz GGX
 float NDF_GGXTR(float3 n, float3 h, float roughness) {
 	float a = roughness * roughness;
 	float a2 = a * a;

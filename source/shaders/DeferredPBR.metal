@@ -34,6 +34,7 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 									  texture2d<float> debug [[texture(3)]],
 									  texture2d<float> depth [[texture(4)]],
 									  texturecube<float> irradianceTx [[texture(5)]],
+									  texturecube<float> prefilteredEnvTx [[texture(6)]],
 									  sampler smp [[sampler(0)]]) {
 	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth.sample(smp, input.uv).x);
 	//float3 worldPos = debug.sample(smp, input.uv).xyz;

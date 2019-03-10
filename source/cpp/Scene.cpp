@@ -88,6 +88,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	OnAssetsLoaded();
 #endif
 }
+
 void Scene::PrepareScene() {
 	state = State::PrepareScene;
 	Img::ImgData img = assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/);
@@ -98,6 +99,8 @@ void Scene::PrepareScene() {
 	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, "CubeEnvMap");
 	const uint64_t irradianceDim = 32;
 	deferredBuffers_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, "Irradiance");
+	const uint64_t preFilterEnvDim = 128;
+	deferredBuffers_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, "PrefilterEnv");
 	renderer_->SetDeferredBuffers(deferredBuffers_);
 	state = State::Ready;
 }
@@ -110,7 +113,7 @@ void Scene::Render() {
 	if (cubeEnv_ != InvalidTexture) {
 		const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
 		auto& l = mesh.layers.front();
-		ShaderStructures::BgCmd cmd{ camera_.vp, l.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, cubeEnv_};
+		ShaderStructures::BgCmd cmd{ camera_.vp, l.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, deferredBuffers_.prefilteredEnvMap/*cubeEnv_*/};
 		renderer_->Submit(cmd);
 	}
 
