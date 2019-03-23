@@ -1,20 +1,12 @@
 #include <metal_stdlib>
 #include "Common.h.metal"
 #include "Phong.h.metal"
+#include "VertexTypes.h.metal"
+#include "FragInput.h.metal"
 
-struct PosUV {
-	float2 pos;
-	float2 uv;
-};
-
-struct FSIn {
-	float4 pos [[position]];
-	float2 uv; // TODO:: ???[[]];
-};
-
-vertex FSIn deferred_vs_main(constant PosUV* input [[buffer(0)]],
+vertex FragT fsquad_vs_main(constant VertexFSQuad* input [[buffer(0)]],
 							 uint id [[vertex_id]]) {
-	FSIn res;
+	FragT res;
 	res.pos = float4(input[id].pos, 0.f, 1.f);
 	res.uv = input[id].uv;
 	return res;
@@ -25,7 +17,7 @@ struct DeferredOut {
 	float4 debug [[color(1)]];
 };
 
-fragment DeferredOut deferred_fs_main(FSIn input [[stage_in]],
+fragment DeferredOut deferred_fs_main(FragT input [[stage_in]],
 							  constant Scene& scene [[buffer(0)]],
 							  texture2d<float> color [[texture(0)]],
 							  texture2d<float> normal [[texture(1)]],

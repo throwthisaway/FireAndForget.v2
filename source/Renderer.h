@@ -19,6 +19,7 @@ struct Mesh;
 						 withSubmesh: (const assets::Submesh&) submesh
 						 withDimension: (NSUInteger) dim
 						  withShader: (ShaderId) shader
+						     withMip: (bool) mip
 						   withLabel: (NSString* _Nullable) label;
 - (TextureIndex) genPrefilteredEnvCubeMap: (TextureIndex) tex
 								   withVB: (BufferIndex) vb
@@ -27,6 +28,9 @@ struct Mesh;
 							withDimension: (NSUInteger) dim
 							   withShader: (ShaderId) shader
 								withLabel: (NSString* _Nullable) label;
+- (TextureIndex) genBRDFLUT: (NSUInteger) dim
+					   withShader: (ShaderId) shader
+						withLabel: (NSString* _Nullable) label;
 - (void) beginRender: (id<MTLTexture> _Nonnull) surface;
 - (void) startForwardPass;
 - (void) startDeferredPass;

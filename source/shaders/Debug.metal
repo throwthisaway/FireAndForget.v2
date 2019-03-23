@@ -1,10 +1,8 @@
 #include <metal_stdlib>
 #include "Common.h.metal"
-struct VIn {
-	packed_float3 pos;
-	packed_float3 n;
-};
-vertex float4 debug_vs_main(const device VIn* input [[buffer(0)]],
+#include "VertexTypes.h.metal"
+
+vertex float4 debug_vs_main(const device VertexPN* input [[buffer(0)]],
 							constant float4x4& mvp [[buffer(1)]],
 							uint vid [[vertex_id]]) {
 	return float4(input[vid].pos, 1.f) * mvp;

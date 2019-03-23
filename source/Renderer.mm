@@ -59,11 +59,14 @@ namespace {
 TextureIndex RendererWrapper::CreateTexture(const void* data, uint64_t width, uint32_t height, Img::PixelFormat format, const char* label) {
 	return [(__bridge Renderer*)renderer createTexture: data withWidth: width withHeight: height withBytesPerPixel: Img::BytesPerPixel(format) withPixelFormat: PixelFormatToMTLPixelFormat(format) withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
 }
-TextureIndex RendererWrapper::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, const char* label) {
-	return [(__bridge Renderer*)renderer genCubeMap: tex withVB: vb withIB: ib withSubmesh: submesh withDimension: dim withShader: shader withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
+TextureIndex RendererWrapper::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, bool mip,  const char* label) {
+	return [(__bridge Renderer*)renderer genCubeMap: tex withVB: vb withIB: ib withSubmesh: submesh withDimension: dim withShader: shader withMip: mip withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
 }
 TextureIndex RendererWrapper::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, const char* label) {
 	return [(__bridge Renderer*)renderer genPrefilteredEnvCubeMap: tex withVB: vb withIB: ib withSubmesh: submesh withDimension: dim withShader: shader withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
+}
+TextureIndex RendererWrapper::GenBRDFLUT(uint64_t dim, ShaderId shader, const char* label) {
+	return [(__bridge Renderer*)renderer genBRDFLUT: dim withShader: shader withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
 }
 void RendererWrapper::BeginRender() {
 	//[(__bridge Renderer*)renderer beginRender];
@@ -115,7 +118,7 @@ namespace {
 	Shaders* shaders_;
 	id<MTLDepthStencilState> depthStencilState_;
 
-	id<MTLSamplerState> defaultSamplerState_, deferredSamplerState_, mipmapSamplerState_;
+	id<MTLSamplerState> defaultSamplerState_, deferredSamplerState_, mipmapSamplerState_, clampSamplerState_;
 	id<MTLBuffer> fullscreenTexturedQuad_, cubeViews_;
 	int cubeViewBufInc_;
 	ShaderStructures::DeferredBuffers deferredBuffers_;
@@ -173,6 +176,19 @@ namespace {
 			samplerDesc.mipFilter = MTLSamplerMipFilterLinear;
 			mipmapSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
 		}
+
+		{
+			// create clamp to edge sampler state for brdf lookup
+			MTLSamplerDescriptor *samplerDesc = [MTLSamplerDescriptor new];
+			samplerDesc.rAddressMode = MTLSamplerAddressModeClampToEdge;
+			samplerDesc.sAddressMode = MTLSamplerAddressModeClampToEdge;
+			samplerDesc.tAddressMode = MTLSamplerAddressModeClampToEdge;
+			samplerDesc.minFilter = MTLSamplerMinMagFilterLinear;
+			samplerDesc.magFilter = MTLSamplerMinMagFilterLinear;
+			samplerDesc.mipFilter = MTLSamplerMipFilterNotMipmapped;
+			clampSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
+		}
+
 		struct PosUV {
 			simd::float2 pos;
 			simd::float2 uv;
@@ -274,14 +290,18 @@ namespace {
 						 withSubmesh: (const assets::Submesh&) submesh
 					   withDimension: (NSUInteger) dim
 						  withShader: (ShaderId) shader
+						     withMip: (bool) mip
 						   withLabel: (NSString* _Nullable) label {
 	constexpr MTLPixelFormat format = MTLPixelFormatRGBA16Float;
 	constexpr uint8_t bytesPerPixel = 8;
 	MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat: format
 																									size: dim
-																							   mipmapped: false];
+																							   mipmapped: mip];
 
 	textureDescriptor.usage = MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget;
+	if (mip) {
+		textureDescriptor.mipmapLevelCount = std::floor(std::log2(dim)) + 1;
+	}
 	id<MTLTexture> cubeTexture = [device_ newTextureWithDescriptor:textureDescriptor];
 	if (label) [cubeTexture setLabel:label];
 	textures_.push_back({cubeTexture, dim, (uint32_t)dim, bytesPerPixel, format});
@@ -299,6 +319,7 @@ namespace {
 		passDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
 		passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
 		passDescriptor.colorAttachments[0].slice = i;
+		passDescriptor.colorAttachments[0].level = 0;
 		id<MTLRenderCommandEncoder> encoder = [commandBuffer renderCommandEncoderWithDescriptor: passDescriptor];
 		[encoder setRenderPipelineState: pipeline.pipeline];
 		[encoder setCullMode: MTLCullModeNone];
@@ -311,8 +332,13 @@ namespace {
 		[encoder endEncoding];
 
 	}
+	if (mip) {
+		id<MTLBlitCommandEncoder> commandEncoder = [commandBuffer blitCommandEncoder];
+		[commandEncoder generateMipmapsForTexture: cubeTexture];
+		[commandEncoder endEncoding];
+	}
 	[commandBuffer commit];
-	[commandBuffer waitUntilCompleted];
+	[commandBuffer waitUntilCompleted];  // TODO:: wait once for all precomputed stuff
 
 //	[capManager stopCapture];
 
@@ -338,17 +364,27 @@ namespace {
 	if (label) [cubeTexture setLabel:label];
 	textures_.push_back({cubeTexture, dim, (uint32_t)dim, bytesPerPixel, format});
 
-	//	MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
-	//	[capManager startCaptureWithCommandQueue:commandQueue_];
+//		MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
+//		[capManager startCaptureWithCommandQueue:commandQueue_];
 
 	id<MTLCommandBuffer> commandBuffer = [commandQueue_ commandBuffer];
 	auto& pipeline = [shaders_ selectPipeline: shader];
 	// TODO:: do the same with 1 drawcall and mrt
 	constexpr int faceCount = 6;
-	id<MTLBuffer> roughnessBuff = [device_ newBufferWithLength: sizeof(float) options: MTLResourceCPUCacheModeWriteCombined];
-	float* pRoughness = (float*)[roughnessBuff contents];
-	for (int mipLevel = 0; mipLevel < mipLevelCount; ++mipLevel) {
+	using RoughnessBuffType = float;
+	const int buffLen = AlignTo<int, 256>(sizeof(RoughnessBuffType));
+	id<MTLBuffer> roughnessBuff = [device_ newBufferWithLength: buffLen*mipLevelCount options: MTLResourceCPUCacheModeWriteCombined];
+	roughnessBuff.label = @"roughness";
+	RoughnessBuffType* pRoughness = (RoughnessBuffType*)[roughnessBuff contents];
+
+	using ResolutionBuffType = float;
+	id<MTLBuffer> resolutionBuff = [device_ newBufferWithLength: sizeof(ResolutionBuffType) options: MTLResourceCPUCacheModeWriteCombined];
+	resolutionBuff.label = @"resolution";
+	ResolutionBuffType* pResolution = (ResolutionBuffType*)[resolutionBuff contents];
+	*pResolution = textures_[tex].texture.width;
+	for (int mipLevel = 0, offset = 0; mipLevel < mipLevelCount; ++mipLevel, offset += buffLen) {
 		*pRoughness = (float)mipLevel / (mipLevelCount - 1);
+		pRoughness += buffLen / sizeof(RoughnessBuffType);
 		for (int i = 0, cubeViewsBuffOffset = 0; i < faceCount; ++i, cubeViewsBuffOffset += cubeViewBufInc_) {
 			MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 			passDescriptor.colorAttachments[0].texture = cubeTexture;
@@ -363,7 +399,8 @@ namespace {
 			[encoder setVertexBuffer: cubeViews_ offset: cubeViewsBuffOffset atIndex: 1];
 			[encoder setFragmentTexture: textures_[tex].texture atIndex:0];
 			[encoder setFragmentSamplerState: self->mipmapSamplerState_ atIndex:0];
-			[encoder setFragmentBuffer: roughnessBuff offset:0 atIndex:0];
+			[encoder setFragmentBuffer: roughnessBuff offset:offset atIndex:0];
+			[encoder setFragmentBuffer: resolutionBuff offset:0 atIndex:1];
 
 			[encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[ib] indexBufferOffset: 0 instanceCount: 1 baseVertex: 0 baseInstance: 0];
 			[encoder endEncoding];
@@ -371,13 +408,42 @@ namespace {
 	}
 	}
 	[commandBuffer commit];
-	[commandBuffer waitUntilCompleted];
+	[commandBuffer waitUntilCompleted];  // TODO:: wait once for all precomputed stuff
 
-	//	[capManager stopCapture];
+//	[capManager stopCapture];
 
 	return (TextureIndex)textures_.size() - 1;
 }
+- (TextureIndex) genBRDFLUT: (NSUInteger) dim
+				 	withShader: (ShaderId) shader
+				  	withLabel: (NSString* _Nullable) label {
+	constexpr MTLPixelFormat format = MTLPixelFormatRG16Float;
+	constexpr uint8_t bytesPerPixel = 8;
+	MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat: format
+																								 width: dim
+																								height: dim
+																							   mipmapped: false];
+	textureDescriptor.usage = MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget;
+	id<MTLTexture> tex = [device_ newTextureWithDescriptor:textureDescriptor];
+	if (label) [tex setLabel:label];
+	textures_.push_back({tex, dim, (uint32_t)dim, bytesPerPixel, format});
 
+	id<MTLCommandBuffer> commandBuffer = [commandQueue_ commandBuffer];
+	MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+	passDescriptor.colorAttachments[0].texture = tex;
+	passDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+	passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+	passDescriptor.colorAttachments[0].level = 0;
+	id<MTLRenderCommandEncoder> encoder = [commandBuffer renderCommandEncoderWithDescriptor: passDescriptor];
+	[encoder setRenderPipelineState: [shaders_ selectPipeline: shader].pipeline];
+	[encoder setCullMode: MTLCullModeNone];
+	[encoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
+	[encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
+	[encoder endEncoding];
+	[commandBuffer commit];
+	[commandBuffer waitUntilCompleted]; // TODO:: wait once for all precomputed stuff
+	return (TextureIndex)textures_.size() - 1;
+}
 - (void) beginRender: (id<MTLTexture> _Nonnull) surface {
 	dispatch_semaphore_wait(frameBoundarySemaphore_, DISPATCH_TIME_FOREVER);
 	[self makeDepthTexture: surface.width withHeight: surface.height];
@@ -563,7 +629,11 @@ namespace {
 	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.irradiance].texture atIndex:fsTexIndex++];
 	assert(deferredBuffers_.prefilteredEnvMap != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.prefilteredEnvMap].texture atIndex:fsTexIndex++];
+	assert(deferredBuffers_.BRDFLUT != InvalidTexture);
+	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.BRDFLUT].texture atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentSamplerState:self->deferredSamplerState_ atIndex:0];
+	[deferredEncoder setFragmentSamplerState:self->mipmapSamplerState_ atIndex:1];
+	[deferredEncoder setFragmentSamplerState:self->clampSamplerState_ atIndex:2];
 
 	// uniforms
 	size_t vsIndex = 0, fsIndex = 0;

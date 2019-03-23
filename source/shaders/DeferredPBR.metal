@@ -3,24 +3,11 @@
 #include "Common.h.metal"
 #include "PBR.h.metal"
 
-
-struct PosUV {
-	packed_float2 pos;
-	packed_float2 uv;
-};
-
 struct FSIn {
 	float4 pos [[position]];
 	float2 uv; // TODO:: ???[[]];
 };
 
-vertex FSIn deferred_pbr_vs_main(constant PosUV* input [[buffer(0)]],
-						uint id [[vertex_id]]) {
-	FSIn res;
-	res.pos = float4(input[id].pos, 0.f, 1.f);
-	res.uv = input[id].uv;
-	return res;
-}
 
 struct DeferredOut {
 	float4 frag [[color(0)]];
@@ -35,7 +22,10 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 									  texture2d<float> depth [[texture(4)]],
 									  texturecube<float> irradianceTx [[texture(5)]],
 									  texturecube<float> prefilteredEnvTx [[texture(6)]],
-									  sampler smp [[sampler(0)]]) {
+									  texture2d<float> BRDFLUT [[texture(7)]],
+									  sampler smp [[sampler(0)]],
+									  sampler mipmapsmp [[sampler(1)]],
+									  sampler clampsmp [[sampler(2)]]) {
 	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth.sample(smp, input.uv).x);
 	//float3 worldPos = debug.sample(smp, input.uv).xyz;
 	float3 n = Decode(normal.sample(smp, input.uv).xy);
@@ -43,12 +33,12 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	float4 albedo = albedoTx.sample(smp, input.uv);
 	float3 v = normalize(scene.eyePos - worldPos);
 
-	float roughness = material.r;
-	float metallic = material.g;
+	const float roughness = material.r;
+	const float metallic = material.g;
 	float3 f0 = float3(.04f);
 	f0 = mix(f0, albedo.rgb, metallic);
-	float r = roughness + 1.f;
-	float k = (r*r) / 8.f;
+	float r1 = roughness + 1.f;
+	float k = (r1*r1) / 8.f;
 	float ndotv = max(dot(n, v), 0.f);
 
 	float3 Lo = 0.f;
@@ -65,7 +55,6 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 		float3 F = Fresnel_Schlick(hdotv, f0);
 
 		float NDF = NDF_GGXTR(n, h, roughness);
-
 		float ndotl = max(dot(n, l), 0.f);
 		float G = GF_Smith(ndotv, ndotl, k);
 
@@ -79,11 +68,22 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	DeferredOut res;
 	// TODO:: calc ao;
 	float ao = 1.f;
-	float3 kS = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
-	float3 kD = 1.f - kS;
+	//
+	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
+	float3 ks = f;
+	float3 kd = 1.f - ks;
+	kd *= 1.f - metallic;
 	float3 irradiance = irradianceTx.sample(smp, n).rgb;
 	float3 diffuse = irradiance * albedo.rgb;
-	float3 ambient = kD * diffuse * ao;
+
+	float3 r = reflect(-v, n);
+	const float max_ref_lod = 4.f;	// TODO:: pass it as constsnt buffer
+	float3 prefilerColor = prefilteredEnvTx.sample(mipmapsmp, r, level(roughness * max_ref_lod)).rgb;
+
+	float2 envBRDF = BRDFLUT.sample(clampsmp, float2(ndotv, roughness)).rg;
+	float3 specular = prefilerColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnek Shlick
+	float3 ambient = (kd * diffuse + specular) * ao;
+	//
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
 	// gamma correction

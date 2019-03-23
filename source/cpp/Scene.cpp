@@ -96,11 +96,13 @@ void Scene::PrepareScene() {
 	auto& l = mesh.layers.front();
 	TextureIndex envMap = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
 	const uint64_t cubeEnvMapDim = 512;
-	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, "CubeEnvMap");
+	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  "CubeEnvMap");
 	const uint64_t irradianceDim = 32;
-	deferredBuffers_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, "Irradiance");
+	deferredBuffers_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, "Irradiance");
 	const uint64_t preFilterEnvDim = 128;
 	deferredBuffers_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, "PrefilterEnv");
+	const uint64_t brdfLUTDim = 512;
+	deferredBuffers_.BRDFLUT = renderer_->GenBRDFLUT(brdfLUTDim, ShaderStructures::BRDFLUT, "BRDFLUT");
 	renderer_->SetDeferredBuffers(deferredBuffers_);
 	state = State::Ready;
 }

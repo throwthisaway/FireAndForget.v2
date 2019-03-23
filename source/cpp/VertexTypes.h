@@ -1,6 +1,6 @@
 #ifndef VertexTypes_h
 #define VertexTypes_h
-struct VertexPUV {
+struct VertexFSQuad {
 	packed_float2 pos, uv;
 };
 struct VertexPN {
