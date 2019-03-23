@@ -32,7 +32,7 @@ void Scene::OnAssetsLoaded() {
 			auto model = assets_.models[assets::Assets::SPHERE];
 			assets_.models.push_back(model);
 			objects_.push_back({ pos, {}, index_t(assets_.models.size() - 1) });
-			assets_.materials.push_back({ { .8f, .0f, .0f },
+			assets_.materials.push_back({ { .5f, .5f, .5f },
 				glm::clamp((float)j / count, .05f, 1.f),
 				(float)i / count,
 				InvalidTexture });
@@ -97,6 +97,7 @@ void Scene::PrepareScene() {
 	TextureIndex envMap = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
 	const uint64_t cubeEnvMapDim = 512;
 	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  "CubeEnvMap");
+	//cubeEnv_ = renderer_->GenTestCubeMap();
 	const uint64_t irradianceDim = 32;
 	deferredBuffers_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, "Irradiance");
 	const uint64_t preFilterEnvDim = 128;
@@ -115,7 +116,7 @@ void Scene::Render() {
 	if (cubeEnv_ != InvalidTexture) {
 		const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
 		auto& l = mesh.layers.front();
-		ShaderStructures::BgCmd cmd{ camera_.vp, l.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, deferredBuffers_.prefilteredEnvMap/*cubeEnv_*/};
+		ShaderStructures::BgCmd cmd{ camera_.vp, l.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, /*deferredBuffers_.prefilteredEnvMap*/cubeEnv_};
 		renderer_->Submit(cmd);
 	}
 

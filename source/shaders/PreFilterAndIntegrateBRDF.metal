@@ -33,7 +33,7 @@ fragment float4 prefilter_fs_main(FragP input [[stage_in]],
 								  texturecube<float> env [[texture(0)]],
 								  sampler smp [[sampler(0)]]) {
 
-	const float3 n = normalize(input.p);
+	const float3 n = normalize(input.p); // TODO:: why negate?
 	const float3 r = n;
 	const float3 v = r;
 

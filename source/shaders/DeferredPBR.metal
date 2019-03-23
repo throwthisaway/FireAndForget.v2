@@ -77,6 +77,8 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	float3 diffuse = irradiance * albedo.rgb;
 
 	float3 r = reflect(-v, n);
+	/*in the PBR fragment shader in line R = reflect(-V,N) - flip the sign of V.
+	 Also I noticed autor of this amazing article did't multiply reflected vector by inverse ModelView matrix. While it look fine in this example in a place where view matrix is rotated(with env cubemap) you'll really notice how it's going off.*/
 	const float max_ref_lod = 4.f;	// TODO:: pass it as constsnt buffer
 	float3 prefilerColor = prefilteredEnvTx.sample(mipmapsmp, r, level(roughness * max_ref_lod)).rgb;
 

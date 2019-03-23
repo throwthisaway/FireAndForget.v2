@@ -10,7 +10,7 @@ vertex FragP cubeenv_vs_main(const device VertexPN* input [[buffer(0)]],
 	output.p = float3(input[id].pos);
 	return output;
 }
-constant float2 inv = float2(.5f / M_PI_F, 1.f / M_PI_F);
+constant float2 inv = -float2(.5f / M_PI_F, 1.f / M_PI_F); /* -1 turns it upside down */
 fragment float4 cubeenv_fs_main(FragP input [[stage_in]],
 								texture2d<float> diffuseTexture [[texture(0)]],
 								sampler smp [[sampler(0)]]) {
@@ -24,7 +24,7 @@ fragment float4 cubeir_fs_main(FragP input [[stage_in]],
 							   texturecube<float> envMap [[texture(0)]],
 							   sampler smp [[sampler(0)]]) {
 	float3 up = float3(0.f, 1.f, 0.f);
-	float3 n = normalize(input.p);
+	float3 n = normalize(input.p); // TODO:: why negate?
 	float3 right = cross(up, n);
 	up = cross(n, right);
 	float3x3 mat = float3x3(right, up, n);

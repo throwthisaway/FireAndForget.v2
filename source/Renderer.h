@@ -21,6 +21,7 @@ struct Mesh;
 						  withShader: (ShaderId) shader
 						     withMip: (bool) mip
 						   withLabel: (NSString* _Nullable) label;
+- (TextureIndex) genTestCubeMap;
 - (TextureIndex) genPrefilteredEnvCubeMap: (TextureIndex) tex
 								   withVB: (BufferIndex) vb
 								   withIB: (BufferIndex) ib

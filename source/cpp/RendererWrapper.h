@@ -22,6 +22,7 @@ public:
 	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, bool mip, const char* label = nullptr);
 	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, const char* label = nullptr);
 	TextureIndex GenBRDFLUT(uint64_t dim, ShaderId shader, const char* label = nullptr);
+	TextureIndex GenTestCubeMap();
 	void EndUploadResources();
 
 	// Shader resources

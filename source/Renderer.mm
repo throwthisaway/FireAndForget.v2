@@ -68,6 +68,9 @@ TextureIndex RendererWrapper::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferI
 TextureIndex RendererWrapper::GenBRDFLUT(uint64_t dim, ShaderId shader, const char* label) {
 	return [(__bridge Renderer*)renderer genBRDFLUT: dim withShader: shader withLabel: label ? [NSString stringWithUTF8String:label] : nullptr];
 }
+TextureIndex RendererWrapper::GenTestCubeMap() {
+	return [(__bridge Renderer*)renderer genTestCubeMap];
+}
 void RendererWrapper::BeginRender() {
 	//[(__bridge Renderer*)renderer beginRender];
 }
@@ -199,14 +202,14 @@ namespace {
 		for (int i = 0; i < FrameCount; ++i)
 			frame_[i].Init(device, defaultCBFrameAllocSize);
 
-		const glm::vec3 at[] = {{1.f, 0.f, 0.f},{-1.f, 0.f, 0.f},{0.f, 1.f, 0.f},{0.f, -1.f, 0.f},{0.f, 0.f, -1.f},{0.f, 0.f, 1.f}},
-		up[] = {{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, {0.f, 0.f, -1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}};
+		const glm::vec3 at[] = {/*+x*/{1.f, 0.f, 0.f},/*-x*/{-1.f, 0.f, 0.f},/*+y*/{0.f, 1.f, 0.f},/*-y*/{0.f, -1.f, 0.f},/*+z*/{0.f, 0.f, 1.f},/*-z*/{0.f, 0.f, -1.f}},
+		up[] = {{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, 1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}};
 		const int faceCount = 6;
 		cubeViewBufInc_ = AlignTo<int, 256>(sizeof(glm::mat4x4));
 		cubeViews_ = [device_ newBufferWithLength: cubeViewBufInc_ * faceCount options: MTLResourceCPUCacheModeWriteCombined];
 		auto ptr = (uint8_t*)[cubeViews_ contents];
 		for (int i = 0; i < faceCount; ++i) {
-			glm::mat4x4 v = glm::lookAt({0.f, 0.f, 0.f}, at[i], up[i] * -1.f/* TODO:: why???*/);
+			glm::mat4x4 v = glm::lookAtLH({0.f, 0.f, 0.f}, at[i], up[i]);
 			memcpy(ptr, &v, sizeof(v));
 			ptr += cubeViewBufInc_;
 		}
@@ -344,7 +347,35 @@ namespace {
 
 	return (TextureIndex)textures_.size() - 1;
 }
+-(TextureIndex) genTestCubeMap {
+	constexpr MTLPixelFormat format = MTLPixelFormatBGRA8Unorm;
+	constexpr uint8_t bytesPerPixel = 4;
+	uint32_t dim = 128;
+	MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat: format
+																									size: dim
+																							   mipmapped: true];
+	textureDescriptor.mipmapLevelCount = std::floor(std::log2(dim)) + 1;
+	id<MTLTexture> texture = [device_ newTextureWithDescriptor:textureDescriptor];
+	[texture setLabel: @"TestCubeMap"];
+	textures_.push_back({texture, dim, dim, bytesPerPixel, format});
+	// argb
+	const uint32_t color[] = {0xff0000ff, 0xff00ff00, 0xffff0000, 0xff00ffff, 0xffff00ff, 0xffffff00};
+	uint32_t data[dim * dim];
+	for (int i = 0; i < textureDescriptor.mipmapLevelCount; ++i) {
+		MTLRegion region = MTLRegionMake2D(0, 0, dim, dim);
+		NSUInteger bytesPerRow = bytesPerPixel * dim;
+		NSUInteger bytesPerImage = bytesPerPixel * dim * dim;
+		for (int slice = 0; slice < 6; ++slice) {
+			for (int j = 0; j < dim * dim; ++j) {
+				data[j] = color[slice];
+			}
+			[texture replaceRegion:region mipmapLevel:i slice:slice withBytes: data bytesPerRow:bytesPerRow bytesPerImage: bytesPerImage];
+		}
+		dim >>= 1;
+	}
 
+	return (TextureIndex)textures_.size() - 1;
+}
 - (TextureIndex) genPrefilteredEnvCubeMap: (TextureIndex) tex
 								   withVB: (BufferIndex) vb
 								   withIB: (BufferIndex) ib
