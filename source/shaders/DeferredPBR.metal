@@ -23,14 +23,15 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 									  texturecube<float> irradianceTx [[texture(5)]],
 									  texturecube<float> prefilteredEnvTx [[texture(6)]],
 									  texture2d<float> BRDFLUT [[texture(7)]],
-									  sampler smp [[sampler(0)]],
-									  sampler mipmapsmp [[sampler(1)]],
-									  sampler clampsmp [[sampler(2)]]) {
-	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth.sample(smp, input.uv).x);
-	//float3 worldPos = debug.sample(smp, input.uv).xyz;
-	float3 n = Decode(normal.sample(smp, input.uv).xy);
-	float4 material = materialTx.sample(smp, input.uv);
-	float4 albedo = albedoTx.sample(smp, input.uv);
+									  sampler deferredsmp [[sampler(0)]],
+									  sampler linearsmp [[sampler(1)]],
+									  sampler mipmapsmp [[sampler(2)]],
+									  sampler clampsmp [[sampler(3)]]) {
+	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth.sample(deferredsmp, input.uv).x);
+	//float3 worldPos = debug.sample(deferredsmp, input.uv).xyz;
+	float3 n = Decode(normal.sample(deferredsmp, input.uv).xy);
+	float4 material = materialTx.sample(deferredsmp, input.uv);
+	float4 albedo = albedoTx.sample(deferredsmp, input.uv);
 	float3 v = normalize(scene.eyePos - worldPos);
 
 	const float roughness = material.r;
@@ -73,13 +74,13 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	float3 ks = f;
 	float3 kd = 1.f - ks;
 	kd *= 1.f - metallic;
-	float3 irradiance = irradianceTx.sample(smp, n).rgb;
+	float3 irradiance = irradianceTx.sample(linearsmp, n).rgb;
 	float3 diffuse = irradiance * albedo.rgb;
 
 	float3 r = reflect(-v, n);
 	/*in the PBR fragment shader in line R = reflect(-V,N) - flip the sign of V.
 	 Also I noticed autor of this amazing article did't multiply reflected vector by inverse ModelView matrix. While it look fine in this example in a place where view matrix is rotated(with env cubemap) you'll really notice how it's going off.*/
-	const float max_ref_lod = 4.f;	// TODO:: pass it as constsnt buffer
+	const float max_ref_lod = 4.f;	// TODO:: pass it as constant buffer
 	float3 prefilerColor = prefilteredEnvTx.sample(mipmapsmp, r, level(roughness * max_ref_lod)).rgb;
 
 	float2 envBRDF = BRDFLUT.sample(clampsmp, float2(ndotv, roughness)).rg;
@@ -92,7 +93,8 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	color = color / (color + 1.f);
 	color = pow(color, 1.f/2.2f);
 	res.frag = float4(color, albedo.a);
-	float4 debug_n = debug.sample(smp, input.uv);
+//	res.frag = float4(irradiance, albedo.a);
+	float4 debug_n = debug.sample(linearsmp, input.uv);
 	res.debug = debug_n;
 	//res.frag = float4(float3(debug_n), 1.f);
 	return res;

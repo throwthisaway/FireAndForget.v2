@@ -663,8 +663,9 @@ namespace {
 	assert(deferredBuffers_.BRDFLUT != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.BRDFLUT].texture atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentSamplerState:self->deferredSamplerState_ atIndex:0];
-	[deferredEncoder setFragmentSamplerState:self->mipmapSamplerState_ atIndex:1];
-	[deferredEncoder setFragmentSamplerState:self->clampSamplerState_ atIndex:2];
+	[deferredEncoder setFragmentSamplerState:self->defaultSamplerState_ atIndex:1];
+	[deferredEncoder setFragmentSamplerState:self->mipmapSamplerState_ atIndex:2];
+	[deferredEncoder setFragmentSamplerState:self->clampSamplerState_ atIndex:3];
 
 	// uniforms
 	size_t vsIndex = 0, fsIndex = 0;

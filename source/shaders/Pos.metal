@@ -28,7 +28,8 @@ fragment FragOut pos_fs_main(PSIn input [[stage_in]],
 	output.albedo = float4(material.diffuse, 1.f);
 	output.normal = Encode(normalize(input.n));
 	output.material = float4(material.specular_power, 0.f, 1.f);
-	output.debug = float4(float3(input.worldPos), 1.f);
+	//output.debug = float4(float3(input.worldPos), 1.f);
+	output.debug = float4(normalize(input.n), 1.f);
 	return output;
 }
 
