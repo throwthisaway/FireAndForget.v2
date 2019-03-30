@@ -504,7 +504,7 @@ namespace {
 	firstPassDescriptor.colorAttachments[0].texture = surface_;
 	firstPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
 	firstPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-	firstPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.f, 0., 0., 0.f);
+	firstPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.f, 0.f, 0.f, 0.f);
 //	firstPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
 //	firstPassDescriptor.depthAttachment.clearDepth = 1.f;
 //	firstPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
@@ -706,6 +706,7 @@ namespace {
 	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.prefilteredEnvMap].texture atIndex:fsTexIndex++];
 	assert(deferredBuffers_.BRDFLUT != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.BRDFLUT].texture atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: halfResDepthTextures_[currentFrameIndex_] atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentSamplerState:self->deferredSamplerState_ atIndex:0];
 	[deferredEncoder setFragmentSamplerState:self->defaultSamplerState_ atIndex:1];
 	[deferredEncoder setFragmentSamplerState:self->mipmapSamplerState_ atIndex:2];
