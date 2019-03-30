@@ -5,9 +5,7 @@
 #include <glm/glm.hpp>
 #include "MeshLoader.h"
 #include "Img.h"
-#include "ShaderTypeAliases.h"
 #include "ShaderStructures.h"
-#include "VertexTypes.h"
 #if defined(PLATFORM_WIN)
 #include <ppltasks.h>
 #endif

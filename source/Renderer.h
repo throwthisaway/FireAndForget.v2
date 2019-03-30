@@ -35,6 +35,11 @@ struct Mesh;
 - (void) beginRender: (id<MTLTexture> _Nonnull) surface;
 - (void) startForwardPass;
 - (void) startDeferredPass;
+- (void) downsampleWithCommandBuffer: (id<MTLCommandBuffer> _Nonnull) commandBuffer
+						withPipeline: (id<MTLRenderPipelineState> _Nonnull) pipelineState
+							  source: (id<MTLTexture> _Nonnull) srcTex
+						destination: (id<MTLTexture> _Nonnull) dstTex;
+
 - (void) renderTo: (id<CAMetalDrawable> _Nonnull) drawable;
 - (ShaderResourceIndex) createShaderResource: (uint32_t) length withCount: (uint16_t) count;
 - (void) updateShaderResource: (ShaderResourceIndex)shaderResourceIndex withData: (const void* _Null_unspecified)data andSize: (size_t)size;

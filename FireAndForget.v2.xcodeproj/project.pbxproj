@@ -48,6 +48,8 @@
 		BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BD9FA6C01F31E8B100978F61 /* Camera.cpp */; };
 		BDCD08EC21DE8B0D00F37C01 /* Alexs_Apt_2k.hdr in Resources */ = {isa = PBXBuildFile; fileRef = BDCD08E721DE8B0D00F37C01 /* Alexs_Apt_2k.hdr */; };
 		BDCD08EE21E0CB9F00F37C01 /* Bg.metal in Sources */ = {isa = PBXBuildFile; fileRef = BDCD08ED21E0CB9F00F37C01 /* Bg.metal */; };
+		BDE7ECBA224FBF8F00BB9171 /* MetalPerformanceShaders.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BDE7ECB9224FBF8F00BB9171 /* MetalPerformanceShaders.framework */; };
+		BDE7ECBC224FC8A300BB9171 /* Downsample_half.metal in Sources */ = {isa = PBXBuildFile; fileRef = BDE7ECBB224FC8A300BB9171 /* Downsample_half.metal */; };
 		BDE816F52191B11C00B091F1 /* CBFrameAlloc.mm in Sources */ = {isa = PBXBuildFile; fileRef = BDE816F32191B11C00B091F1 /* CBFrameAlloc.mm */; };
 		BDE817032191F8EB00B091F1 /* libmeshoptimizer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BDE817022191F8EB00B091F1 /* libmeshoptimizer.a */; };
 		BDE817042192216F00B091F1 /* Tex.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD0E83621FF010FA005A2F8A /* Tex.metal */; };
@@ -135,6 +137,9 @@
 		BDCD08E721DE8B0D00F37C01 /* Alexs_Apt_2k.hdr */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Alexs_Apt_2k.hdr; path = assets/Alexs_Apt_2k.hdr; sourceTree = "<group>"; };
 		BDCD08ED21E0CB9F00F37C01 /* Bg.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Bg.metal; path = shaders/Bg.metal; sourceTree = "<group>"; };
 		BDCD08EF21E10F2400F37C01 /* VertexTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = VertexTypes.h; path = cpp/VertexTypes.h; sourceTree = "<group>"; };
+		BDE7ECB4224FBBE700BB9171 /* VertexTypeAliases.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = VertexTypeAliases.h; path = cpp/VertexTypeAliases.h; sourceTree = "<group>"; };
+		BDE7ECB9224FBF8F00BB9171 /* MetalPerformanceShaders.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalPerformanceShaders.framework; path = System/Library/Frameworks/MetalPerformanceShaders.framework; sourceTree = SDKROOT; };
+		BDE7ECBB224FC8A300BB9171 /* Downsample_half.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Downsample_half.metal; path = shaders/Downsample_half.metal; sourceTree = "<group>"; };
 		BDE816F32191B11C00B091F1 /* CBFrameAlloc.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CBFrameAlloc.mm; sourceTree = "<group>"; };
 		BDE816F42191B11C00B091F1 /* CBFrameAlloc.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CBFrameAlloc.hpp; sourceTree = "<group>"; };
 		BDE816F72191BDF900B091F1 /* Transform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Transform.h; path = cpp/Transform.h; sourceTree = "<group>"; };
@@ -149,6 +154,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BDE7ECBA224FBF8F00BB9171 /* MetalPerformanceShaders.framework in Frameworks */,
 				BDE817032191F8EB00B091F1 /* libmeshoptimizer.a in Frameworks */,
 				BD72038C1EEC1A1800B2C914 /* libMeshLoader.a in Frameworks */,
 				BD3D1ACC1E8A684000F7311A /* QuartzCore.framework in Frameworks */,
@@ -178,6 +184,7 @@
 				BDCD08ED21E0CB9F00F37C01 /* Bg.metal */,
 				BD1B64242233E1BA00B7D806 /* PreFilterAndIntegrateBRDF.metal */,
 				BD621880223E6DA800468779 /* FragInput.h.metal */,
+				BDE7ECBB224FC8A300BB9171 /* Downsample_half.metal */,
 			);
 			name = shaders;
 			sourceTree = "<group>";
@@ -215,6 +222,7 @@
 				BD33FCAE1F35E4E800162D00 /* MatrixUtils.h */,
 				BDC40B872078E99800A550BE /* BufferUtils.h */,
 				BDCD08EF21E10F2400F37C01 /* VertexTypes.h */,
+				BDE7ECB4224FBBE700BB9171 /* VertexTypeAliases.h */,
 			);
 			name = cpp;
 			sourceTree = "<group>";
@@ -284,6 +292,7 @@
 		BD3D1AC81E8A682D00F7311A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				BDE7ECB9224FBF8F00BB9171 /* MetalPerformanceShaders.framework */,
 				BD72038B1EEC1A1800B2C914 /* libMeshLoader.a */,
 				BDE817022191F8EB00B091F1 /* libmeshoptimizer.a */,
 				BD3D1ACB1E8A684000F7311A /* QuartzCore.framework */,
@@ -430,6 +439,7 @@
 				BD1B64252233E1BA00B7D806 /* PreFilterAndIntegrateBRDF.metal in Sources */,
 				BD6A40E0208230A80027E1D7 /* Phong.metal in Sources */,
 				BDCD08EE21E0CB9F00F37C01 /* Bg.metal in Sources */,
+				BDE7ECBC224FC8A300BB9171 /* Downsample_half.metal in Sources */,
 				BD2E31DC21DA3D1F0085F6DA /* CubeEnvMap.metal in Sources */,
 				BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */,
 				BD4992F520DE9B12009DA76D /* DeferredPBR.metal in Sources */,

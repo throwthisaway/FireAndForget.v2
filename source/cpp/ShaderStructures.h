@@ -22,7 +22,8 @@ const ShaderId Bg = 6;
 const ShaderId Irradiance = 7;
 const ShaderId PrefilterEnv = 8;
 const ShaderId BRDFLUT = 9;
-const ShaderId Count = 10;
+const ShaderId Downsample = 10;
+const ShaderId Count = 11;
 const int RenderTargetCount = 4;
 
 // resource types

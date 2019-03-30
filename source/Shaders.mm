@@ -270,6 +270,28 @@ using namespace ShaderStructures;
 		if (error) NSLog(@"BRDF LUT%@", [error localizedDescription]);
 	}
 
+	{
+		// Downsample
+		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
+		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
+		vertexDesc.attributes[0].format = MTLVertexFormatFloat2;
+		vertexDesc.attributes[0].bufferIndex = 0;
+		vertexDesc.attributes[0].offset = 0;
+		vertexDesc.attributes[1].format = MTLVertexFormatFloat2;
+		vertexDesc.attributes[1].bufferIndex = 0;
+		vertexDesc.attributes[1].offset = 2 * sizeof(float);
+		vertexDesc.layouts[0].stride = 4 * sizeof(float);
+		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+		pipelineDescriptor.vertexDescriptor = vertexDesc;
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"fsquad_vs_main"];
+		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"downsample_fs_main"];
+		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatR32Float;
+		pipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
+
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
+		pipelines_.push_back({pipeline, RenderPass::Post});
+		if (error) NSLog(@"Downsample %@", [error localizedDescription]);
+	}
 }
 
 - (const PipelineState&) selectPipeline: (size_t) index {

@@ -6,6 +6,7 @@
 #include "cpp/BufferUtils.h"
 #include "CBFrameAlloc.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
 
 using namespace ShaderStructures;
 
@@ -112,7 +113,7 @@ namespace {
 	id<MTLDevice> device_;
 	id<MTLTexture> surface_;
 	id<MTLCommandQueue> commandQueue_;
-	id<MTLTexture> depthTextures_[FrameCount];
+	id<MTLTexture> depthTextures_[FrameCount], halfResDepthTextures_[FrameCount];
 	id<MTLTexture> colorAttachmentTextures_[FrameCount][RenderTargetCount];
 	std::vector<id<MTLBuffer>> buffers_;
 	std::vector<Texture> textures_;
@@ -252,10 +253,21 @@ namespace {
 																					mipmapped:NO];
 		desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 		desc.resourceOptions = MTLResourceStorageModePrivate;
+
+		MTLTextureDescriptor *descHalfRes = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatR32Float
+																						width:width>>1
+																					   height:height>>1
+																					mipmapped:NO];
+		descHalfRes.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+		descHalfRes.resourceOptions = MTLResourceStorageModePrivate;
 		for (int i = 0; i < FrameCount; ++i) {
 			id<MTLTexture> texture = [device_ newTextureWithDescriptor:desc];
-			[texture setLabel:@"Depth Texture"];
+			[texture setLabel: [NSString stringWithFormat: @"Depth Texture %d", i]];
 			self->depthTextures_[i] = texture;
+
+			texture = [device_ newTextureWithDescriptor:descHalfRes];
+			[texture setLabel: [NSString stringWithFormat: @"HalfResDepth Texture %d", i]];
+			self->halfResDepthTextures_[i] = texture;
 		}
 	}
 }
@@ -586,7 +598,33 @@ namespace {
 //			[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[mesh.ib].buffer indexBufferOffset: submesh.offset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 //		}
 //}
+- (void) downsampleWithCommandBuffer: (id<MTLCommandBuffer> _Nonnull) commandBuffer
+						withPipeline: (id<MTLRenderPipelineState> _Nonnull) pipelineState
+							  source: (id<MTLTexture> _Nonnull) srcTex
+						 destination: (id<MTLTexture> _Nonnull) dstTex {
+	MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+	passDescriptor.colorAttachments[0].texture = dstTex;
+	passDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+	passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
 
+	id<MTLRenderCommandEncoder> encoder = [commandBuffer renderCommandEncoderWithDescriptor: passDescriptor];
+
+	[encoder setCullMode: MTLCullModeBack];
+	[encoder setRenderPipelineState: pipelineState];
+	[encoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
+	[encoder setFragmentTexture: srcTex atIndex: 0];
+
+	CBFrameAlloc& frame = frame_[currentFrameIndex_];
+	struct {
+		unsigned int width, height;
+	}buf;
+	auto cb = frame.Alloc(sizeof(buf));
+	buf.width = (unsigned int)srcTex.width; buf.height = (unsigned int)srcTex.height;
+	memcpy(cb.address, &buf, sizeof(buf));
+	[encoder setFragmentBuffer:cb.buffer  offset: cb.offset atIndex: 0];
+	[encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
+	[encoder endEncoding];
+}
 - (void) renderTo: (id<CAMetalDrawable> _Nonnull) drawable {
 
 
@@ -617,8 +655,6 @@ namespace {
 //	//MTLCaptureManager* capManager = [MTLCaptureManager sharedCaptureManager];
 //	//[capManager stopCapture];
 
-
-
 	for (auto commandEncoder : encoders_) {
 		[commandEncoder endEncoding];
 	}
@@ -633,11 +669,19 @@ namespace {
 //		dispatch_semaphore_signal(semaphore);
 //	}];
 // @@@
+
+	// resize depth
 	for (auto commandBuffer : commandBuffers_) {
 		[commandBuffer commit];
 	}
 
 	id<MTLCommandBuffer> deferredCommandBuffer = [commandQueue_ commandBuffer];
+
+	[self downsampleWithCommandBuffer: deferredCommandBuffer
+					withPipeline: [shaders_ selectPipeline: Downsample].pipeline
+						  source: depthTextures_[currentFrameIndex_]
+					 destination: halfResDepthTextures_[currentFrameIndex_]];
+
 	MTLRenderPassDescriptor *deferredPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 	deferredPassDescriptor.colorAttachments[0].texture = drawable.texture;
 	deferredPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;

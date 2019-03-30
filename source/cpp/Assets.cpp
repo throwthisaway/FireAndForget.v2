@@ -2,6 +2,8 @@
 #include "compatibility.h"
 #include "Assets.hpp"
 #include <assert.h>
+#include "VertexTypeAliases.h"
+#include "VertexTypes.h"
 #ifdef PLATFORM_MAC_OS
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFStream.h>
