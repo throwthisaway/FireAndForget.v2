@@ -43,6 +43,7 @@ void RendererWrapper::SetDeferredBuffers(const ShaderStructures::DeferredBuffers
 namespace {
 	MTLPixelFormat PixelFormatToMTLPixelFormat(Img::PixelFormat format) {
 		switch (format) {
+			//case Img::PixelFormat::RGB8:
 			case Img::PixelFormat::RGBA8:
 				return MTLPixelFormatRGBA8Unorm;
 			case Img::PixelFormat::BGRA8:
@@ -160,7 +161,7 @@ namespace {
 			defaultSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
 		}
 		{
-			// create default sampler state
+			// create deferred sampler state
 			MTLSamplerDescriptor *samplerDesc = [MTLSamplerDescriptor new];
 			samplerDesc.sAddressMode = MTLSamplerAddressModeClampToEdge;
 			samplerDesc.tAddressMode = MTLSamplerAddressModeClampToEdge;
@@ -707,6 +708,7 @@ namespace {
 	assert(deferredBuffers_.BRDFLUT != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.BRDFLUT].texture atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentTexture: halfResDepthTextures_[currentFrameIndex_] atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: textures_[deferredBuffers_.random].texture atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentSamplerState:self->deferredSamplerState_ atIndex:0];
 	[deferredEncoder setFragmentSamplerState:self->defaultSamplerState_ atIndex:1];
 	[deferredEncoder setFragmentSamplerState:self->mipmapSamplerState_ atIndex:2];

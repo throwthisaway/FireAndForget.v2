@@ -21,7 +21,7 @@
 struct Time;
 struct Scene {
 	struct SceneShaderResources {
-		ShaderResourceIndex cScene;
+		ShaderResourceIndex cScene, cAO;
 	};
 
 	struct Object {
@@ -42,6 +42,9 @@ struct Scene {
 private:
 	glm::mat4 m;	// for scene transform
 	Transform transform;
+	struct {
+		int width, height;
+	}viewport_;
 	Camera camera_;
 	struct Light {
 		ShaderStructures::PointLight pointLight;
@@ -52,6 +55,7 @@ private:
 	std::vector<Object> objects_;
 	struct {
 		ShaderStructures::cScene cScene;
+		ShaderStructures::cAO cAO;
 	}shaderStructures;
 	SceneShaderResources shaderResources;
 	TextureIndex cubeEnv_ = InvalidTexture;

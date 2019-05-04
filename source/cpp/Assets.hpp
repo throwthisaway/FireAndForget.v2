@@ -49,7 +49,7 @@ namespace assets {
 #if defined(PLATFORM_WIN)
 		static Concurrency::task<void> LoadImage(const wchar_t* fname);
 #elif defined(PLATFORM_MAC_OS)
-		static Img::ImgData LoadImage(const wchar_t* fname);
+		static Img::ImgData LoadImage(const wchar_t* fname, Img::PixelFormat pf);
 #endif
 #if defined(PLATFORM_WIN)
 		std::vector<Concurrency::task<void>> loadTasks;
@@ -65,6 +65,6 @@ namespace assets {
 		void LoadFromBundle(const char * path, const ImageLoadCB&);
 		Mesh CreateModel(const wchar_t* name, RendererWrapper* renderer, MeshLoader::Mesh& mesh);
 		void InternalLoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id, const std::vector<uint8_t>& data);
-		static Img::ImgData DecodeImageFromData(const std::vector<uint8_t>& data);
+		static Img::ImgData DecodeImageFromData(const std::vector<uint8_t>& data, Img::PixelFormat pf);
 	};
 }

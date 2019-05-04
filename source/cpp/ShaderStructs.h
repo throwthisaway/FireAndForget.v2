@@ -28,5 +28,13 @@ MSVC_ALIGN16 struct Scene {
 	PointLight light[MAX_LIGHTS];
 	CLANG_ALIGN16 float3 eyePos;
 	CLANG_ALIGN16 float2 nf;
+	float2 viewport;
+};
+MSVC_ALIGN16 struct AO {
+	float2 random_size;
+	float rad;
+	float scale;
+	float intensity;
+	float bias;
 };
 #endif

@@ -125,6 +125,10 @@ struct cScene : cFrame<> {
 	Scene scene;
 };
 
+struct cAO : cStatic<> {
+	AO ao;
+};
+
 struct cMatrix : cFrame<> {
 	float4x4 matrix;
 };
@@ -172,11 +176,12 @@ struct DeferredBuffers {
 	ResourceBinding bindings[RootParamCount];
 #elif defined(PLATFORM_MAC_OS)
 	using VSParams = ShaderParamTraits<>;
-	using FSParams = ShaderParamTraits<cScene>;
+	using FSParams = ShaderParamTraits<cScene, cAO>;
 	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
 	TextureIndex irradiance = InvalidTexture,
 		prefilteredEnvMap = InvalidTexture,
-		BRDFLUT = InvalidTexture;
+		BRDFLUT = InvalidTexture,
+		random = InvalidTexture;
 #endif
 };
 //using TexVSSParams = ShaderParamTraits<cObjectVS>;

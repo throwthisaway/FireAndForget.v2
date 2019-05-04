@@ -128,9 +128,9 @@ namespace assets {
 		auto data = ::LoadFromBundle(fname);
 		InternalLoadMesh(renderer, fname, id, data);
 	}
-	Img::ImgData Assets::LoadImage(const wchar_t* fname) {
+	Img::ImgData Assets::LoadImage(const wchar_t* fname, Img::PixelFormat pf) {
 		std::vector<uint8_t> data = ::LoadFromBundle(fname);
-		return DecodeImageFromData(data);
+		return DecodeImageFromData(data, pf);
 	}
 #endif
 //	namespace {
@@ -138,11 +138,22 @@ namespace assets {
 //			void operator()(uint8_t* p) { stbi_image_free((stbi_uc*)p);	}
 //		};
 //	}
-	Img::ImgData Assets::DecodeImageFromData(const std::vector<uint8_t>& data) {
+	Img::ImgData Assets::DecodeImageFromData(const std::vector<uint8_t>& data, Img::PixelFormat pf) {
 		int w, h, channels;
-		float* image = stbi_loadf_from_memory(data.data(), (int)data.size(), &w, &h, &channels, 4);
-		Img::PixelFormat pf = Img::PixelFormat::RGBAF32;
-		return {std::unique_ptr<uint8_t/*, StbDeleter default deleter should be fine*/>((uint8_t*)image), (uint16_t)w, (uint16_t)h, BytesPerPixel(pf), pf};
+		uint8_t bytesPerPixel = BytesPerPixel(pf);
+		switch (Img::GetComponentType(pf)) {
+			case Img::ComponentType::Float: {
+				float* image = stbi_loadf_from_memory(data.data(), (int)data.size(), &w, &h, &channels, 4);
+				return {std::unique_ptr<uint8_t/*, StbDeleter default deleter should be fine*/>((uint8_t*)image), (uint16_t)w, (uint16_t)h, bytesPerPixel, pf};
+			}
+			case Img::ComponentType::Byte: {
+				stbi_uc* image = stbi_load_from_memory(data.data(), (int)data.size(), &w, &h, &channels, 4);
+				return {std::unique_ptr<uint8_t/*, StbDeleter default deleter should be fine*/>((uint8_t*)image), (uint16_t)w, (uint16_t)h, bytesPerPixel, pf};
+			}
+			default:
+				assert(false);
+		}
+		return {};
 	}
 	void Assets::InternalLoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id, const std::vector<uint8_t>& data) {
 		MeshLoader::Mesh mesh;

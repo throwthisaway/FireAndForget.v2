@@ -51,6 +51,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 	state = State::Start;
 	using namespace ShaderStructures;
 	renderer_ = renderer;
+	viewport_.width = width; viewport_.height = height;
 	camera_.Perspective(width, height);
 
 	const float Z = -10.5f;
@@ -64,6 +65,7 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 //	shaderStructures.cScene.scene.light[1].diffuse[2] = 150.0f;
 
 	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::frame_count);
+	shaderResources.cAO = renderer->CreateShaderResource(sizeof(ShaderStructures::cAO), ShaderStructures::cAO::frame_count);
 #ifdef PLATFORM_WIN
 	deferredBuffers.descAllocEntryIndex = renderer->AllocDescriptors(DeferredBuffers::Params::desc_count);
 	uint16_t offset = 0;
@@ -74,8 +76,15 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 		renderer->CreateCBV(deferredBuffers_.descAllocEntryIndex, offset, frame, shaderResources.cScene + frame);
 	}
 	++offset;
+	// TODO:: cAO
+	assert(false && "TODO:: cAO");
 #elif defined(PLATFORM_MAC_OS)
+	shaderStructures.cAO.ao.bias = 0.f;
+	shaderStructures.cAO.ao.rad = .04f;
+	shaderStructures.cAO.ao.scale = 1.f;
+	shaderStructures.cAO.ao.intensity = 1.f;
 	deferredBuffers_.fsBuffers[DeferredBuffers::FSParams::index<cScene>::value] = {shaderResources.cScene, cScene::frame_count};
+	deferredBuffers_.fsBuffers[DeferredBuffers::FSParams::index<cAO>::value] = {shaderResources.cAO, cAO::frame_count};
 #endif
 
 	state = State::AssetsLoading;
@@ -91,7 +100,15 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 
 void Scene::PrepareScene() {
 	state = State::PrepareScene;
-	Img::ImgData img = assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/);
+	{
+		Img::ImgData img = assets::Assets::LoadImage(L"random.png", Img::PixelFormat::RGBA8);
+		deferredBuffers_.random = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
+		shaderStructures.cAO.ao.random_size.x = img.width;
+		shaderStructures.cAO.ao.random_size.y = img.height;
+		renderer_->UpdateShaderResource(shaderResources.cAO, &shaderStructures.cAO, sizeof(shaderStructures.cAO));
+
+	}
+	Img::ImgData img = assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/, Img::PixelFormat::RGBAF32);
 	const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
 	auto& l = mesh.layers.front();
 	TextureIndex envMap = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
@@ -163,6 +180,7 @@ void Scene::Update(double frame, double total) {
 	shaderStructures.cScene.scene.ip = glm::inverse(camera_.proj);
 	shaderStructures.cScene.scene.ivp = camera_.ivp;
 	shaderStructures.cScene.scene.nf.x = camera_.n; shaderStructures.cScene.scene.nf.y = camera_.f;
+	shaderStructures.cScene.scene.viewport.x = viewport_.width; shaderStructures.cScene.scene.viewport.y = viewport_.height;
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
 		shaderStructures.cScene.scene.light[i] = lights_[i].pointLight;
 		//FromVec3(camera_.view * glm::vec4(ToVec3(lights_[i].pointLight.pos), 1.f), shaderStructures.cScene.scene.light[i].pos);
