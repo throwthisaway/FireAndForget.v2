@@ -100,7 +100,7 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 		Lo += (kD * albedo.rgb / M_PI_F + specular) * radiance * ndotl;
 	}
 	DeferredOut res;
-	float aoResult = CalcAO(input.uv, worldPos, n, scene.viewport, ao, scene.ivp, depth, random, deferredsmp, linearsmp);
+	float aoResult = CalcAO(input.uv, worldPos, n, scene.viewport, ao, scene.ivp, halfResDepth, random, deferredsmp, linearsmp);
 	//
 	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
 	float3 ks = f;
