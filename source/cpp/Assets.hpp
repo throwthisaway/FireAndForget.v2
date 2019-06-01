@@ -1,5 +1,5 @@
 #pragma once
-#include "RendererWrapper.h"
+#include "../Content/Renderer.h"
 #include <array>
 #include <unordered_map>
 #include <glm/glm.hpp>
@@ -8,6 +8,8 @@
 #include "ShaderStructures.h"
 #if defined(PLATFORM_WIN)
 #include <ppltasks.h>
+#include <concurrent_vector.h>
+#include <concurrent_unordered_map.h>
 #endif
 namespace assets {
 	enum class VertexType{PUV, PN, PT, PNT};
@@ -33,7 +35,8 @@ namespace assets {
 
 	struct Assets {
 		~Assets();
-		void Init(RendererWrapper* renderer);
+		void Init();
+		void Update(Renderer* renderer);
 		static constexpr size_t LIGHT = 0;
 		static constexpr size_t PLACEHOLDER = 1;
 		static constexpr size_t CHECKERBOARD = 2;
@@ -41,30 +44,41 @@ namespace assets {
 		static constexpr size_t SPHERE = 4;
 		static constexpr size_t UNITCUBE = 5;
 		static constexpr size_t STATIC_MODEL_COUNT = 6;
-
 		std::vector<Mesh> models;
-		std::unordered_map<std::wstring, TextureIndex> textures;
-		std::unordered_map<std::wstring, MaterialIndex> materialMap;
+		static constexpr size_t RANDOM = 0;
+		static constexpr size_t ENVIRONMENT_MAP = 1;
+		static constexpr size_t STATIC_IMAGE_COUNT = 2;
+		std::vector<TextureIndex> textures;
 		std::vector<Material> materials;
-#if defined(PLATFORM_WIN)
-		static Concurrency::task<void> LoadImage(const wchar_t* fname);
-#elif defined(PLATFORM_MAC_OS)
-		static Img::ImgData LoadImage(const wchar_t* fname, Img::PixelFormat pf);
-#endif
-#if defined(PLATFORM_WIN)
-		std::vector<Concurrency::task<void>> loadTasks;
-		Concurrency::task<void> loadCompleteTask;
-#endif
+		enum class Status { kInitialized, kLoaded, kReady } status;
 	private:
-		using ImageLoadCB = std::function<void(bool, Img::ImgData&)>;
+		struct LoadContext {
+			struct CreateModelResult {
+				Mesh mesh;
+				std::vector<uint8_t> vb, ib;
+			};
+			CreateModelResult CreateModel(const wchar_t* name, const std::vector<uint8_t>& data);
+			Concurrency::task<void> LoadMesh(const wchar_t* fname, size_t id);
+			Concurrency::task<void> LoadImage(const wchar_t* fname, size_t id);
 #if defined(PLATFORM_WIN)
-		Concurrency::task<void> LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id);
+			concurrency::concurrent_unordered_map<std::wstring, TextureIndex> imageMap;
+			concurrency::concurrent_vector<Img::ImgData> images;
+			concurrency::concurrent_unordered_map<std::wstring, MaterialIndex> materialMap;
+			concurrency::concurrent_vector<Material> materials;
+			concurrency::concurrent_vector<CreateModelResult> createModelResults;
+			concurrency::concurrent_vector<Concurrency::task<void>> imageLoadTasks;
 #elif defined(PLATFORM_MAC_OS)
-		void LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id);
+			std::unordered_map<std::wstring, TextureIndex> imageMap;
+			std::vector<Img::ImgData> images;
+			std::unordered_map<std::wstring, MaterialIndex> materialMap;
+			std::vector<Material> materials;
 #endif
-		void LoadFromBundle(const char * path, const ImageLoadCB&);
-		Mesh CreateModel(const wchar_t* name, RendererWrapper* renderer, MeshLoader::Mesh& mesh);
-		void InternalLoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id, const std::vector<uint8_t>& data);
-		static Img::ImgData DecodeImageFromData(const std::vector<uint8_t>& data, Img::PixelFormat pf);
+		}loadContext;
+#if defined(PLATFORM_WIN)
+#elif defined(PLATFORM_MAC_OS)
+		void LoadMesh(Renderer* renderer, const wchar_t* fname, size_t id);
+		static Img::ImgData LoadImage(const wchar_t* fname);
+#endif
+		void ImagesToTextures(Renderer*);
 	};
 }

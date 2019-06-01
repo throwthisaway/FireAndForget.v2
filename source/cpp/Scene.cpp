@@ -15,11 +15,11 @@ namespace {
 		{ 4.f, 4.f, 10.f}, /* position */
 		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange), defaultLightRange }, /* attenuation and range */};
 }
-void Scene::OnAssetsLoaded() {
+void Scene::PrepareScene() {
 	objects_.push_back({ lights_[0].pointLight.pos, {}, assets::Assets::LIGHT });
-	lights_[0].placeholder = objects_.size() - 1;
+	lights_[0].placeholder = index_t(objects_.size() - 1);
 	objects_.push_back({ lights_[1].pointLight.pos, {}, assets::Assets::LIGHT });
-	lights_[1].placeholder = objects_.size() - 1;
+	lights_[1].placeholder = index_t(objects_.size() - 1);
 	objects_.push_back({ {}, {}, assets::Assets::PLACEHOLDER });
 	objects_.push_back({ {}, {}, assets::Assets::CHECKERBOARD });
 	objects_.push_back({ { 0.f, .5f, 0.f }, {}, assets::Assets::BEETHOVEN });
@@ -39,15 +39,13 @@ void Scene::OnAssetsLoaded() {
 			pos.x += incX;
 			auto& submesh = assets_.models[objects_.back().mesh].layers.front().submeshes.front();
 			submesh.material = (MaterialIndex)assets_.materials.size() - 1;
-			assets_.materialMap.emplace(L"mat_" + std::to_wstring(i) + L'_' + std::to_wstring(j), submesh.material);
 		}
 		pos.y += incY;
 		pos.x = -3 * incX;
 	}
-	state = State::AssetsLoaded;
 	PrepareScene();
 }
-void Scene::Init(RendererWrapper* renderer, int width, int height) {
+void Scene::Init(Renderer* renderer, int width, int height) {
 	state = State::Start;
 	using namespace ShaderStructures;
 	renderer_ = renderer;
@@ -64,10 +62,14 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 //	shaderStructures.cScene.scene.light[1].diffuse[1] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[2] = 150.0f;
 
+	shaderStructures.cAO.ao.bias = 0.f;
+	shaderStructures.cAO.ao.rad = .04f;
+	shaderStructures.cAO.ao.scale = 1.f;
+	shaderStructures.cAO.ao.intensity = 1.f;
 	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::frame_count);
 	shaderResources.cAO = renderer->CreateShaderResource(sizeof(ShaderStructures::cAO), ShaderStructures::cAO::frame_count);
 #ifdef PLATFORM_WIN
-	deferredBuffers.descAllocEntryIndex = renderer->AllocDescriptors(DeferredBuffers::Params::desc_count);
+	deferredBuffers_.descAllocEntryIndex = renderer->AllocDescriptors(DeferredBuffers::Params::desc_count);
 	uint16_t offset = 0;
 	// cScene
 	auto rootParamIndex = DeferredBuffers::Params::index<cScene>::value;
@@ -76,42 +78,35 @@ void Scene::Init(RendererWrapper* renderer, int width, int height) {
 		renderer->CreateCBV(deferredBuffers_.descAllocEntryIndex, offset, frame, shaderResources.cScene + frame);
 	}
 	++offset;
-	// TODO:: cAO
-	assert(false && "TODO:: cAO");
+	rootParamIndex = DeferredBuffers::Params::index<cAO>::value;
+	deferredBuffers_.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
+	for (uint32_t frame = 0; frame < cAO::frame_count; ++frame) {
+		renderer->CreateCBV(deferredBuffers_.descAllocEntryIndex, offset, frame, shaderResources.cAO + frame);
+	}
+	++offset;
+
 #elif defined(PLATFORM_MAC_OS)
-	shaderStructures.cAO.ao.bias = 0.f;
-	shaderStructures.cAO.ao.rad = .04f;
-	shaderStructures.cAO.ao.scale = 1.f;
-	shaderStructures.cAO.ao.intensity = 1.f;
 	deferredBuffers_.fsBuffers[DeferredBuffers::FSParams::index<cScene>::value] = {shaderResources.cScene, cScene::frame_count};
 	deferredBuffers_.fsBuffers[DeferredBuffers::FSParams::index<cAO>::value] = {shaderResources.cAO, cAO::frame_count};
 #endif
 
 	state = State::AssetsLoading;
-	assets_.Init(renderer);
+	assets_.Init();
 #ifdef PLATFORM_WIN
-	assets_.loadCompleteTask.then([this, renderer](Concurrency::task<void>& assetsWhenAllCompletion) {
-		assetsWhenAllCompletion.then([this]() { OnAssetsLoaded();});
-	});
 #elif defined(PLATFORM_MAC_OS)
 	OnAssetsLoaded();
 #endif
 }
 
 void Scene::PrepareScene() {
-	state = State::PrepareScene;
-	{
-		Img::ImgData img = assets::Assets::LoadImage(L"random.png", Img::PixelFormat::RGBA8);
-		deferredBuffers_.random = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
-		shaderStructures.cAO.ao.random_size.x = img.width;
-		shaderStructures.cAO.ao.random_size.y = img.height;
-		renderer_->UpdateShaderResource(shaderResources.cAO, &shaderStructures.cAO, sizeof(shaderStructures.cAO));
-
-	}
-	Img::ImgData img = assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/, Img::PixelFormat::RGBAF32);
+	deferredBuffers_.random = assets_.textures[assets::Assets::RANDOM];
+	Dim dim = renderer_->GetDimensions(deferredBuffers_.random);
+	shaderStructures.cAO.ao.random_size.x = dim.w;
+	shaderStructures.cAO.ao.random_size.y = dim.h;
+	renderer_->UpdateShaderResource(shaderResources.cAO, &shaderStructures.cAO, sizeof(shaderStructures.cAO));
 	const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
 	auto& l = mesh.layers.front();
-	TextureIndex envMap = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
+	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
 	const uint64_t cubeEnvMapDim = 512;
 	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  "CubeEnvMap");
 	//cubeEnv_ = renderer_->GenTestCubeMap();
@@ -126,7 +121,6 @@ void Scene::PrepareScene() {
 }
 
 void Scene::Render() {
-	if (state == State::AssetsLoaded) PrepareScene();
 	if (state != State::Ready) return;
 	// bg
 	renderer_->StartForwardPass();
@@ -168,7 +162,8 @@ void Scene::UpdateSceneTransform() {
 	m = ScreenSpaceRotator(m, Transform{ transform.pos, transform.center, rot });
 }
 void Scene::Update(double frame, double total) {
-	if (state == State::AssetsLoaded) PrepareScene();
+	assets_.Update(renderer_);
+	if (assets_.status == assets::Assets::Status::kReady) PrepareScene();
 	if (state != State::Ready) return;
 	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);

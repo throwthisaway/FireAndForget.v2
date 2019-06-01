@@ -1,13 +1,13 @@
 #pragma once
 #include "compatibility.h"
 #include <glm/glm.hpp>
-#include "RendererWrapper.h"
 #include "ShaderStructures.h"
 #include "Assets.hpp"
 #include "input/Input.hpp"
 #include "Camera.hpp"
 #ifdef PLATFORM_WIN
 #include "../Content/ShaderStructures.h"
+#include "../Content/Renderer.h"
 #endif // PLATFORM_WIN
 
 // TODO::
@@ -29,15 +29,15 @@ struct Scene {
 		index_t mesh;
 		void Update(double frame, double total);
 	};
-	void Init(RendererWrapper*, int, int);
-	void OnAssetsLoaded();
+	void Init(Renderer*, int, int);
+	void PrepareScene();
 	void PrepareScene();
 	void Render();
 	void Update(double frame, double total);
 	void UpdateCameraTransform();
 	void UpdateSceneTransform();
 	Input input;
-	enum class State{Start, AssetsLoading, AssetsLoaded, PrepareScene, Ready};
+	enum class State{Start, AssetsLoading, Ready};
 	State state = State::Start;
 private:
 	glm::mat4 m;	// for scene transform
@@ -50,7 +50,7 @@ private:
 		ShaderStructures::PointLight pointLight;
 		index_t placeholder;
 	}lights_[MAX_LIGHTS];
-	RendererWrapper* renderer_;
+	Renderer* renderer_;
 	assets::Assets assets_;
 	std::vector<Object> objects_;
 	struct {

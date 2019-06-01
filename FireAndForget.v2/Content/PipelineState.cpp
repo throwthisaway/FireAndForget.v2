@@ -145,9 +145,9 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks_.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", pnLayout, _countof(pnLayout)));
 	shaderTasks_.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_1CB, L"TexVS.cso", L"TexPS.cso", pntLayout, _countof(pntLayout)));
 	shaderTasks_.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", pnLayout, _countof(pnLayout)));
-	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::Deferred, ROOT_VS_0CB_PS_1CB_5TX, L"DeferredVS.cso", L"DeferredPS.cso", ptLayout, _countof(ptLayout)));
+	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::Deferred, ROOT_VS_0CB_PS_2CB_5TX, L"DeferredVS.cso", L"DeferredPS.cso", ptLayout, _countof(ptLayout)));
 	// TODO:: hack!!! write DeferredPBR
-	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::DeferredPBR, ROOT_VS_0CB_PS_1CB_5TX, L"DeferredPBRVS.cso", L"DeferredPBRPS.cso", ptLayout, _countof(ptLayout)));
+	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::DeferredPBR, ROOT_VS_0CB_PS_2CB_5TX, L"DeferredPBRVS.cso", L"DeferredPBRPS.cso", ptLayout, _countof(ptLayout)));
 	shaderTasks_.push_back(DX::ReadDataAsync(L"DeferredRootSig.cso").then([this](std::vector<byte>& fileData) mutable {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, fileData.data(), fileData.size(), IID_PPV_ARGS(&rootSignature)));
@@ -162,7 +162,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 			assert(desc->pParameters[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE);
 			ranges[i] = desc->pParameters[i].DescriptorTable.NumDescriptorRanges;
 		}
-		rootSignatures_[ROOT_VS_0CB_PS_1CB_5TX] = { rootSignature, std::move(ranges) };
+		rootSignatures_[ROOT_VS_0CB_PS_2CB_5TX] = { rootSignature, std::move(ranges) };
 	}));
 	completionTask_ = Concurrency::when_all(std::begin(shaderTasks_), std::end(shaderTasks_)).then([this]() {
 		shaderTasks_.clear();
@@ -219,7 +219,7 @@ Concurrency::task<void> PipelineStates::CreateDeferredShader(ShaderId id, size_t
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
 		state.InputLayout = { inputLayout, count };
 		// compiled separately referenced in shader
-		//state.pRootSignature = rootSignatures_[ROOT_VS_0CB_PS_1CB_5TX].Get();
+		//state.pRootSignature = rootSignatures_[ROOT_VS_0CB_PS_2CB_5TX].Get();
 		state.VS = CD3DX12_SHADER_BYTECODE(&vertexShader->front(), vertexShader->size());
 		state.PS = CD3DX12_SHADER_BYTECODE(&pixelShader->front(), pixelShader->size());
 		state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);

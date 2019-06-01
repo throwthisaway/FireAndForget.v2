@@ -1,19 +1,22 @@
 #pragma once
+#include <vector>
+#include "compatibility.h"
+#include "Img.h"
 #include "..\Common\DeviceResources.h"
 #include "..\Common\DirectXHelper.h"
 #include "..\Common\StepTimer.h"
-#include "ShaderStructures.h"
-#include "..\source\cpp\RendererWrapper.h"
-#include "..\source\cpp\ShaderStructures.h"
 #include "PipelineState.h"
 #include "DescriptorHeapAllocator.h"
 #include "CBFrameAlloc.h"
 #include "DescriptorFrameAlloc.h"
+#include "..\source\cpp\ShaderStructures.h"
 #include "..\source\cpp\Assets.hpp"
 
-using namespace FireAndForget_v2;
-
 struct Mesh;
+
+struct Dim {
+	uint32_t w, h;
+};
 
 class Renderer {
 	PipelineStates pipelineStates_;
@@ -23,12 +26,14 @@ public:
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
 	void Update(DX::StepTimer const& timer);
+	uint32_t GetCurrenFrameIndex() const;
 	bool Render();
 	void SaveState();
 
 	void BeginUploadResources();
 	BufferIndex CreateBuffer(const void* buffer, size_t sizeInBytes);
-	BufferIndex CreateTexture(const void* buffer, UINT64 width, UINT height, UINT bytesPerPixel, DXGI_FORMAT format);
+	TextureIndex CreateTexture(const void* buffer, UINT64 width, UINT height, UINT bytesPerPixel, Img::PixelFormat format);
+	Dim GetDimensions(TextureIndex);
 	void EndUploadResources();
 
 	// Shader resources
@@ -44,8 +49,15 @@ public:
 	void CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ID3D12Resource* resource, DXGI_FORMAT format);
 	
 
+	TextureIndex CreateTexture(const void* data, uint64_t width, uint32_t height, Img::PixelFormat format, const char* label = nullptr);
+	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, bool mip, const char* label = nullptr);
+	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const assets::Submesh& submesh, uint64_t dim, ShaderId shader, const char* label = nullptr);
+	TextureIndex GenBRDFLUT(uint64_t dim, ShaderId shader, const char* label = nullptr);
+	TextureIndex GenTestCubeMap();
+
 	void BeginRender();
-	size_t StartRenderPass();
+	void StartDeferredPass();
+	void StartForwardPass();
 	template<typename CmdT>
 	void Submit(const CmdT&) {
 		assert(false); // TODO:: implement Submit overload

@@ -110,124 +110,150 @@ namespace {
 //		return mesh;
 //	}
 }
-namespace assets {
-	Assets::~Assets() = default;
-#ifdef PLATFORM_WIN
-	Concurrency::task<void> Assets::LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id) {
-		return DX::ReadDataAsync(fname).then([this, renderer, fname, id](std::vector<byte>& data) {
-			InternalLoadMesh(renderer, fname, id, data);
-		});
+namespace {
+	enum class ImageFileType { kUnknown, kTGA, kPNG, kHDR };
+	bool EndsWith(const wchar_t* str1, size_t length1, const wchar_t* str2, size_t length2) {
+		assert(length1 > length2);
+		return !istrcmp(str1, length1 - length2, str2);
 	}
-	Concurrency::task<Img::ImgData> Assets::LoadImage(RendererWrapper* renderer, const wchar_t* fname) {
-		return DX::ReadDataAsync(fname).then([renderer, pf](std::vector<byte>& data) {
-			return DecodeImageFromData(data);
-		});
+	ImageFileType GetImageFileType(const wchar_t* fname, size_t length) {
+		if (EndsWith(fname, length, L"tga", 3)) return ImageFileType::kTGA;
+		if (EndsWith(fname, length, L"png", 3)) return ImageFileType::kPNG;
+		if (EndsWith(fname, length, L"hdr", 3)) return ImageFileType::kHDR;
+		assert(false && "invalid image file format");
+		return ImageFileType::kUnknown;
 	}
-#elif defined(PLATFORM_MAC_OS)
-	void Assets::LoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id) {
-		auto data = ::LoadFromBundle(fname);
-		InternalLoadMesh(renderer, fname, id, data);
+	Img::ImgData DecodeTGA(const std::vector<uint8_t>& data) {
+		Img::ImgData result;
+		auto err = Img::DecodeTGA(data.data(), data.size(), result, true);
+		assert(err == Img::TgaDecodeResult::Ok);
+		return result;
 	}
-	Img::ImgData Assets::LoadImage(const wchar_t* fname, Img::PixelFormat pf) {
-		std::vector<uint8_t> data = ::LoadFromBundle(fname);
-		return DecodeImageFromData(data, pf);
-	}
-#endif
-//	namespace {
-//		struct StbDeleter {
-//			void operator()(uint8_t* p) { stbi_image_free((stbi_uc*)p);	}
-//		};
-//	}
-	Img::ImgData Assets::DecodeImageFromData(const std::vector<uint8_t>& data, Img::PixelFormat pf) {
+	//struct StbDeleter {
+	//	void operator()(uint8_t* p) { stbi_image_free((stbi_uc*)p);	}
+	//};
+	Img::ImgData StbDecodeImageFromData(const std::vector<uint8_t>& data, Img::PixelFormat pf) {
 		int w, h, channels;
 		uint8_t bytesPerPixel = BytesPerPixel(pf);
 		switch (Img::GetComponentType(pf)) {
-			case Img::ComponentType::Float: {
-				float* image = stbi_loadf_from_memory(data.data(), (int)data.size(), &w, &h, &channels, 4);
-				return {std::unique_ptr<uint8_t/*, StbDeleter default deleter should be fine*/>((uint8_t*)image), (uint16_t)w, (uint16_t)h, bytesPerPixel, pf};
-			}
-			case Img::ComponentType::Byte: {
-				stbi_uc* image = stbi_load_from_memory(data.data(), (int)data.size(), &w, &h, &channels, 4);
-				return {std::unique_ptr<uint8_t/*, StbDeleter default deleter should be fine*/>((uint8_t*)image), (uint16_t)w, (uint16_t)h, bytesPerPixel, pf};
-			}
-			default:
-				assert(false);
+		case Img::ComponentType::Float: {
+			float* image = stbi_loadf_from_memory(data.data(), (int)data.size(), &w, &h, &channels, 4);
+			return { std::unique_ptr<uint8_t/*, StbDeleter default deleter should be fine*/>((uint8_t*)image), (uint16_t)w, (uint16_t)h, bytesPerPixel, pf };
+		}
+		case Img::ComponentType::Byte: {
+			stbi_uc* image = stbi_load_from_memory(data.data(), (int)data.size(), &w, &h, &channels, 4);
+			return { std::unique_ptr<uint8_t/*, StbDeleter default deleter should be fine*/>((uint8_t*)image), (uint16_t)w, (uint16_t)h, bytesPerPixel, pf };
+		}
+		default:
+			assert(false && "unhandled component type");
 		}
 		return {};
 	}
-	void Assets::InternalLoadMesh(RendererWrapper* renderer, const wchar_t* fname, size_t id, const std::vector<uint8_t>& data) {
-		MeshLoader::Mesh mesh;
-		mesh.data = std::move(data);
-		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-		models[id] = CreateModel(fname, renderer, mesh);
+	Img::ImgData DecodeImageFromData(const std::vector<uint8_t>& data, ImageFileType type) {
+		switch (type) {
+			case ImageFileType::kTGA: return DecodeTGA(data);
+			case ImageFileType::kPNG: return StbDecodeImageFromData(data, Img::PixelFormat::RGBA8);
+			case ImageFileType::kHDR: return StbDecodeImageFromData(data, Img::PixelFormat::RGBAF32);
+		}
+		assert(false);
+		return {};
 	}
-	void Assets::Init(RendererWrapper* renderer) {
-		renderer->BeginUploadResources();
-		models.resize(STATIC_MODEL_COUNT);
+}
+namespace assets {
+	Assets::~Assets() = default;
 #ifdef PLATFORM_WIN
-		std::initializer_list<Concurrency::task<void>> loadMeshTasks{
-			LoadMesh(renderer, L"light.mesh", LIGHT),
-			LoadMesh(renderer, L"box.mesh", PLACEHOLDER),
-			LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD),
-			LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN),
-			LoadMesh(renderer, L"sphere.mesh", SPHERE),
-			LoadMesh(renderer, L"textured_unit_cube.mesh", UNITCUBE),
-		};
+	Concurrency::task<void> Assets::LoadContext::LoadMesh(const wchar_t* fname, size_t id) {
+		return DX::ReadDataAsync(fname).then([this, fname, id](std::vector<byte>& data) {
+			createModelResults[id] = CreateModel(fname, data);
+		});
+	}
+	Concurrency::task<void> Assets::LoadContext::LoadImage(const wchar_t* fname, size_t id) {
+		return DX::ReadDataAsync(fname).then([type = GetImageFileType(fname, wcslen(fname)), this, id](std::vector<byte>& data) {
+			images[id] = std::move(DecodeImageFromData(data, type));
+		});
+	}
+#elif defined(PLATFORM_MAC_OS)
+	void Assets::LoadMesh(Renderer* renderer, const wchar_t* fname, size_t id) {
+		auto data = ::LoadFromBundle(fname);
+		auto res = loadContext.CreateModel(fname, data);
+		models[id] = std::move(res.mesh);
+		models[id].vb = renderer->CreateBuffer(res.vb.data(), res.vb.size());
+		models[id].ib = renderer->CreateBuffer(res.ib.data(), res.ib.size());
+	}
+	Img::ImgData Assets::LoadImage(const wchar_t* fname) {
+		std::vector<uint8_t> data = ::LoadFromBundle(fname);
+		return DecodeImageFromData(data, GetImageFileType(fname, wcslen(fname)));
+	}
+#endif
 
-		loadCompleteTask = Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this, renderer]() {
-			return Concurrency::when_all(std::begin(loadTasks), std::end(loadTasks)).then([this, renderer]() {
-				loadTasks.clear();
-				renderer->EndUploadResources();
+	void Assets::Init() {
+		status = Status::kInitialized;
+		models.resize(STATIC_MODEL_COUNT);
+		textures.resize(STATIC_IMAGE_COUNT);
+#ifdef PLATFORM_WIN
+		loadContext.images.resize(STATIC_IMAGE_COUNT);
+		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"random.png", RANDOM));
+		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"Alexs_Apt_2k.hdr", ENVIRONMENT_MAP));
+		loadContext.createModelResults.resize(STATIC_MODEL_COUNT);
+		std::initializer_list<Concurrency::task<void>> loadMeshTasks{
+			loadContext.LoadMesh(L"light.mesh", LIGHT),
+			loadContext.LoadMesh(L"box.mesh", PLACEHOLDER),
+			loadContext.LoadMesh(L"checkerboard.mesh", CHECKERBOARD),
+			loadContext.LoadMesh(L"BEETHOVE_object.mesh", BEETHOVEN),
+			loadContext.LoadMesh(L"sphere.mesh", SPHERE),
+			loadContext.LoadMesh(L"textured_unit_cube.mesh", UNITCUBE),
+		};
+		
+		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {
+			return Concurrency::when_all(std::begin(loadContext.imageLoadTasks), std::end(loadContext.imageLoadTasks)).then([this]() {
+				status = Status::kLoaded;
 			}); });
 #elif defined(PLATFORM_MAC_OS)
+		renderer->BeginUploadResources();
 		LoadMesh(renderer, L"light.mesh", LIGHT);
 		LoadMesh(renderer, L"box.mesh", PLACEHOLDER);
 		LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD);
 		LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN);
 		LoadMesh(renderer, L"sphere.mesh", SPHERE);
 		LoadMesh(renderer, L"textured_unit_cube.mesh", UNITCUBE);
+		materials = std::move(loadContext.materials);
+		Img::ImgData img = assets::Assets::LoadImage(L"random.png", Img::PixelFormat::RGBA8);
+		textures[RANDOM] = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
+		Img::ImgData img = assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/, Img::PixelFormat::RGBAF32);
+		textures[ENVIRONMENT_MAP] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
+		ImagesToTextures(renderer);
 		renderer->EndUploadResources();
+		loadContext = LoadContext{};
+		status = Status::kAvailable;
 #endif
 	}
-	//SubMesh ConvertSectionToSubmesh(RendererWrapper* renderer, const MeshLoader::Layer::Sections::Section& section) {
-	//	SubMesh result{ section.offset * VERTICESPERPOLY, section.count * VERTICESPERPOLY };
-	//	CreateShaderResources
-	//	return result;
-	//}
-	//Mesh::Layer ConvertLayer(RendererWrapper* renderer, const MeshLoader::Layer& layer) {
-	//	Mesh::Layer result;
-	//	for (size_t i = 0; i < layer.poly.count; ++i)
-	//		result.submeshes.push_back((ConvertSectionToSubmesh(renderer, layer.poly.sections[i])));
-	//	return result;
-	//}
-	bool DecodeImage(const std::wstring& path, std::vector<uint8_t>& data, Img::ImgData& image) {
-		if (!istrcmp(path, path.size() - 3, std::wstring{ L"tga" })) {
-			auto err = Img::DecodeTGA(data.data(), data.size(), image, true);
-			if (err != Img::TgaDecodeResult::Ok) {
-				// TODO::
-				assert(false);
-				return false;
-			}
+	void Assets::ImagesToTextures(Renderer* renderer) {
+		for (int id = 0; id < (int)loadContext.images.size(); ++id) {
+			auto& img = loadContext.images[id];
+			textures[id] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
 		}
-		else {
-			assert(false);	// TODO:: more file formats
-			return false;
+		// replace image ids with texture ids
+		for (auto& material : materials) {
+			material.texAlbedo = textures[material.texAlbedo];
+			// ...
 		}
-		return true;
 	}
-	void Assets::LoadFromBundle(const char * path, const ImageLoadCB& cb) {
-		auto fname = extractFilename(s2ws(path));
-		Img::ImgData image;
-#ifdef PLATFORM_MAC_OS
-		auto data = ::LoadFromBundle(fname.c_str());
-		bool success = DecodeImage(fname, data, image);
-		cb(success, image);
-#elif defined(PLATFORM_WIN)
-		auto load = DX::ReadDataAsync(fname).then([fname, cb, &image](std::vector<uint8_t>& data) {
-			bool success = DecodeImage(fname, data, image);
-			cb(success, fname, image);
-		});
-		loadTasks.push_back(load);
+	void Assets::Update(Renderer* renderer) {
+#if defined(PLATFORM_WIN)
+		if (status == Status::kLoaded) {
+			std::copy(std::begin(loadContext.materials), std::end(loadContext.materials), std::back_inserter(materials));
+			renderer->BeginUploadResources();
+			for (int id = 0; id < (int)loadContext.createModelResults.size(); ++id) {
+				auto& res = loadContext.createModelResults[id];
+				models[id] = std::move(res.mesh);
+				models[id].vb = renderer->CreateBuffer(res.vb.data(), res.vb.size());
+				models[id].ib = renderer->CreateBuffer(res.ib.data(), res.ib.size());
+			}
+			ImagesToTextures(renderer);
+			renderer->EndUploadResources();
+			loadContext = LoadContext();
+			status = Status::kReady;
+		}
 #endif
 	}
 	namespace {
@@ -256,7 +282,10 @@ namespace assets {
 			}
 		};
 	}
-	Mesh Assets::CreateModel(const wchar_t* name, RendererWrapper* renderer, MeshLoader::Mesh& mesh) {
+	Assets::LoadContext::CreateModelResult Assets::LoadContext::CreateModel(const wchar_t* name, const std::vector<uint8_t>& data) {
+		MeshLoader::Mesh mesh;
+		mesh.data = std::move(data);
+		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
 		Mesh result;
 		std::vector<uint8_t> vb, ib;
 		for (const auto& layer : mesh.layers) {
@@ -269,32 +298,28 @@ namespace assets {
 				auto surf = mesh.surfaces[surfaceIndex];
 				auto colLayers = surf.surface_infos[MeshLoader::COLOR_MAP].layers;
 
-				auto res = materialMap.emplace(std::wstring{ name } + L'_' + std::wstring{ s2ws(surf.name) }, (MaterialIndex)materials.size());
+				auto res = materialMap.insert({ std::wstring{ name } +L'_' + std::wstring{ s2ws(surf.name) }, (MaterialIndex)materials.size() });
 				VertexType vertexType = VertexType::PN;
 				MaterialIndex materialIndex = res.first->second;
 				if (res.second) {
+					materials.push_back({});
 					Material material;
 					material.albedo = { surf.color[0], surf.color[1], surf.color[2] };
 					material.metallic = surf.surface_infos[MeshLoader::SPECULARITY_MAP].val;
 					material.roughness = surf.surface_infos[MeshLoader::GLOSSINESS_MAP].val;
-					materials.push_back(material);
+					materials[materialIndex] = material;
 					if (colLayers && colLayers->image && colLayers->image->path) {
 						vertexType = VertexType::PNT;
-						auto inserted = textures.emplace(s2ws(colLayers->image->path), InvalidTexture);
-						TextureIndex& texRef = inserted.first->second;
+						auto inserted = imageMap.insert({ s2ws(colLayers->image->path), (TextureIndex)images.size() });
+						materials[materialIndex].texAlbedo = inserted.first->second;
 						if (inserted.second) {
-							LoadFromBundle(colLayers->image->path, [this, renderer, materialIndex, texRef](bool success, Img::ImgData& image) mutable {
-								assert(success);
-								if (success) {
-									auto tex = renderer->CreateTexture(image.data.get(),
-																	  image.width,
-																	  image.height,
-																	  image.pf);
-									materials[materialIndex].texAlbedo = tex;
-									texRef = tex;
-								}
-							});
-						} else materials[materialIndex].texAlbedo = texRef;
+							images.push_back({});
+#if defined(PLATFORM_WIN)
+							imageLoadTasks.push_back(LoadImage(s2ws(colLayers->image->path).c_str(), inserted.first->second));
+#elif defined(PLATFORM_MAC_OS)
+							images[index] = LoadImage((s2ws(colLayers->image->path).c_str());
+#endif
+						} else ;
 					}
 				}
 				auto vOffset = (offset_t)vb.size(), iOffset = (offset_t)ib.size();
@@ -339,8 +364,8 @@ namespace assets {
 			}
 		}
 
-		result.vb = renderer->CreateBuffer(vb.data(), vb.size());
-		result.ib = renderer->CreateBuffer(ib.data(), ib.size());
-		return result;
+		//result.vb = renderer->CreateBuffer(vb.data(), vb.size());
+		//result.ib = renderer->CreateBuffer(ib.data(), ib.size());
+		return { result, std::move(vb), std::move(ib) };
 	}
 }

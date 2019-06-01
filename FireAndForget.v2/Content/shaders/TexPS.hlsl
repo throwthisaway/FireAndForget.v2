@@ -23,7 +23,7 @@ MRTOut main(PSIn input) {
 	MRTOut output;
 	output.albedo = diffuseColor;
 	output.normal = Encode(input.n);
-	output.material = float4(mat.specular, mat.power, 0.f, 1.f);
+	output.material = float4(mat.specular_power, 0.f, 1.f);
 	output.debug = float4(input.n, 1.f);
 	return output;
 }

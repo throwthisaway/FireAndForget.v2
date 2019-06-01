@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "..\Common\DirectXHelper.h"
 #include "..\source\cpp\Assets.hpp"
+#include "..\source\cpp\VertexTypes.h"
 
 // TODO::
 // - remove deviceResource commandallocators
@@ -17,89 +18,6 @@ using namespace ShaderStructures;
 // https://www.braynzarsoft.net/viewtutorial/q16390-04-directx-12-braynzar-soft-tutorials
 
 static const float Black[] = { 0.f, 0.f, 0.f, 0.f };
-
-void RendererWrapper::Init(Renderer* renderer) {
-	this->renderer = renderer;
-}
-
-void RendererWrapper::BeginUploadResources() {
-	renderer->BeginUploadResources();
-}
-
-BufferIndex RendererWrapper::CreateBuffer(const void* buffer, size_t sizeInBytes) {
-	return renderer->CreateBuffer(buffer, sizeInBytes);
-}
-
-namespace {
-	DXGI_FORMAT PixelFormatToDXGIFormat(Img::PixelFormat format) {
-		switch (format) {
-			case Img::PixelFormat::RGBA8:
-				return DXGI_FORMAT_R8G8B8A8_UNORM;
-			case Img::PixelFormat::BGRA8:
-				return DXGI_FORMAT_B8G8R8A8_UNORM;
-			default:
-				assert(false);
-		}
-		return DXGI_FORMAT_UNKNOWN;
-	}
-}
-BufferIndex RendererWrapper::CreateTexture(const void* buffer, uint64_t width, uint32_t height, uint8_t bytesPerPixel, Img::PixelFormat format) {
-	return renderer->CreateTexture(buffer, width, height, bytesPerPixel, PixelFormatToDXGIFormat(format));
-}
-void RendererWrapper::EndUploadResources() {
-	renderer->EndUploadResources();
-}
-
-ShaderResourceIndex RendererWrapper::CreateShaderResource(uint32_t size, uint16_t count) {
-	return renderer->CreateShaderResource(size, count);
-}
-void RendererWrapper::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size) {
-	return renderer->UpdateShaderResource(shaderResourceIndex, data, size);
-}
-
-DescAllocEntryIndex RendererWrapper::AllocDescriptors(uint16_t count) {
-	return renderer->AllocDescriptors(count);
-}
-void RendererWrapper::CreateCBV(DescAllocEntryIndex index, uint16_t offset, ShaderResourceIndex resourceIndex) {
-	renderer->CreateCBV(index, offset, resourceIndex);
-}
-void RendererWrapper::CreateSRV(DescAllocEntryIndex index, uint16_t offset, BufferIndex textureBufferIndex) {
-	renderer->CreateSRV(index, offset, textureBufferIndex);
-}
-void RendererWrapper::CreateCBV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, ShaderResourceIndex resourceIndex) {
-	renderer->CreateCBV(index, offset, frame, resourceIndex);
-}
-void RendererWrapper::CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t frame, BufferIndex textureBufferIndex) {
-	renderer->CreateSRV(index, offset, frame, textureBufferIndex);
-}
-
-void RendererWrapper::BeginRender() {
-	renderer->BeginRender();
-}
-size_t RendererWrapper::StartRenderPass() {
-	return renderer->StartRenderPass();
-}
-uint32_t RendererWrapper::GetCurrenFrameIndex() {
-	return renderer->m_deviceResources->GetCurrentFrameIndex();
-}
-
-void RendererWrapper::SetDeferredBuffers(const ShaderStructures::DeferredBuffers& deferredBuffers) {
-	renderer->SetDeferredBuffers(deferredBuffers);
-}
-
-//
-//ResourceHeapHandle RendererWrapper::GetStaticShaderResourceHeap(unsigned short descCountNeeded) {
-//	return renderer->GetStaticShaderResourceHeap(descCountNeeded);
-//}
-//ShaderResourceIndex RendererWrapper::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, size_t size, unsigned short count) {
-//	return renderer->GetShaderResourceIndex(shaderResourceHeap, size, count);
-//}
-//void RendererWrapper::UpdateShaderResource(ShaderResourceIndex shaderResourceIndex, const void* data, size_t size) {
-//	renderer->UpdateShaderResource(shaderResourceIndex, data, size);
-//}
-//ShaderResourceIndex RendererWrapper::GetShaderResourceIndex(ResourceHeapHandle shaderResourceHeap, BufferIndex textureIndex) {
-//	return renderer->GetShaderResourceIndex(shaderResourceHeap, textureIndex);
-//}
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
@@ -131,8 +49,29 @@ void Renderer::EndUploadResources() {
 	m_deviceResources->WaitForGpu();
 	bufferUpload_.intermediateResources.clear();
 }
-BufferIndex Renderer::CreateTexture(const void* buffer, UINT64 width, UINT height, UINT bytesPerPixel, DXGI_FORMAT format) {
-	CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
+namespace {
+	DXGI_FORMAT PixelFormatToDXGIFormat(Img::PixelFormat format) {
+		switch (format) {
+			case Img::PixelFormat::RGBA8:
+				return DXGI_FORMAT_R8G8B8A8_UNORM;
+			case Img::PixelFormat::BGRA8:
+				return DXGI_FORMAT_B8G8R8A8_UNORM;
+			default:
+				assert(false);
+		}
+		return DXGI_FORMAT_UNKNOWN;
+	}
+}
+uint32_t Renderer::GetCurrenFrameIndex() const {
+	return m_deviceResources->GetCurrentFrameIndex();
+}
+Dim Renderer::GetDimensions(TextureIndex index) {
+	D3D12_RESOURCE_DESC desc = buffers_[index].resource->GetDesc();
+	return { (decltype(Dim::w))desc.Width, (decltype(Dim::h))desc.Height };
+}
+TextureIndex Renderer::CreateTexture(const void* buffer, UINT64 width, UINT height, UINT bytesPerPixel, Img::PixelFormat format) {
+	DXGI_FORMAT dxgiFmt = PixelFormatToDXGIFormat(format);
+	CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(dxgiFmt, width, height);
 
 	auto device = m_deviceResources->GetD3DDevice();
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource, bufferUpload;
@@ -171,9 +110,10 @@ BufferIndex Renderer::CreateTexture(const void* buffer, UINT64 width, UINT heigh
 			CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		bufferUpload_.cmdList->ResourceBarrier(1, &vertexBufferResourceBarrier);
 	}
-	buffers_.push_back({ resource, 0, 0, format });
-	return (BufferIndex)buffers_.size() - 1;
+	buffers_.push_back({ resource, 0, 0, dxgiFmt });
+	return (TextureIndex)buffers_.size() - 1;
 }
+
 BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes) {
 	CD3DX12_RESOURCE_DESC vertexBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes);
 
@@ -270,7 +210,7 @@ void Renderer::CreateDeviceDependentResources() {
 
 	BeginUploadResources();
 	// fullscreen quad...
-	assets::VertexPUV quad[] = { { { -1., -1.f },{ 0.f, 1.f } },{ { -1., 1.f },{ 0.f, 0.f } },{ { 1., -1.f },{ 1.f, 1.f } },{ { 1., 1.f },{ 1.f, 0.f } } };
+	VertexFSQuad quad[] = { { { -1., -1.f },{ 0.f, 1.f } },{ { -1., 1.f },{ 0.f, 0.f } },{ { 1., -1.f },{ 1.f, 1.f } },{ { 1., 1.f },{ 1.f, 0.f } } };
 	fsQuad_ = CreateBuffer(quad, sizeof(quad));
 	EndUploadResources();
 }
@@ -330,8 +270,8 @@ void Renderer::BeginRender() {
 		++i;
 	}
 }
-size_t Renderer::StartRenderPass() {
-	if (!loadingComplete_) return 0;
+void Renderer::StartDeferredPass() {
+	if (!loadingComplete_) return;
 	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
 	// Indicate this resource will be in use as a render target.
 	CD3DX12_RESOURCE_BARRIER renderTargetResourceBarriers[ShaderStructures::RenderTargetCount + 1];
@@ -370,7 +310,6 @@ size_t Renderer::StartRenderPass() {
 			commandList->SetGraphicsRootSignature(pipelineStates_.rootSignatures_[state.rootSignatureId].rootSignature.Get());
 		}
 	}
-	return 0;
 }
 
 template<>
@@ -586,7 +525,7 @@ bool Renderer::Render() {
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
 			{ buffers_[fsQuad_].bufferLocation,
 			(UINT)buffers_[fsQuad_].size,
-			(UINT)sizeof(assets::VertexPUV) } };
+			(UINT)sizeof(VertexFSQuad) } };
 
 		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
 		commandList->DrawInstanced(4, 1, 0, 0);
@@ -607,7 +546,7 @@ bool Renderer::Render() {
 template<>
 void Renderer::Submit(const DrawCmd& cmd) {
 	if (!loadingComplete_) return;
-	auto id = cmd.submesh.id;
+	auto id = cmd.shader;
 	auto& state = pipelineStates_.states_[id];
 	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
 	auto& frame = frame_[m_deviceResources->GetCurrentFrameIndex()];
@@ -645,8 +584,8 @@ void Renderer::Submit(const DrawCmd& cmd) {
 				auto cb = frame.cb.Alloc(sizeof(ShaderStructures::Material));
 				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
 				((ShaderStructures::Material*)cb.cpuAddress)->diffuse = cmd.material.albedo;
-				((ShaderStructures::Material*)cb.cpuAddress)->power = cmd.material.metallic;
-				((ShaderStructures::Material*)cb.cpuAddress)->specular = cmd.material.roughness;
+				((ShaderStructures::Material*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
+				((ShaderStructures::Material*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
 			}
 			offset += frame.desc.GetDescriptorSize();
 			break;
@@ -670,8 +609,8 @@ void Renderer::Submit(const DrawCmd& cmd) {
 				auto cb = frame.cb.Alloc(sizeof(ShaderStructures::Material));
 				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
 				((ShaderStructures::Material*)cb.cpuAddress)->diffuse = cmd.material.albedo;
-				((ShaderStructures::Material*)cb.cpuAddress)->power = cmd.material.metallic;
-				((ShaderStructures::Material*)cb.cpuAddress)->specular = cmd.material.roughness;
+				((ShaderStructures::Material*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
+				((ShaderStructures::Material*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
 			}
 			offset += frame.desc.GetDescriptorSize();
 			break;
@@ -751,23 +690,6 @@ void Renderer::CreateSRV(DescAllocEntryIndex index, uint16_t offset, uint32_t fr
 void Renderer::CreateSRV(DescAllocEntryIndex index, uint16_t offset, ID3D12Resource* resource, DXGI_FORMAT format) {
 	for (UINT i = 0; i < DX::c_frameCount; ++i)
 		descAlloc_[i].CreateSRV(index, offset, resource, format);
-}
-// TODO:: these have to come after Renderer::Submit specialization
-template<>
-void RendererWrapper::Submit(const ShaderStructures::DebugCmd& cmd) {
-	renderer->Submit(cmd);
-}
-template<>
-void RendererWrapper::Submit(const ShaderStructures::PosCmd& cmd) {
-	renderer->Submit(cmd);
-}
-template<>
-void RendererWrapper::Submit(const ShaderStructures::TexCmd& cmd) {
-	renderer->Submit(cmd);
-}
-template<>
-void RendererWrapper::Submit(const ShaderStructures::DrawCmd& cmd) {
-	renderer->Submit(cmd);
 }
 void Renderer::SetDeferredBuffers(const ShaderStructures::DeferredBuffers& deferredBuffers) {
 	deferredBuffers_ = deferredBuffers;

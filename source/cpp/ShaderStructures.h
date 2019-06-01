@@ -171,18 +171,18 @@ struct TexCmd {
 struct DeferredBuffers {
 #ifdef PLATFORM_WIN
 	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	using Params = ShaderParamTraits<cScene, tTexture<RenderTargetCount + 1 /* Depth */>>;
+	using Params = ShaderParamTraits<cScene, cAO, tTexture<RenderTargetCount + 1 /* Depth */>>;
 	static constexpr int RootParamCount = 1;
 	ResourceBinding bindings[RootParamCount];
 #elif defined(PLATFORM_MAC_OS)
 	using VSParams = ShaderParamTraits<>;
 	using FSParams = ShaderParamTraits<cScene, cAO>;
 	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
+#endif
 	TextureIndex irradiance = InvalidTexture,
 		prefilteredEnvMap = InvalidTexture,
 		BRDFLUT = InvalidTexture,
 		random = InvalidTexture;
-#endif
 };
 //using TexVSSParams = ShaderParamTraits<cObjectVS>;
 //using TexPSParams = ShaderParamTraits<tStaticTexture, cObjectPS, cFrame>;

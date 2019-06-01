@@ -1,8 +1,9 @@
+
 float3 ComputePointLight_Phong(PointLight l, float3 eyePos, float3 pos, float3 normal, float3 col, float spec, float power) {
 	normal.x = -normal.x; normal.y = -normal.y; normal.z = -normal.z;
 	float3 lv = l.pos - pos;	// vector towards light
 	float l_distance = length(lv);
-	if (l_distance > l.range) return col * l.ambient;
+	if (l_distance > l.att_range.w) return col * l.ambient;
 
 	lv = lv / l_distance;			// light direction vector
 
@@ -15,7 +16,7 @@ float3 ComputePointLight_Phong(PointLight l, float3 eyePos, float3 pos, float3 n
 		float3 v = normalize(eyePos.xyz - pos);	//normalized eye direction vector from the surface
 		float3 specular = l.specular.xyz * pow(saturate(dot(r, v)), power) * spec;
 		//attenuation
-		float att = 1.0f / dot(l.att, float3(1.0f, l_distance, l_distance * l_distance));
+		float att = 1.0f / dot(l.att_range.xyz, float3(1.0f, l_distance, l_distance * l_distance));
 		return (diffuse + specular) * att;
 	}
 	return col * l.ambient;
@@ -23,7 +24,7 @@ float3 ComputePointLight_Phong(PointLight l, float3 eyePos, float3 pos, float3 n
 float3 ComputePointLight_BlinnPhong(PointLight l, float3 eyePos, float3 pos, float3 normal, float3 col, float spec, float power) {
 	float3 lv = l.pos - pos;	// vector towards light
 	float l_distance = length(lv);
-	if (l_distance > l.range) return col * l.ambient;
+	if (l_distance > l.att_range.w) return col * l.ambient;
 
 	lv = lv / l_distance;			// light direction vector
 	normal = normalize(normal);	// TODO:: normalize(n) needed?
@@ -35,7 +36,7 @@ float3 ComputePointLight_BlinnPhong(PointLight l, float3 eyePos, float3 pos, flo
 
 		float3 specular = l.specular.xyz * pow(saturate(dot(h, normal)), power) * spec;
 		//attenuation
-		float att = 1.0f / dot(l.att, float3(1.0f, l_distance, l_distance * l_distance));
+		float att = 1.0f / dot(l.att_range.xyz, float3(1.0f, l_distance, l_distance * l_distance));
 		return (diffuse + specular) * att;
 	}
 	return col * l.ambient;
@@ -45,5 +46,5 @@ float3 ComputePointLight_Diffuse(PointLight l, float3 pos, float3 normal, float3
 	float l_distance = length(lv);
 	//	if (l_distance > l.range) return float3(.0, .0, .0);
 	//attenuation
-	return  max(dot(lv / l_distance, normalize(normal)), 0.f) * l.diffuse * col / dot(l.att, float3(1.0f, l_distance, l_distance * l_distance));
+	return  max(dot(lv / l_distance, normalize(normal)), 0.f) * l.diffuse * col / dot(l.att_range.xyz, float3(1.0f, l_distance, l_distance * l_distance));
 }

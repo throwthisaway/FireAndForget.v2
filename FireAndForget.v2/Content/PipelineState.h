@@ -33,7 +33,7 @@ public:
 
 	static const size_t ROOT_VS_1CB_PS_1CB = 0;
 	static const size_t ROOT_VS_1CB_PS_1TX_1CB = 1;
-	static const size_t ROOT_VS_0CB_PS_1CB_5TX = 2;
+	static const size_t ROOT_VS_0CB_PS_2CB_5TX = 2;
 	static const size_t ROOT_SIG_COUNT = 3;
 	struct RootSig {
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;

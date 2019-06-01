@@ -8,6 +8,7 @@
 // when used inside shaders
 #define CLANG_ALIGN16
 #endif
+
 MSVC_ALIGN16 struct Object {
 	float4x4 mvp, m;
 };
