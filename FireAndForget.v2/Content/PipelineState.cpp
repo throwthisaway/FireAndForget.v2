@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "d3dcompiler.h"
 #include "PipelineState.h"
 #include "..\Common\DeviceResources.h"
 #include "..\Common\DirectXHelper.h"
@@ -44,22 +45,99 @@ namespace {
 
 }
 
-UINT8* PipelineStates::CBuffer::Map() {
-	// Map the constant buffers.
-	CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
-	UINT8* mappedConstantBuffer = nullptr;
-	DX::ThrowIfFailed(constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mappedConstantBuffer)));
-	//ZeroMemory(mappedConstantBuffer, DX::c_frameCount * alignedConstantBufferSize);
-	return mappedConstantBuffer;
-}
-void PipelineStates::CBuffer::Unmap() {
-	constantBuffer->Unmap(0, nullptr);
-}
-PipelineStates::CBuffer::~CBuffer() {
-	//Unmap();
-}
 PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
-	deviceResources_(deviceResources) {}
+	deviceResources_(deviceResources) {
+		{
+			constexpr DXGI_FORMAT deferredRTFmts[] = {
+				DXGI_FORMAT_R8G8B8A8_UNORM,
+				DXGI_FORMAT_R16G16_UNORM,
+				DXGI_FORMAT_R8G8B8A8_UNORM,
+				DXGI_FORMAT_R32G32B32A32_FLOAT
+			};
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = _countof(deferredRTFmts);
+			for (UINT i = 0; i < state.NumRenderTargets; ++i)
+				state.RTVFormats[i] = deferredRTFmts[i];
+			state.DSVFormat = deviceResources->GetDepthBufferFormat();
+			state.SampleDesc.Count = 1;
+			deferred = state;
+		}
+		{
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = {};
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 1;
+			state.RTVFormats[0] = deviceResources->GetBackBufferFormat();
+			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			state.SampleDesc.Count = 1;
+			post = state;
+		}
+
+		{
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 1;
+			state.RTVFormats[0] = deviceResources->GetBackBufferFormat();
+			state.DSVFormat = deviceResources->GetDepthBufferFormat();
+			state.SampleDesc.Count = 1;
+			forward = state;
+		}
+
+		{
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = {};
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 1;
+			state.RTVFormats[0] = DXGI_FORMAT_D32_FLOAT;
+			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			state.SampleDesc.Count = 1;
+			depth = state;
+		}
+
+		{
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = {};
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 1;
+			state.RTVFormats[0] = DXGI_FORMAT_R16G16_FLOAT;
+			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			state.SampleDesc.Count = 1;
+			rg16 = state;
+		}
+
+		{
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = {};
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 1;
+			state.RTVFormats[0] = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			state.SampleDesc.Count = 1;
+			pre = state;
+		}
+
+}
 
 PipelineStates::~PipelineStates() {}
 
@@ -95,7 +173,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
-		rootSignatures_[ROOT_VS_1CB_PS_1CB] = { rootSignature, std::move(ranges) };
+		rootSignatures_[ROOT_VS_1CB_PS_1CB] = rootSignature;
 	}
 
 	{
@@ -139,102 +217,55 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
-		rootSignatures_[ROOT_VS_1CB_PS_1TX_1CB] = { rootSignature, std::move(ranges) };
+		rootSignatures_[ROOT_VS_1CB_PS_1TX_1CB] = rootSignature;
 	}
 
+	shaderTasks.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", { pnLayout, _countof(pnLayout) }, deferred));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_1CB, L"TexVS.cso", L"TexPS.cso", { pntLayout, _countof(pntLayout) }, deferred));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", { pnLayout, _countof(pnLayout) }, deferred));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Deferred, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPS.cso", { fsQuadLayout, _countof(fsQuadLayout) }, post));
+	shaderTasks.push_back(CreateShader(ShaderStructures::DeferredPBR, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPBRPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, post));
 
+	shaderTasks.push_back(CreateShader(ShaderStructures::CubeEnvMap, ROOT_UNKNOWN, L"FSQuadVS.cso", L"CubeEnvMapPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, pre));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Bg, ROOT_UNKNOWN, L"BgVS.cso", L"BgPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, forward));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Irradiance, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvIrPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, pre));
+	shaderTasks.push_back(CreateShader(ShaderStructures::PrefilterEnv, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvPrefilterPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, pre));
+	shaderTasks.push_back(CreateShader(ShaderStructures::BRDFLUT, ROOT_UNKNOWN, L"FSQuadVS.cso", L"BRDFLUTPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, rg16));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Downsample, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DownsampleX2DepthPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, depth));
+	completionTask_ = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
+}
 
-	shaderTasks_.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", pnLayout, _countof(pnLayout)));
-	shaderTasks_.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_1CB, L"TexVS.cso", L"TexPS.cso", pntLayout, _countof(pntLayout)));
-	shaderTasks_.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", pnLayout, _countof(pnLayout)));
-	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::Deferred, ROOT_VS_0CB_PS_2CB_5TX, L"FSQuadVS.cso", L"DeferredPS.cso", fsQuadLayout, _countof(fsQuadLayout)));
-	// TODO:: hack!!! write DeferredPBR
-	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::DeferredPBR, ROOT_VS_0CB_PS_2CB_5TX, L"FSQuadVS.cso", L"DeferredPBRPS.cso", fsQuadLayout, _countof(fsQuadLayout)));
-	shaderTasks_.push_back(DX::ReadDataAsync(L"DeferredRS.cso").then([this](std::vector<byte>& fileData) mutable {
-		ComPtr<ID3D12RootSignature>	rootSignature;
-		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, fileData.data(), fileData.size(), IID_PPV_ARGS(&rootSignature)));
-		NAME_D3D12_OBJECT(rootSignature);
-		ComPtr<ID3D12RootSignatureDeserializer> deserializer;
-		DX::ThrowIfFailed(D3D12CreateRootSignatureDeserializer(fileData.data(), fileData.size(), __uuidof(ID3D12RootSignatureDeserializer), &deserializer));
-		assert(deserializer);
-		const D3D12_ROOT_SIGNATURE_DESC* desc = deserializer->GetRootSignatureDesc();
-		assert(desc);
-		std::vector<UINT> ranges(desc->NumParameters);
-		for (UINT i = 0; i < desc->NumParameters; ++i) {
-			assert(desc->pParameters[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE);
-			ranges[i] = desc->pParameters[i].DescriptorTable.NumDescriptorRanges;
+Concurrency::task<void> PipelineStates::CreateShader(ShaderId id,
+		size_t rootSignatureIndex,
+		const wchar_t* vs, 
+		const wchar_t* ps, 
+		const D3D12_INPUT_LAYOUT_DESC il,
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc) {
+	auto vsTask = DX::ReadDataAsync(vs).then([](std::vector<byte>& data) {
+		return std::make_shared<std::vector<byte>>(std::move(data));
+	});
+	auto psTask = DX::ReadDataAsync(ps).then([](std::vector<byte>& data) {
+		return std::make_shared<std::vector<byte>>(std::move(data));
+	});
+	return (vsTask && psTask).then([=](const std::vector<std::shared_ptr<std::vector<byte>>>& res) {
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC state = desc;
+		state.InputLayout = il;
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+		if (rootSignatureIndex == ROOT_UNKNOWN) {
+			ComPtr<ID3DBlob> blob;
+			// rs from ps
+			::D3DGetBlobPart(res[1]->data(), res[1]->size(), D3D_BLOB_ROOT_SIGNATURE, 0, blob.GetAddressOf());
+			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+			state.pRootSignature = rootSignature.Get();
+			rootSignatures_.push_back(rootSignature);
+		} else {
+			rootSignature = rootSignatures_[rootSignatureIndex];
+			state.pRootSignature =rootSignature.Get();
 		}
-		rootSignatures_[ROOT_VS_0CB_PS_2CB_5TX] = { rootSignature, std::move(ranges) };
-	}));
-	completionTask_ = Concurrency::when_all(std::begin(shaderTasks_), std::end(shaderTasks_)).then([this]() {
-		shaderTasks_.clear();
-		loadingComplete_ = true;
-	});
-}
-
-Concurrency::task<void> PipelineStates::CreateShader(ShaderId id, size_t rootSignatureIndex, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count) {
-	std::shared_ptr<std::vector<byte>> vertexShader = std::make_shared<std::vector<byte>>(),
-		pixelShader = std::make_shared<std::vector<byte>>();
-	auto createVSTask = DX::ReadDataAsync(vs).then([vertexShader](std::vector<byte>& fileData) mutable {
-		*vertexShader = std::move(fileData);
-	});
-	auto createPSTask = DX::ReadDataAsync(ps).then([pixelShader](std::vector<byte>& fileData) mutable {
-		*pixelShader = std::move(fileData);
-	});
-
-	return (createPSTask && createVSTask).then([this, id, rootSignatureIndex, inputLayout, count, vertexShader, pixelShader]() mutable {
+		state.VS = CD3DX12_SHADER_BYTECODE(&res[0]->front(), res[0]->size());
+		state.PS = CD3DX12_SHADER_BYTECODE(&res[1]->front(), res[1]->size());
 		ComPtr<ID3D12PipelineState> pipelineState;
-
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
-		state.InputLayout = { inputLayout, count };
-		state.pRootSignature = rootSignatures_[rootSignatureIndex].rootSignature.Get();
-		state.VS = CD3DX12_SHADER_BYTECODE(&vertexShader->front(), vertexShader->size());
-		state.PS = CD3DX12_SHADER_BYTECODE(&pixelShader->front(), pixelShader->size());
-		state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		state.SampleMask = UINT_MAX;
-		state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		state.NumRenderTargets = ShaderStructures::RenderTargetCount;
-		for (int i = 0; i < ShaderStructures::RenderTargetCount; ++i)
-			state.RTVFormats[i] = renderTargetFormats[i];
-		state.DSVFormat = deviceResources_->GetDepthBufferFormat();
-		state.SampleDesc.Count = 1;
-
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-		states_[id] = { rootSignatureIndex, pipelineState, false};
-	});
-}
-Concurrency::task<void> PipelineStates::CreateDeferredShader(ShaderId id, size_t rootSignatureIndex, const wchar_t* vs, const wchar_t* ps, const D3D12_INPUT_ELEMENT_DESC* inputLayout, UINT count) {
-	std::shared_ptr<std::vector<byte>> vertexShader = std::make_shared<std::vector<byte>>(),
-		pixelShader = std::make_shared<std::vector<byte>>();
-	auto createVSTask = DX::ReadDataAsync(vs).then([vertexShader](std::vector<byte>& fileData) mutable {
-		*vertexShader = std::move(fileData);
-	});
-	auto createPSTask = DX::ReadDataAsync(ps).then([pixelShader](std::vector<byte>& fileData) mutable {
-		*pixelShader = std::move(fileData);
-	});
-
-	return (createPSTask && createVSTask).then([this, id, rootSignatureIndex, inputLayout, count, vertexShader, pixelShader]() mutable {
-		ComPtr<ID3D12PipelineState> pipelineState;
-
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
-		state.InputLayout = { inputLayout, count };
-		// compiled separately referenced in shader
-		//state.pRootSignature = rootSignatures_[ROOT_VS_0CB_PS_2CB_5TX].Get();
-		state.VS = CD3DX12_SHADER_BYTECODE(&vertexShader->front(), vertexShader->size());
-		state.PS = CD3DX12_SHADER_BYTECODE(&pixelShader->front(), pixelShader->size());
-		state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		state.DepthStencilState = {};
-		state.SampleMask = UINT_MAX;
-		state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		state.NumRenderTargets = 1;
-		state.RTVFormats[0] = deviceResources_->GetBackBufferFormat();
-		state.DSVFormat = deviceResources_->GetDepthBufferFormat();
-		state.SampleDesc.Count = 1;
-
-		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-		states_[id] = { rootSignatureIndex, pipelineState, true};
+		states_[id] = { rootSignature, pipelineState, false};
 	});
 }

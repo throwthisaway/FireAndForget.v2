@@ -552,34 +552,38 @@ void Renderer::Submit(const DrawCmd& cmd) {
 	auto& frame = frame_[m_deviceResources->GetCurrentFrameIndex()];
 	PIXBeginEvent(commandList, 0, L"Submit"); {
 		DescriptorFrameAlloc::Entry entry;
+		ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		UINT offset = 0, index = 0;
 		switch (id) {
 		case ShaderStructures::Debug: {
 			entry = frame.desc.Push(2);
-			UINT offset = 0;
 			{
 				auto cb = frame.cb.Alloc(sizeof(float4x4));
 				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
 				memcpy(cb.cpuAddress, &cmd.mvp, sizeof(float4x4));
 			}
-			offset += frame.desc.GetDescriptorSize();
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle.Offset(offset));
+			++index;  offset += frame.desc.GetDescriptorSize();
 			{
 				auto cb = frame.cb.Alloc(sizeof(float4));
 				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
 				memcpy(cb.cpuAddress, &cmd.material.albedo, sizeof(float4));
 			}
-			offset += frame.desc.GetDescriptorSize();
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle.Offset(offset));
+			++index;  offset += frame.desc.GetDescriptorSize();
 			break;
 		}
 		case ShaderStructures::Pos: {
 			entry = frame.desc.Push(2);
-			UINT offset = 0;
 			{
 				auto cb = frame.cb.Alloc(sizeof(ShaderStructures::Object));
 				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
 				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
 				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
 			}
-			offset += frame.desc.GetDescriptorSize();
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle.Offset(offset));
+			++index;  offset += frame.desc.GetDescriptorSize();
 			{
 				auto cb = frame.cb.Alloc(sizeof(ShaderStructures::Material));
 				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
@@ -587,19 +591,20 @@ void Renderer::Submit(const DrawCmd& cmd) {
 				((ShaderStructures::Material*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
 				((ShaderStructures::Material*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
 			}
-			offset += frame.desc.GetDescriptorSize();
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle.Offset(offset));
+			++index;  offset += frame.desc.GetDescriptorSize();
 			break;
 		}
 		case ShaderStructures::Tex: {
 			entry = frame.desc.Push(3);
-			UINT offset = 0;
 			{
 				auto cb = frame.cb.Alloc(sizeof(ShaderStructures::Object));
 				frame.desc.CreateCBV(entry.cpuHandle.Offset(offset), cb.gpuAddress, cb.size);
 				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
 				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
 			}
-			offset += frame.desc.GetDescriptorSize();
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle.Offset(offset));
+			++index;  offset += frame.desc.GetDescriptorSize();
 			{
 				auto& texture = buffers_[cmd.material.texAlbedo];
 				frame.desc.CreateSRV(entry.cpuHandle.Offset(offset), texture.resource.Get(), texture.format);
@@ -612,18 +617,11 @@ void Renderer::Submit(const DrawCmd& cmd) {
 				((ShaderStructures::Material*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
 				((ShaderStructures::Material*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
 			}
-			offset += frame.desc.GetDescriptorSize();
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle.Offset(offset));
+			++index;  offset += frame.desc.GetDescriptorSize();
 			break;
 		}
 		default: assert(false);
-		}
-
-		ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
-		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		auto& rootSignature = pipelineStates_.rootSignatures_[state.rootSignatureId];
-		for (UINT i = 0, offset = 0; i < rootSignature.ranges.size(); ++i) {
-			commandList->SetGraphicsRootDescriptorTable(i, entry.gpuHandle.Offset(offset));
-			offset += frame.desc.GetDescriptorSize() * rootSignature.ranges[i];
 		}
 
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

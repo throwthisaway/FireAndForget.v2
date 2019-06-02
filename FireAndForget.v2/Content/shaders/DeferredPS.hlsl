@@ -1,6 +1,7 @@
 #include "../../../source/cpp/ShaderStructs.h"
 #include "Phong.hlsli"
 #include "Common.hlsli"
+#include "DeferredRS.hlsli"
 
 cbuffer cScene : register(b0) {
 	Scene scene;
@@ -24,6 +25,7 @@ float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 	float4 world_pos = mul(ip, projected_pos);
 	return world_pos.xyz / world_pos.w;
 }
+[RootSignature(DeferredRS)]
 float4 main(PSIn input) : SV_TARGET {
 	float3 diffuseColor = tRTT[0].Sample(smp, input.uv0).rgb;
 	float3 n = Decode(tRTT[1].Sample(smp, input.uv0).xy);

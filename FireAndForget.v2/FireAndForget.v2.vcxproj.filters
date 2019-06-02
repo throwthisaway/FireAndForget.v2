@@ -231,6 +231,9 @@
     <None Include="Content\shaders\BRDFLUTRS.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
+    <None Include="DeferredRS.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">
@@ -263,9 +266,6 @@
       <Filter>Content\shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\shaders\DeferredPS.hlsl">
-      <Filter>Content\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\shaders\DeferredRootSig.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\shaders\DeferredPBRPS.hlsl">

@@ -3,7 +3,7 @@
 #include "PI.hlsli"
 #include "PBR.hlsli"
 #include "Common.hlsli"
-//#include "DeferredPBRRS.hlsli"
+#include "DeferredRS.hlsli"
 
 ConstantBuffer<Scene> scene: register(b0);
 ConstantBuffer<AO> ao : register(b1);
@@ -57,7 +57,7 @@ float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, float4x4 ivp, Te
 #define BRDFLUT 7
 #define DEPTHD2 8
 #define RANDOM 9
-
+[RootSignature(DeferredRS)]
 float4 main(PS_T input) : SV_TARGET {
 	float3 albedo = tex[ALBEDO].Sample(smp, input.uv).rgb;
 	float3 n = Decode(tex[NORMAL].Sample(smp, input.uv).xy);
