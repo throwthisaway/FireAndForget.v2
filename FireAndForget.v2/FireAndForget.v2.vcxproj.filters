@@ -26,9 +26,6 @@
     <ClCompile Include="Common\DeviceResources.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClInclude Include="Content\ShaderStructures.h">
-      <Filter>Content</Filter>
-    </ClInclude>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
       <Filter>Assets</Filter>
     </Image>
@@ -177,6 +174,9 @@
     <ClInclude Include="Content\DescriptorFrameAlloc.h">
       <Filter>Content</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\cpp\VertexTypeAliases.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -197,6 +197,39 @@
     </None>
     <None Include="..\source\assets\sphere.mesh">
       <Filter>Assets</Filter>
+    </None>
+    <None Include="Content\shaders\VertexTypes.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\PSInput.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\CubeEnvMapRS.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\PI.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\DownSampleRS.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\BgRS.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\Hammersley.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\ImportanceSampleGGX.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\PBR.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\CubeEnvPrefilterRS.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\BRDFLUTRS.hlsli">
+      <Filter>Content\shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -232,16 +265,37 @@
     <FxCompile Include="Content\shaders\DeferredPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\shaders\DeferredVS.hlsl">
-      <Filter>Content\shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\shaders\DeferredRootSig.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\shaders\DeferredPBRVS.hlsl">
+    <FxCompile Include="Content\shaders\DeferredPBRPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\shaders\DeferredPBRPS.hlsl">
+    <FxCompile Include="Content\shaders\CubeEnvMapVS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\CubeEnvMapPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\CubeEnvIrPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\FSQuadVS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\DownsampleX2DepthPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\BgVS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\BgPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\CubeEnvPrefilterPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\BRDFLUTPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
   </ItemGroup>

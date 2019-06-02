@@ -1,47 +1,16 @@
 #include "../../../source/cpp/ShaderStructs.h"
+#include "PSInput.hlsli"
+#include "PI.hlsli"
+#include "PBR.hlsli"
 #include "Common.hlsli"
+//#include "DeferredPBRRS.hlsli"
 
-cbuffer cScene : register(b0) {
-	Scene scene;
-};
-
-Texture2D tRTT[5] : register(t0);
-
-SamplerState smp : register(s0) {
-	Filter = MIN_MAG_MIP_NEAREST;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-struct PSIn {
-	float4 pos : SV_POSITION;
-	float2 uv0 : TEXCOORD0;
-};
-
-static const float M_PI_F = 3.14159265f;
-
-// https://learnopengl.com/PBR/Theory
-float NDF_GGXTR(float3 n, float3 h, float roughness) {
-	float roughness2 = roughness * roughness;
-	float ndoth = max(dot(n, h), 0.f);
-	float ndoth2 = ndoth * ndoth;
-	float denom = ndoth2 * (roughness2 - 1.f) + 1.f;
-	return roughness2 / (M_PI_F * denom * denom);
-}
-
-float GF_SchlickGGX(float ndotv, float k) {
-	return ndotv / (ndotv * (1.f - k) + k);
-}
-
-float GF_Smith(float ndotv, float ndotl, float k) {
-	float subNV = GF_SchlickGGX(ndotv, k);
-	float subNL = GF_SchlickGGX(ndotl, k);
-	return subNV * subNL;
-}
-
-float3 Fresnel_Schlick(float cosTheta, float3 f0) {
-	return f0 + (1.f - f0) * pow(1.f - cosTheta, 5.f);
-}
+ConstantBuffer<Scene> scene: register(b0);
+ConstantBuffer<AO> ao : register(b1);
+Texture2D tex[10] : register(t0);
+SamplerState smp : register(s0);
+SamplerState linearSmp : register(s1);
+SamplerState linearClampSmp : register(s2);
 
 float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 	float4 projected_pos = float4(uv * 2.f - 1.f, depth, 1.f);
@@ -49,15 +18,54 @@ float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 	float4 world_pos = mul(ip, projected_pos);
 	return world_pos.xyz / world_pos.w;
 }
+float AOPass(float2 uv, float3 p, float3 n, float4x4 ivp, Texture2D<float> depth) {
+	float3 worldPos = WorldPosFormDepth(uv, ivp, depth.Sample(smp, uv).x);
+	float3 diff = worldPos - p;
+	float len = length(diff);
+	float3 v = diff / len;
+	len *= ao.scale;
+	return max(0.f, dot(v, n) - ao.bias) * 1.f / (1.f + len) * ao.intensity;
+}
 
-float4 main(PSIn input) : SV_TARGET{
-	float3 albedo = tRTT[0].Sample(smp, input.uv0).rgb;
-	float3 n = Decode(tRTT[1].Sample(smp, input.uv0).xy);
-	float4 material = tRTT[2].Sample(smp, input.uv0);
-	float depth = tRTT[4].Sample(smp, input.uv0).r;
+#define ITERATION 4
+float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, float4x4 ivp, Texture2D<float> depth, Texture2D<float> random) {
+	const float2 sampling[] = { float2(-1.f, 0.f), float2(1.f, 0.f), float2(0.f, 1.f), float2(0.f, -1.f) };
+
+	float sum = 0.f, radius = ao.rad / center_pos.z;
+	float2 rnd = normalize(random.sample(linearSmp, vp * uv / ao.random_size).xy * 2.f - 1.f);
+	// TODO:: int iterations = lerp(6.0,2.0,p.z/g_far_clip);
+	for (int i = 0; i < ITERATION; i++) {
+		float2 c1 = reflect(sampling[i], rnd) * radius
+		, c2 = float2(c1.x * .70716f - c1.y * .70716f,
+					  c1.x * .70716f + c1.y * .70716f);
+
+		sum += AOPass(uv + c1 * .25f, center_pos, n, ao, ivp, depth, smp);
+		sum += AOPass(uv + c1 * .75f, center_pos, n, ao, ivp, depth, smp);
+		sum += AOPass(uv + c2 * .5f, center_pos, n, ao, ivp, depth, smp);
+		sum += AOPass(uv + c2, center_pos, n, ao, ivp, depth, smp);
+	}
+	sum /= (float)ITERATION * 4.f;
+	return sum;
+}
+#define ALBEDO 0
+#define NORMAL 1
+#define MATERIAL 2
+#define DEBUG 3
+#define DEPTH 4
+#define IRRADIANCE 5
+#define PREFILTEREDENV 6
+#define BRDFLUT 7
+#define DEPTHD2 8
+#define RANDOM 9
+
+float4 main(PS_T input) : SV_TARGET {
+	float3 albedo = tex[ALBEDO].Sample(smp, input.uv).rgb;
+	float3 n = Decode(tex[NORMAL].Sample(smp, input.uv).xy);
+	float4 material = tex[MATERIAL].Sample(smp, input.uv);
+	float depth = tex[DEPTH].Sample(smp, input.uv).r;
 	// TODO:: better one with linear depth and without mat mult: https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
-	float4 debug = tRTT[3].Sample(smp, input.uv0);
-	float3 worldPos = WorldPosFormDepth(input.uv0, scene.ivp, depth);
+	float4 debug = tex[DEBUG].Sample(smp, input.uv);
+	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth);
 	float3 v = normalize(scene.eyePos - worldPos);
 
 	float roughness = material.r;
@@ -93,13 +101,29 @@ float4 main(PSIn input) : SV_TARGET{
 		kD *= 1.f - metallic;
 		Lo += (kD * albedo / M_PI_F + specular) * radiance * ndotl;
 	}
-	// TODO:: calc ao;
-	float ao = 1.f;
-	float3 ambient = float3(.03f, .03f, .03f) * albedo * ao;
+	float ao = CalcAO(input.uv, worldPos, n, scene.viewport, ao, scene.ivp, halfResDepth, random);
+	// 
+	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
+	float3 ks = f;
+	float3 kd = 1.f - ks;
+	kd *= 1.f - metallic;
+	float3 irradiance = tex[IRRADIANCE].Sample(linearSmp, n).rgb;
+	float3 diffuse = irradiance * albedo.rgb;
+
+	float3 r = reflect(-v, n);
+	/*in the PBR fragment shader in line R = reflect(-V,N) - flip the sign of V.
+	 Also I noticed author of this amazing article did't multiply reflected vector by inverse ModelView matrix. While it look fine in this example in a place where view matrix is rotated(with env cubemap) you'll really notice how it's going off.*/
+	const float max_ref_lod = 4.f;	// TODO:: pass it as constant buffer
+	float3 prefilerColor = tex[PREFILTEREDENV].Sample(smp, r, level(roughness * max_ref_lod)).rgb;
+
+	float2 envBRDF = tex[BRDFLUT].Sample(linearClampSmp, float2(ndotv, roughness)).rg;
+	float3 specular = prefilerColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnel Shlick
+	float3 ambient = (kd * diffuse + specular) - ao; // * aoResult;
+	//
+	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
 	// gamma correction
-	color = color / (color + float3(1.f, 1.f, 1.f));
-	float gamma = 1.f / 2.2f;
-	color = pow(color, float3(gamma, gamma, gamma));
-	return float4(color, 1.f);
+	color = color / (color + 1.f);
+	color = pow(color, 1.f/2.2f);
+	return float4(color, albedo.a);
 }

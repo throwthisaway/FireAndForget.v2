@@ -2,7 +2,6 @@
 #include "PipelineState.h"
 #include "..\Common\DeviceResources.h"
 #include "..\Common\DirectXHelper.h"
-#include "..\Content\ShaderStructures.h"
 using namespace Microsoft::WRL;
 using namespace concurrency;
 
@@ -17,6 +16,9 @@ namespace {
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }};
 	const D3D12_INPUT_ELEMENT_DESC ptLayout[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
+	const D3D12_INPUT_ELEMENT_DESC fsQuadLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
 	//PipelineStates::CBuffer SetupDescriptorHeap(ID3D12Device* d3dDevice, ID3D12DescriptorHeap* cbvHeap, ID3D12Resource* constantBuffer, size_t size, size_t numDesc, size_t repeatCount, size_t indexOffset) {
@@ -145,10 +147,10 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks_.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", pnLayout, _countof(pnLayout)));
 	shaderTasks_.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_1CB, L"TexVS.cso", L"TexPS.cso", pntLayout, _countof(pntLayout)));
 	shaderTasks_.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", pnLayout, _countof(pnLayout)));
-	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::Deferred, ROOT_VS_0CB_PS_2CB_5TX, L"DeferredVS.cso", L"DeferredPS.cso", ptLayout, _countof(ptLayout)));
+	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::Deferred, ROOT_VS_0CB_PS_2CB_5TX, L"FSQuadVS.cso", L"DeferredPS.cso", fsQuadLayout, _countof(fsQuadLayout)));
 	// TODO:: hack!!! write DeferredPBR
-	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::DeferredPBR, ROOT_VS_0CB_PS_2CB_5TX, L"DeferredPBRVS.cso", L"DeferredPBRPS.cso", ptLayout, _countof(ptLayout)));
-	shaderTasks_.push_back(DX::ReadDataAsync(L"DeferredRootSig.cso").then([this](std::vector<byte>& fileData) mutable {
+	shaderTasks_.push_back(CreateDeferredShader(ShaderStructures::DeferredPBR, ROOT_VS_0CB_PS_2CB_5TX, L"FSQuadVS.cso", L"DeferredPBRPS.cso", fsQuadLayout, _countof(fsQuadLayout)));
+	shaderTasks_.push_back(DX::ReadDataAsync(L"DeferredRS.cso").then([this](std::vector<byte>& fileData) mutable {
 		ComPtr<ID3D12RootSignature>	rootSignature;
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, fileData.data(), fileData.size(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
