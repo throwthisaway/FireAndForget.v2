@@ -4,11 +4,8 @@
 #include "RendererTypes.h"
 #include "compatibility.h"
 #include "ShaderTypeAliases.h"
+#include "Mesh.h"
 
-namespace assets {
-	struct Submesh;
-	struct Material;
-}
 namespace ShaderStructures {
 #include "ShaderStructs.h"
 const int FrameCount = 3;
@@ -77,137 +74,26 @@ struct BufferInfo {
 
 struct DrawCmd {
 	const float4x4& m, mvp;
-	const assets::Submesh& submesh;
-	const assets::Material& material;
+	const Submesh& submesh;
+	const Material& material;
 	BufferIndex vb, ib;
 	ShaderId shader;
 };
 struct BgCmd {
 	const float4x4& vp;
-	const assets::Submesh& submesh;
+	const Submesh& submesh;
 	BufferIndex vb, ib;
 	ShaderId shader;
 	TextureIndex cubeEnv;
 };
-// Debug
-struct cMVP : cFrame<> {
-	float4x4 mvp;
-};
-struct cColor : cStatic<> {
-	float4 color;
-};
 
-struct DebugCmd {
-	uint32_t offset, count;
-	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer;
-#ifdef PLATFORM_WIN
-	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	using Params = ShaderParamTraits<cMVP, cColor>;
-	static constexpr int RootParamCount = 2;
-	ResourceBinding bindings[RootParamCount];
-#elif defined(PLATFORM_MAC_OS)
-	using VSParams = ShaderParamTraits<cMVP>;
-	using FSParams = ShaderParamTraits<cColor>;
-	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
-#endif
-};
-
-// Pos-Tex
-struct cObject : cFrame<> {
-	Object obj;
-};
-
-struct cMaterial : cStatic<> {
-	Material material;
-};
-
-struct cScene : cFrame<> {
+struct DeferredCmd {
 	Scene scene;
-};
-
-struct cAO : cStatic<> {
 	AO ao;
-};
-
-struct cMatrix : cFrame<> {
-	float4x4 matrix;
-};
-// Pos
-
-struct PosCmd {
-	uint32_t offset, count;
-	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer;
-#ifdef PLATFORM_WIN
-	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	using Params = ShaderParamTraits<cObject, cMaterial>;
-	static constexpr int RootParamCount = 2;
-	ResourceBinding bindings[RootParamCount];
-#elif defined(PLATFORM_MAC_OS)
-	using VSParams = ShaderParamTraits<cObject>;
-	using FSParams = ShaderParamTraits<cMaterial>;
-	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
-#endif
-};
-// Tex
-template<int Count>
-struct tTexture : cTexture<Count> {};
-
-struct TexCmd {
-	uint32_t offset, count;
-	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer, nb = InvalidBuffer, uvb = InvalidBuffer;
-#ifdef PLATFORM_WIN
-	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	using Params = ShaderParamTraits<cObject, tTexture<1>, cMaterial>;
-	static constexpr int RootParamCount = 2;
-	ResourceBinding bindings[RootParamCount];
-#elif defined(PLATFORM_MAC_OS)
-	using VSParams = ShaderParamTraits<cObject>;
-	using FSParams = ShaderParamTraits<cMaterial>;
-	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
-	TextureIndex textures[1];
-#endif
-};
-
-struct DeferredBuffers {
-#ifdef PLATFORM_WIN
-	DescAllocEntryIndex descAllocEntryIndex; // to determine descriptorheap
-	using Params = ShaderParamTraits<cScene, cAO, tTexture<RenderTargetCount + 1 /* Depth */>>;
-	static constexpr int RootParamCount = 1;
-	ResourceBinding bindings[RootParamCount];
-#elif defined(PLATFORM_MAC_OS)
-	using VSParams = ShaderParamTraits<>;
-	using FSParams = ShaderParamTraits<cScene, cAO>;
-	BufferInfo vsBuffers[VSParams::count], fsBuffers[FSParams::count];
-#endif
 	TextureIndex irradiance = InvalidTexture,
 		prefilteredEnvMap = InvalidTexture,
 		BRDFLUT = InvalidTexture,
 		random = InvalidTexture;
-};
-//using TexVSSParams = ShaderParamTraits<cObjectVS>;
-//using TexPSParams = ShaderParamTraits<tStaticTexture, cObjectPS, cFrame>;
-//
-
-//
-//struct DynamicResource {
-//	ShaderResourceIndex resourceStartIndex;	// one resource per frame
-//	void* ptr;
-//	uint32_t size;
-//};
-
-struct cBuffers {
-	using buf_size_t = uint16_t;
-	std::vector<std::pair<const uint8_t*, buf_size_t>> data;
-};
-
-struct ConstantColorRef : cBuffers {
-	ConstantColorRef(const cMVP& mvp, const cColor& color) {
-#undef max
-		assert(sizeof(mvp) < std::numeric_limits<buf_size_t>::max());
-		data.emplace_back(reinterpret_cast<const uint8_t*>(&mvp), (buf_size_t)sizeof(mvp));
-		assert(sizeof(color) < std::numeric_limits<buf_size_t>::max());
-		data.emplace_back(reinterpret_cast<const uint8_t*>(&color), (buf_size_t)sizeof(color));
-	}
 };
 
 }

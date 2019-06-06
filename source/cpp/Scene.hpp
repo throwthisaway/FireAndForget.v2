@@ -20,10 +20,6 @@
 // - implicit truncation of vector type: 	output.n = normalize(mul(input.n, m));
 struct Time;
 struct Scene {
-	struct SceneShaderResources {
-		ShaderResourceIndex cScene, cAO;
-	};
-
 	struct Object {
 		vec3_t pos, rot;
 		index_t mesh;
@@ -54,10 +50,9 @@ private:
 	assets::Assets assets_;
 	std::vector<Object> objects_;
 	struct {
-		ShaderStructures::cScene cScene;
-		ShaderStructures::cAO cAO;
+		ShaderStructures::Scene scene;
+		ShaderStructures::AO AO;
 	}shaderStructures;
-	SceneShaderResources shaderResources;
 	TextureIndex cubeEnv_ = InvalidTexture;
-	ShaderStructures::DeferredBuffers deferredBuffers_;
+	ShaderStructures::DeferredCmd deferredCmd_;
 };

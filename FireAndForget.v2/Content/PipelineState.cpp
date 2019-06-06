@@ -48,12 +48,6 @@ namespace {
 PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
 	deviceResources_(deviceResources) {
 		{
-			constexpr DXGI_FORMAT deferredRTFmts[] = {
-				DXGI_FORMAT_R8G8B8A8_UNORM,
-				DXGI_FORMAT_R16G16_UNORM,
-				DXGI_FORMAT_R8G8B8A8_UNORM,
-				DXGI_FORMAT_R32G32B32A32_FLOAT
-			};
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
@@ -231,7 +225,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(ShaderStructures::Irradiance, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvIrPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, pre));
 	shaderTasks.push_back(CreateShader(ShaderStructures::PrefilterEnv, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvPrefilterPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, pre));
 	shaderTasks.push_back(CreateShader(ShaderStructures::BRDFLUT, ROOT_UNKNOWN, L"FSQuadVS.cso", L"BRDFLUTPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, rg16));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Downsample, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DownsampleX2DepthPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, depth));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Downsample, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DownsampleDepthPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, depth));
 	completionTask_ = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }
 

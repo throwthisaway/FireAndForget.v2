@@ -4,6 +4,7 @@
 #include "PBR.hlsli"
 #include "Common.hlsli"
 #include "DeferredRS.hlsli"
+#include "DeferredBindings.hlsli"
 
 ConstantBuffer<Scene> scene: register(b0);
 ConstantBuffer<AO> ao : register(b1);
@@ -47,24 +48,15 @@ float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, float4x4 ivp, Te
 	sum /= (float)ITERATION * 4.f;
 	return sum;
 }
-#define ALBEDO 0
-#define NORMAL 1
-#define MATERIAL 2
-#define DEBUG 3
-#define DEPTH 4
-#define IRRADIANCE 5
-#define PREFILTEREDENV 6
-#define BRDFLUT 7
-#define DEPTHD2 8
-#define RANDOM 9
+
 [RootSignature(DeferredRS)]
-float4 main(PS_T input) : SV_TARGET {
-	float3 albedo = tex[ALBEDO].Sample(smp, input.uv).rgb;
-	float3 n = Decode(tex[NORMAL].Sample(smp, input.uv).xy);
-	float4 material = tex[MATERIAL].Sample(smp, input.uv);
-	float depth = tex[DEPTH].Sample(smp, input.uv).r;
+float4 main(PS_T input) : SV_TARGET{
+	float3 albedo = tex[BINDING_ALBEDO].Sample(smp, input.uv).rgb;
+	float3 n = Decode(tex[BINDING_NORMAL].Sample(smp, input.uv).xy);
+	float4 material = tex[BINDING_MATERIAL].Sample(smp, input.uv);
+	float depth = tex[BINDING_DEPTH].Sample(smp, input.uv).r;
 	// TODO:: better one with linear depth and without mat mult: https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
-	float4 debug = tex[DEBUG].Sample(smp, input.uv);
+	float4 debug = tex[BINDING_DEBUG].Sample(smp, input.uv);
 	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth);
 	float3 v = normalize(scene.eyePos - worldPos);
 
@@ -73,7 +65,7 @@ float4 main(PS_T input) : SV_TARGET {
 	float3 f0 = float3(.04f, .04f, .04f);
 	f0 = lerp(f0, albedo, metallic);
 	float r = roughness + 1.f;
-	float k = (r*r) / 8.f;
+	float k = (r * r) / 8.f;
 	float ndotv = max(dot(n, v), 0.f);
 
 	float3 Lo = float3(0.f, 0.f, 0.f);
@@ -101,22 +93,22 @@ float4 main(PS_T input) : SV_TARGET {
 		kD *= 1.f - metallic;
 		Lo += (kD * albedo / M_PI_F + specular) * radiance * ndotl;
 	}
-	float ao = CalcAO(input.uv, worldPos, n, scene.viewport, ao, scene.ivp, halfResDepth, random);
+	float ao = CalcAO(input.uv, worldPos, n, scene.viewport, ao, scene.ivp, tex[BINDING_DOWNSAMPLE_DEPTH}, tex[BINDING_RANDOM);
 	// 
 	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
 	float3 ks = f;
 	float3 kd = 1.f - ks;
 	kd *= 1.f - metallic;
-	float3 irradiance = tex[IRRADIANCE].Sample(linearSmp, n).rgb;
+	float3 irradiance = tex[BINDING_IRRADIANCE].Sample(linearSmp, n).rgb;
 	float3 diffuse = irradiance * albedo.rgb;
 
 	float3 r = reflect(-v, n);
 	/*in the PBR fragment shader in line R = reflect(-V,N) - flip the sign of V.
 	 Also I noticed author of this amazing article did't multiply reflected vector by inverse ModelView matrix. While it look fine in this example in a place where view matrix is rotated(with env cubemap) you'll really notice how it's going off.*/
 	const float max_ref_lod = 4.f;	// TODO:: pass it as constant buffer
-	float3 prefilerColor = tex[PREFILTEREDENV].Sample(smp, r, level(roughness * max_ref_lod)).rgb;
+	float3 prefilerColor = tex[BINDING_PREFILTEREDENV].Sample(smp, r, level(roughness * max_ref_lod)).rgb;
 
-	float2 envBRDF = tex[BRDFLUT].Sample(linearClampSmp, float2(ndotv, roughness)).rg;
+	float2 envBRDF = tex[BINDING_BRDFLUT].Sample(linearClampSmp, float2(ndotv, roughness)).rg;
 	float3 specular = prefilerColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnel Shlick
 	float3 ambient = (kd * diffuse + specular) - ao; // * aoResult;
 	//

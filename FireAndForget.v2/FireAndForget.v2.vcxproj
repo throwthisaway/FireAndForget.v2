@@ -208,6 +208,7 @@
     <ClInclude Include="..\source\cpp\Camera.hpp" />
     <ClInclude Include="..\source\cpp\CreateShaderParams.h" />
     <ClInclude Include="..\source\cpp\input\Input.hpp" />
+    <ClInclude Include="..\source\cpp\Mesh.h" />
     <ClInclude Include="..\source\cpp\ShaderStructs.h" />
     <ClInclude Include="..\source\cpp\ShaderStructures.h" />
     <ClInclude Include="..\source\cpp\MatrixUtils.h" />
@@ -409,7 +410,7 @@
       <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)DeferredRootSig.cso</SetRootSignature>
       <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Release|x64'">DeferredRootSig.hlsl</SetRootSignature>
     </FxCompile>
-    <FxCompile Include="Content\shaders\DownsampleX2DepthPS.hlsl">
+    <FxCompile Include="Content\shaders\DownsampleDepthPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">Pixel</ShaderType>

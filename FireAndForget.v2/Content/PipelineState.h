@@ -12,6 +12,13 @@ class PipelineStates {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pre, rg16, depth, forward, deferred, post;
 	std::vector<Concurrency::task<void>> shaderTasks;
 public:
+	static constexpr DXGI_FORMAT deferredRTFmts[] = {
+		DXGI_FORMAT_R8G8B8A8_UNORM, // albedo
+		DXGI_FORMAT_R16G16_UNORM,	// compressed normals
+		DXGI_FORMAT_R8G8B8A8_UNORM, // material properties
+		DXGI_FORMAT_R32G32B32A32_FLOAT, // debug
+		DXGI_FORMAT_D32_FLOAT	// half-resolution depth
+	};
 	PipelineStates(const DX::DeviceResources*);
 	~PipelineStates();
 	void CreateDeviceDependentResources();
@@ -30,7 +37,7 @@ public:
 	struct State {
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
-		bool deferred;
+		enum class RenderPass {Pre, Forward, Geometry, Lighting, Post} pass;
 		//std::function<ShaderResource(ID3D12Device*, unsigned short)> createShaderResource;
 	};
 	std::vector<State> states_;

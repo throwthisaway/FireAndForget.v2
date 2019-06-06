@@ -1,7 +1,7 @@
 #include "Common.hlsli"
 #include "../../../source/cpp/ShaderStructs.h"
 
-ConstantBuffer<Material> mat : register(b0);
+ConstantBuffer<GPUMaterial> mat : register(b0);
 
 struct PSIn {
 	float4 pos : SV_POSITION;

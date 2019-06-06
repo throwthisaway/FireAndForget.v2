@@ -12,7 +12,7 @@
 MSVC_ALIGN16 struct Object {
 	float4x4 mvp, m;
 };
-MSVC_ALIGN16 struct Material {
+MSVC_ALIGN16 struct GPUMaterial {
 	CLANG_ALIGN16 float3 diffuse;
 	CLANG_ALIGN16 float2 specular_power;
 };

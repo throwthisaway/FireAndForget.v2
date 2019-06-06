@@ -3,7 +3,7 @@
 
 Texture2D<float4> tColor : register(t0);
 
-ConstantBuffer<Material> mat : register(b0);
+ConstantBuffer<GPUMaterial> mat : register(b0);
 
 SamplerState smp : register(s0) {
 	Filter = MIN_MAG_MIP_LINEAR;

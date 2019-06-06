@@ -177,6 +177,9 @@
     <ClInclude Include="..\source\cpp\VertexTypeAliases.h">
       <Filter>cpp</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\cpp\Mesh.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -283,9 +286,6 @@
     <FxCompile Include="Content\shaders\FSQuadVS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\shaders\DownsampleX2DepthPS.hlsl">
-      <Filter>Content\shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\shaders\BgVS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
@@ -296,6 +296,9 @@
       <Filter>Content\shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\shaders\BRDFLUTPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\DownsampleDepthPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
   </ItemGroup>

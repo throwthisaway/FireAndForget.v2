@@ -1,5 +1,4 @@
 #pragma once
-#include "../Content/Renderer.h"
 #include <array>
 #include <unordered_map>
 #include <glm/glm.hpp>
@@ -7,32 +6,12 @@
 #include "Img.h"
 #include "ShaderStructures.h"
 #if defined(PLATFORM_WIN)
+#include "../Content/Renderer.h"
 #include <ppltasks.h>
 #include <concurrent_vector.h>
 #include <concurrent_unordered_map.h>
 #endif
 namespace assets {
-	enum class VertexType{PUV, PN, PT, PNT};
-	struct Material {
-		vec3_t albedo;
-		float metallic, roughness;
-		TextureIndex texAlbedo;
-	};
-	struct Submesh {
-		MaterialIndex material;
-		offset_t vbByteOffset, ibByteOffset, stride;
-		index_t count;
-		VertexType vertexType;
-	};
-	struct Layer {
-		vec3_t pivot;
-		std::vector<Submesh> submeshes;
-	};
-	struct Mesh {
-		BufferIndex vb = InvalidBuffer, ib = InvalidBuffer;
-		std::vector<Layer> layers;
-	};
-
 	struct Assets {
 		~Assets();
 		void Init();
