@@ -42,13 +42,49 @@ void DescriptorFrameAlloc::CreateCBV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D1
 	device_->CreateConstantBufferView(&desc, cpuHandle);
 }
 
-void DescriptorFrameAlloc::CreateSRV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* textureBuffer, DXGI_FORMAT format) {
-	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
-	desc.Format = format;
-	desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	desc.Texture2D.MipLevels = 1;
-	device_->CreateShaderResourceView(textureBuffer, &desc, cpuHandle);
+void DescriptorFrameAlloc::CreateSRV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource) {
+	const auto desc = resource->GetDesc();
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
+	srv.Format = desc.Format;
+	srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srv.Texture2D.MipLevels = (!desc.MipLevels) ? UINT(-1) : desc.MipLevels;
+	device_->CreateShaderResourceView(resource, &srv, cpuHandle);
+}
+void DescriptorFrameAlloc::CreateSRV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, UINT arrayIndex) {
+	const auto desc = resource->GetDesc();
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
+	srv.Format = desc.Format;
+	srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+	srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srv.Texture2DArray.MipLevels = (!desc.MipLevels) ? UINT(-1) : desc.MipLevels;
+	srv.Texture2DArray.FirstArraySlice = arrayIndex;
+	device_->CreateShaderResourceView(resource, &srv, cpuHandle);
+}
+void DescriptorFrameAlloc::CreateCubeSRV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource) {
+	const auto desc = resource->GetDesc();
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
+	srv.Format = desc.Format;
+	srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+	srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srv.TextureCube.MipLevels = (!desc.MipLevels) ? UINT(-1) : desc.MipLevels;
+	device_->CreateShaderResourceView(resource, &srv, cpuHandle);
+}
+void DescriptorFrameAlloc::CreateUAV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, UINT mipSlice) {
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uav = {};
+	uav.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+    uav.Format = resource ? resource->GetDesc().Format : DXGI_FORMAT_R8G8B8A8_UNORM;
+    uav.Texture2D.MipSlice = mipSlice;
+	device_->CreateUnorderedAccessView(resource, nullptr, &uav, cpuHandle);
+}
+void DescriptorFrameAlloc::CreateArrayUAV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, UINT arrayIndex, UINT mipSlice) {
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uav = {};
+	uav.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+    uav.Format = resource ? resource->GetDesc().Format : DXGI_FORMAT_R8G8B8A8_UNORM;
+    uav.Texture2DArray.MipSlice = mipSlice;
+	uav.Texture2DArray.FirstArraySlice = resource ? arrayIndex : 0;
+	uav.Texture2DArray.ArraySize = resource ? resource->GetDesc().DepthOrArraySize : 0;
+	device_->CreateUnorderedAccessView(resource, nullptr, &uav, cpuHandle);
 }
 void DescriptorFrameAlloc::Reset() {
 	index_ = 0;

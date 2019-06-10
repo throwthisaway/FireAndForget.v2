@@ -6,7 +6,7 @@
     "DescriptorTable(CBV(b0), visibility = SHADER_VISIBILITY_VERTEX)," \
     "DescriptorTable(CBV(b0), CBV(b1), SRV(t0), visibility = SHADER_VISIBILITY_PIXEL)," \
     "StaticSampler(s0, visibility = SHADER_VISIBILITY_PIXEL," \
-        "addressU = TEXTURE_ADDRESS_REPEAT," \
-        "addressV = TEXTURE_ADDRESS_REPEAT," \
-        "addressW = TEXTURE_ADDRESS_REPEAT," \
+        "addressU = TEXTURE_ADDRESS_WRAP," \
+        "addressV = TEXTURE_ADDRESS_WRAP," \
+        "addressW = TEXTURE_ADDRESS_WRAP," \
         "filter = FILTER_MIN_MAG_MIP_LINEAR)"

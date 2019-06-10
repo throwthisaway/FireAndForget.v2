@@ -20,7 +20,15 @@ const ShaderId Irradiance = 7;
 const ShaderId PrefilterEnv = 8;
 const ShaderId BRDFLUT = 9;
 const ShaderId Downsample = 10;
-const ShaderId Count = 11;
+const ShaderId GenMips = 11; // POT, Linear
+const ShaderId GenMipsOddX = 12; // Linear
+const ShaderId GenMipsOddY = 13; // Linear
+const ShaderId GenMipsOddXOddY = 14; // Linear
+const ShaderId GenMipsSRGB = 15; // POT, SRGB
+const ShaderId GenMipsOddXSRGB = 16; // SRGB
+const ShaderId GenMipsOddYSRGB = 17; // SRGB
+const ShaderId GenMipsOddXOddYSRGB = 18; // SRGB
+const ShaderId Count = 19;
 const int RenderTargetCount = 4;
 
 // resource types

@@ -8,5 +8,5 @@ struct PS_T {
 
 struct PS_P {
 	float4 pos : SV_POSITION;
-	float3 p; // localpos
+	float3 p : POSITION0;
 }; 

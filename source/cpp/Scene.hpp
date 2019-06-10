@@ -6,7 +6,6 @@
 #include "input/Input.hpp"
 #include "Camera.hpp"
 #ifdef PLATFORM_WIN
-#include "../Content/ShaderStructures.h"
 #include "../Content/Renderer.h"
 #endif // PLATFORM_WIN
 
@@ -26,7 +25,6 @@ struct Scene {
 		void Update(double frame, double total);
 	};
 	void Init(Renderer*, int, int);
-	void PrepareScene();
 	void PrepareScene();
 	void Render();
 	void Update(double frame, double total);

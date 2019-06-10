@@ -114,9 +114,6 @@
     <ClInclude Include="..\source\cpp\MatrixUtils.h">
       <Filter>cpp</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\cpp\RendererWrapper.h">
-      <Filter>cpp</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\cpp\Scene.hpp">
       <Filter>cpp</Filter>
     </ClInclude>
@@ -147,9 +144,6 @@
     <ClInclude Include="..\source\cpp\ShaderStructures.h">
       <Filter>cpp</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\cpp\CreateShaderParams.h">
-      <Filter>cpp</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\cpp\Transform.h">
       <Filter>cpp</Filter>
     </ClInclude>
@@ -178,6 +172,9 @@
       <Filter>cpp</Filter>
     </ClInclude>
     <ClInclude Include="..\source\cpp\Mesh.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\DeferredBindings.h">
       <Filter>cpp</Filter>
     </ClInclude>
   </ItemGroup>
@@ -234,7 +231,16 @@
     <None Include="Content\shaders\BRDFLUTRS.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
-    <None Include="DeferredRS.hlsli">
+    <None Include="..\source\assets\textured_unit_cube.mesh">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="Content\shaders\ColorSpaceUtility.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\DeferredRS.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\GenMips.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
   </ItemGroup>
@@ -244,12 +250,6 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Content\shaders\SamplePixelShader.hlsl">
-      <Filter>Content\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\shaders\SampleVertexShader.hlsl">
-      <Filter>Content\shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\shaders\PosPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
@@ -299,6 +299,30 @@
       <Filter>Content\shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\shaders\DownsampleDepthPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\GenMips.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\GenMipsOddX.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\GenMipsOddY.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\GenMipsOddXOddY.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\GenMipsSRGB.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\GenMipsOddXSRGB.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\GenMipsOddYSRGB.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\GenMipsOddXOddYSRGB.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Scene.hpp"
 #include "MatrixUtils.h"
-#include "CreateShaderParams.h"
 
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
@@ -43,7 +42,34 @@ void Scene::PrepareScene() {
 		pos.y += incY;
 		pos.x = -3 * incX;
 	}
-	PrepareScene();
+
+	deferredCmd_.ao.bias = 0.f;
+	deferredCmd_.ao.rad = .04f;
+	deferredCmd_.ao.scale = 1.f;
+	deferredCmd_.ao.intensity = 1.f;
+	for (int i = 0; i < MAX_LIGHTS; ++i) {
+		deferredCmd_.scene.light[i] = lights_[i].pointLight;
+		//FromVec3(camera_.view * glm::vec4(ToVec3(lights_[i].pointLight.pos), 1.f), shaderStructures.cScene.scene.light[i].pos);
+	}
+	renderer_->BeginPrePass();
+	deferredCmd_.random = assets_.textures[assets::Assets::RANDOM];
+	Dim dim = renderer_->GetDimensions(deferredCmd_.random);
+	deferredCmd_.ao.random_size.x = dim.w;
+	deferredCmd_.ao.random_size.y = dim.h;
+	const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
+	auto& l = mesh.layers.front();
+	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
+	const uint64_t cubeEnvMapDim = 512;
+	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  L"CubeEnvMap");
+	//cubeEnv_ = renderer_->GenTestCubeMap();
+	const uint64_t irradianceDim = 32;
+	deferredCmd_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, L"Irradiance");
+	const uint64_t preFilterEnvDim = 128;
+	deferredCmd_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, L"PrefilterEnv");
+	const uint64_t brdfLUTDim = 512;
+	deferredCmd_.BRDFLUT = renderer_->GenBRDFLUT(brdfLUTDim, ShaderStructures::BRDFLUT, L"BRDFLUT");
+	renderer_->EndPrePass();
+	state = State::Ready;
 }
 void Scene::Init(Renderer* renderer, int width, int height) {
 	state = State::Start;
@@ -61,29 +87,7 @@ void Scene::Init(Renderer* renderer, int width, int height) {
 //	shaderStructures.cScene.scene.light[1].diffuse[0] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[1] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[2] = 150.0f;
-
-	shaderStructures.cAO.ao.bias = 0.f;
-	shaderStructures.cAO.ao.rad = .04f;
-	shaderStructures.cAO.ao.scale = 1.f;
-	shaderStructures.cAO.ao.intensity = 1.f;
-	shaderResources.cScene = renderer->CreateShaderResource(sizeof(ShaderStructures::cScene), ShaderStructures::cScene::frame_count);
-	shaderResources.cAO = renderer->CreateShaderResource(sizeof(ShaderStructures::cAO), ShaderStructures::cAO::frame_count);
 #ifdef PLATFORM_WIN
-	deferredBuffers_.descAllocEntryIndex = renderer->AllocDescriptors(DeferredBuffers::Params::desc_count);
-	uint16_t offset = 0;
-	// cScene
-	auto rootParamIndex = DeferredBuffers::Params::index<cScene>::value;
-	deferredBuffers_.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
-	for (uint32_t frame = 0; frame < cScene::frame_count; ++frame) {
-		renderer->CreateCBV(deferredBuffers_.descAllocEntryIndex, offset, frame, shaderResources.cScene + frame);
-	}
-	++offset;
-	rootParamIndex = DeferredBuffers::Params::index<cAO>::value;
-	deferredBuffers_.bindings[rootParamIndex] = ResourceBinding{ rootParamIndex, offset };
-	for (uint32_t frame = 0; frame < cAO::frame_count; ++frame) {
-		renderer->CreateCBV(deferredBuffers_.descAllocEntryIndex, offset, frame, shaderResources.cAO + frame);
-	}
-	++offset;
 
 #elif defined(PLATFORM_MAC_OS)
 	deferredBuffers_.fsBuffers[DeferredBuffers::FSParams::index<cScene>::value] = {shaderResources.cScene, cScene::frame_count};
@@ -98,28 +102,6 @@ void Scene::Init(Renderer* renderer, int width, int height) {
 #endif
 }
 
-void Scene::PrepareScene() {
-	deferredBuffers_.random = assets_.textures[assets::Assets::RANDOM];
-	Dim dim = renderer_->GetDimensions(deferredBuffers_.random);
-	shaderStructures.cAO.ao.random_size.x = dim.w;
-	shaderStructures.cAO.ao.random_size.y = dim.h;
-	renderer_->UpdateShaderResource(shaderResources.cAO, &shaderStructures.cAO, sizeof(shaderStructures.cAO));
-	const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
-	auto& l = mesh.layers.front();
-	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
-	const uint64_t cubeEnvMapDim = 512;
-	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  "CubeEnvMap");
-	//cubeEnv_ = renderer_->GenTestCubeMap();
-	const uint64_t irradianceDim = 32;
-	deferredBuffers_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, "Irradiance");
-	const uint64_t preFilterEnvDim = 128;
-	deferredBuffers_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, "PrefilterEnv");
-	const uint64_t brdfLUTDim = 512;
-	deferredBuffers_.BRDFLUT = renderer_->GenBRDFLUT(brdfLUTDim, ShaderStructures::BRDFLUT, "BRDFLUT");
-	renderer_->SetDeferredBuffers(deferredBuffers_);
-	state = State::Ready;
-}
-
 void Scene::Render() {
 	if (state != State::Ready) return;
 	// bg
@@ -131,7 +113,7 @@ void Scene::Render() {
 		renderer_->Submit(cmd);
 	}
 
-	renderer_->StartDeferredPass();
+	renderer_->StartGeometryPass();
 	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
 		const auto& mesh = assets_.models[o.mesh];
@@ -142,12 +124,14 @@ void Scene::Render() {
 			m = glm::transpose(m);
 			for (const auto& submesh : l.submeshes) {
 				const auto& material = assets_.materials[submesh.material];
-				ShaderId shader = (material.texAlbedo != InvalidTexture && submesh.vertexType == assets::VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
+				ShaderId shader = (material.texAlbedo != InvalidTexture && submesh.vertexType == VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
 				ShaderStructures::DrawCmd cmd{ m, mvp, submesh, material, mesh.vb, mesh.ib, shader};
 				renderer_->Submit(cmd);
 			}
 		}
 	}
+	
+	renderer_->DoLightingPass(deferredCmd_);
 }
 void Scene::UpdateCameraTransform() {
 	camera_.Translate(input.dpos);
@@ -170,17 +154,12 @@ void Scene::Update(double frame, double total) {
 	}
 	camera_.Update();
 	// need to determine it from view because of ScreenSpaceRotator...
-	shaderStructures.cScene.scene.eyePos = camera_.GetEyePos();
+	deferredCmd_.scene.eyePos = camera_.GetEyePos();
 	// TODO:: WTF?
-	shaderStructures.cScene.scene.ip = glm::inverse(camera_.proj);
-	shaderStructures.cScene.scene.ivp = camera_.ivp;
-	shaderStructures.cScene.scene.nf.x = camera_.n; shaderStructures.cScene.scene.nf.y = camera_.f;
-	shaderStructures.cScene.scene.viewport.x = viewport_.width; shaderStructures.cScene.scene.viewport.y = viewport_.height;
-	for (int i = 0; i < MAX_LIGHTS; ++i) {
-		shaderStructures.cScene.scene.light[i] = lights_[i].pointLight;
-		//FromVec3(camera_.view * glm::vec4(ToVec3(lights_[i].pointLight.pos), 1.f), shaderStructures.cScene.scene.light[i].pos);
-	}
-	renderer_->UpdateShaderResource(shaderResources.cScene + renderer_->GetCurrenFrameIndex(), &shaderStructures.cScene, sizeof(shaderStructures.cScene));
+	deferredCmd_.scene.ip = glm::inverse(camera_.proj);
+	deferredCmd_.scene.ivp = camera_.ivp;
+	deferredCmd_.scene.nf.x = camera_.n; deferredCmd_.scene.nf.y = camera_.f;
+	deferredCmd_.scene.viewport.x = viewport_.width; deferredCmd_.scene.viewport.y = viewport_.height;
 	for (auto& o : objects_) {
 		o.Update(frame, total);
 	}

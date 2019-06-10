@@ -2,7 +2,9 @@
 #include "VertexTypes.hlsli"
 #include "PSInput.hlsli"
 
-ConstantBuffer<float4x4> mvp : register(b0);
+cbuffer cb : register(b0) {
+	float4x4 mvp;
+};
 
 [RootSignature(CubeEnvMapRS)]
 PS_P main(VertexPN input) {

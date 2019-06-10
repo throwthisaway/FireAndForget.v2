@@ -4,11 +4,19 @@
 #include "PBR.hlsli"
 #include "Common.hlsli"
 #include "DeferredRS.hlsli"
-#include "DeferredBindings.hlsli"
 
 ConstantBuffer<Scene> scene: register(b0);
 ConstantBuffer<AO> ao : register(b1);
-Texture2D tex[10] : register(t0);
+Texture2D<float4> texAlbedo : register(t0);
+Texture2D<float2> texNormal : register(t1);
+Texture2D<float4> texMaterial : register(t2);
+Texture2D<float4> texDebug : register(t3);
+Texture2D<float> texDepth : register(t4);
+TextureCube<float4> texIrradiance : register(t5);
+TextureCube<float4> texPrefilteredEnv : register(t6);
+Texture2D<float2> texBRDFLUT : register(t7);
+Texture2D<float> texHalfResDepth : register(t8);
+Texture2D<float2> texRandom : register(t9);
 SamplerState smp : register(s0);
 SamplerState linearSmp : register(s1);
 SamplerState linearClampSmp : register(s2);
@@ -29,21 +37,21 @@ float AOPass(float2 uv, float3 p, float3 n, float4x4 ivp, Texture2D<float> depth
 }
 
 #define ITERATION 4
-float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, float4x4 ivp, Texture2D<float> depth, Texture2D<float> random) {
+float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, float4x4 ivp, Texture2D<float> depth, Texture2D<float2> random) {
 	const float2 sampling[] = { float2(-1.f, 0.f), float2(1.f, 0.f), float2(0.f, 1.f), float2(0.f, -1.f) };
 
 	float sum = 0.f, radius = ao.rad / center_pos.z;
-	float2 rnd = normalize(random.sample(linearSmp, vp * uv / ao.random_size).xy * 2.f - 1.f);
+	float2 rnd = normalize(random.Sample(linearSmp, vp * uv / ao.random_size).rg * 2.f - 1.f);
 	// TODO:: int iterations = lerp(6.0,2.0,p.z/g_far_clip);
 	for (int i = 0; i < ITERATION; i++) {
 		float2 c1 = reflect(sampling[i], rnd) * radius
 		, c2 = float2(c1.x * .70716f - c1.y * .70716f,
 					  c1.x * .70716f + c1.y * .70716f);
 
-		sum += AOPass(uv + c1 * .25f, center_pos, n, ao, ivp, depth, smp);
-		sum += AOPass(uv + c1 * .75f, center_pos, n, ao, ivp, depth, smp);
-		sum += AOPass(uv + c2 * .5f, center_pos, n, ao, ivp, depth, smp);
-		sum += AOPass(uv + c2, center_pos, n, ao, ivp, depth, smp);
+		sum += AOPass(uv + c1 * .25f, center_pos, n, ivp, depth);
+		sum += AOPass(uv + c1 * .75f, center_pos, n, ivp, depth);
+		sum += AOPass(uv + c2 * .5f, center_pos, n, ivp, depth);
+		sum += AOPass(uv + c2, center_pos, n, ivp, depth);
 	}
 	sum /= (float)ITERATION * 4.f;
 	return sum;
@@ -51,21 +59,21 @@ float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, float4x4 ivp, Te
 
 [RootSignature(DeferredRS)]
 float4 main(PS_T input) : SV_TARGET{
-	float3 albedo = tex[BINDING_ALBEDO].Sample(smp, input.uv).rgb;
-	float3 n = Decode(tex[BINDING_NORMAL].Sample(smp, input.uv).xy);
-	float4 material = tex[BINDING_MATERIAL].Sample(smp, input.uv);
-	float depth = tex[BINDING_DEPTH].Sample(smp, input.uv).r;
+	float4 albedo = texAlbedo.Sample(smp, input.uv);
+	float3 n = Decode(texNormal.Sample(smp, input.uv).xy);
+	float4 material = texMaterial.Sample(smp, input.uv);
+	float depth = texDepth.Sample(smp, input.uv).r;
 	// TODO:: better one with linear depth and without mat mult: https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
-	float4 debug = tex[BINDING_DEBUG].Sample(smp, input.uv);
+	float4 debug = texDebug.Sample(smp, input.uv);
 	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth);
 	float3 v = normalize(scene.eyePos - worldPos);
 
 	float roughness = material.r;
 	float metallic = material.g;
 	float3 f0 = float3(.04f, .04f, .04f);
-	f0 = lerp(f0, albedo, metallic);
-	float r = roughness + 1.f;
-	float k = (r * r) / 8.f;
+	f0 = lerp(f0, albedo.rgb, metallic);
+	float r1 = roughness + 1.f;
+	float k = (r1 * r1) / 8.f;
 	float ndotv = max(dot(n, v), 0.f);
 
 	float3 Lo = float3(0.f, 0.f, 0.f);
@@ -91,24 +99,24 @@ float4 main(PS_T input) : SV_TARGET{
 		float3 kS = F;
 		float3 kD = float3(1.f, 1.f, 1.f) - kS;
 		kD *= 1.f - metallic;
-		Lo += (kD * albedo / M_PI_F + specular) * radiance * ndotl;
+		Lo += (kD * albedo.rgb / M_PI_F + specular) * radiance * ndotl;
 	}
-	float ao = CalcAO(input.uv, worldPos, n, scene.viewport, ao, scene.ivp, tex[BINDING_DOWNSAMPLE_DEPTH}, tex[BINDING_RANDOM);
+	float ao = CalcAO(input.uv, worldPos, n, scene.viewport, scene.ivp, texHalfResDepth, texRandom);
 	// 
 	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
 	float3 ks = f;
 	float3 kd = 1.f - ks;
 	kd *= 1.f - metallic;
-	float3 irradiance = tex[BINDING_IRRADIANCE].Sample(linearSmp, n).rgb;
+	float3 irradiance = texIrradiance.Sample(linearSmp, n).rgb;
 	float3 diffuse = irradiance * albedo.rgb;
 
 	float3 r = reflect(-v, n);
 	/*in the PBR fragment shader in line R = reflect(-V,N) - flip the sign of V.
 	 Also I noticed author of this amazing article did't multiply reflected vector by inverse ModelView matrix. While it look fine in this example in a place where view matrix is rotated(with env cubemap) you'll really notice how it's going off.*/
 	const float max_ref_lod = 4.f;	// TODO:: pass it as constant buffer
-	float3 prefilerColor = tex[BINDING_PREFILTEREDENV].Sample(smp, r, level(roughness * max_ref_lod)).rgb;
+	float3 prefilerColor = texPrefilteredEnv.SampleLevel(smp, r, roughness * max_ref_lod).rgb;
 
-	float2 envBRDF = tex[BINDING_BRDFLUT].Sample(linearClampSmp, float2(ndotv, roughness)).rg;
+	float2 envBRDF = texBRDFLUT.Sample(linearClampSmp, float2(ndotv, roughness)).rg;
 	float3 specular = prefilerColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnel Shlick
 	float3 ambient = (kd * diffuse + specular) - ao; // * aoResult;
 	//

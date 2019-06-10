@@ -31,7 +31,6 @@ namespace FireAndForget_v2
 	private:
 		// TODO: Replace with your own content renderers.
 		std::unique_ptr<Renderer> m_sceneRenderer;
-		RendererWrapper rendererWrapper_;
 
 		// Rendering loop timer.
 		DX::StepTimer m_timer;

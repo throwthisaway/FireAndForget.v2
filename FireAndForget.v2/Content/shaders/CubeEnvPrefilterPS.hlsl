@@ -4,8 +4,12 @@
 #include "PBR.hlsli"
 #include "CubeEnvPrefilterRS.hlsli"
 
-ConstantBuffer<float> roughness : register(b0);
-ConstantBuffer<float> resolution : register(b1);
+cbuffer cb0 : register(b0) {
+	float roughness;
+}
+cbuffer cb1 : register(b1) {
+	float resolution;
+}
 TextureCube<float4> envMap : register(t0);
 SamplerState smp : register(s0);
 
@@ -18,14 +22,14 @@ float4 main(PS_P input) : SV_TARGET {
 	const float3 up = (abs(n.z) < .999f) ? float3(0.f, 0.f, 1.f) : float3(1.f, 0.f, 0.f);
 	const float3 tangent = normalize(cross(up, n));
 	const float3 bitangent = cross(n, tangent);
-	const float3x3 sphericalToTangent(tangent, bitangent, n);
+	const float3x3 sphericalToTangent = float3x3(tangent, bitangent, n);
 
 	// TODO:: extract these to cb
 	const float a = roughness * roughness,
 		a2 = a*a,
 		a2minus1 = a2 - 1.f;
 
-	float3 prefilteredColor = float3(0.f);
+	float3 prefilteredColor = (float3)0.f;
 	float weight = 0.f;
 	const uint sampleCount = 1024u;
 	for (uint i = 0; i < sampleCount; ++i) {
@@ -44,7 +48,7 @@ float4 main(PS_P input) : SV_TARGET {
 
 			float mipLevel = roughness == 0.f ? 0.f : .5f * log2(saSample / saTexel);
 
-			prefilteredColor += envMap.Sample(smp, l, level(mipLevel)).rgb * ndotl;
+			prefilteredColor += envMap.SampleLevel(smp, l, mipLevel).rgb * ndotl;
 			weight += ndotl;
 		}
 	}

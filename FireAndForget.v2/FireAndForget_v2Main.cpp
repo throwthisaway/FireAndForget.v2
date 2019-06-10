@@ -25,8 +25,7 @@ void FireAndForget_v2Main::CreateRenderers(const std::shared_ptr<DX::DeviceResou
 {
 	// TODO: Replace this with your app's content initialization.
 	m_sceneRenderer = std::unique_ptr<Renderer>(new Renderer(deviceResources));
-	rendererWrapper_.Init(m_sceneRenderer.get());
-	scene_.Init(&rendererWrapper_, (int)deviceResources->GetOutputSize().Width, (int)deviceResources->GetOutputSize().Height);
+	scene_.Init(m_sceneRenderer.get(), (int)deviceResources->GetOutputSize().Width, (int)deviceResources->GetOutputSize().Height);
 	OnWindowSizeChanged();
 }
 
@@ -52,7 +51,6 @@ bool FireAndForget_v2Main::Render()
 	}
 
 	m_sceneRenderer->BeginRender();
-	m_sceneRenderer->StartRenderPass();
 	scene_.Render();
 	return m_sceneRenderer->Render();
 }

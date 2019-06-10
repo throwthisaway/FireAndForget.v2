@@ -1,10 +1,12 @@
-#include "Downsample.hlsli"
+#include "DownsampleRS.hlsli"
 #include "PSInput.hlsli"
 
-ConstantBuffer<uint> factor;
+cbuffer cb : register(b0) {
+	uint factor;
+};
 Texture2D<float4> tex : register(t0);
 
 [RootSignature(DownsampleRS)]
 float main(PS_T input) : SV_TARGET {
-	return tex.load(uint2(input.pos.xy) * factor)).r;
+	return tex.Load(uint3(input.pos.xy * factor, 0)).r;
 }
