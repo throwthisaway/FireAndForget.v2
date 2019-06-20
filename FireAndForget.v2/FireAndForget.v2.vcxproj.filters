@@ -243,9 +243,15 @@
     <None Include="Content\shaders\GenMips.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
+    <None Include="..\source\assets\Alexs_Apt_2k.hdr">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\random.png">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>

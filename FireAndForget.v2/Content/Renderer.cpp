@@ -7,6 +7,10 @@
 #include "../../source/cpp/BufferUtils.h"
 #include <glm/gtc/matrix_transform.hpp>
 // TODO::
+// - requesting new ppol in cbframealloc causes "CPU descriptor handle expected, but specified handle refers to a GPU descriptor handle." during CreateCBV
+// - all embedded rootsignatures are read from the ps source
+// - depthstencil transition to depth write happens at the present resource barrier at the very end
+// - DownsampleDepth transitions depth stencil to pixel shader resouce
 // - remove deviceResource commandallocators
 // - remove rtvs[framecount]
 // - swap offset and frame in createsrv
@@ -26,7 +30,8 @@ using namespace DirectX;
 using namespace Windows::Foundation;
 
 namespace {
-	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536, defaultCBFrameAllocSize = 65536, defaultDescFrameAllocCount = 256;
+	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536, defaultCBFrameAllocSize = 65536, defaultDescFrameAllocCount = 256,
+		defaultRTVDescCount = 16;
 	inline uint32_t NumMips(uint32_t w, uint32_t h) {
         uint32_t res;
         _BitScanReverse((unsigned long*)&res, w | h);
@@ -56,8 +61,6 @@ void Renderer::EndUploadResources() {
 	m_deviceResources->WaitForGpu();
 	// cleanup
 	bufferUpload_.intermediateResources.clear();
-	DX::ThrowIfFailed(bufferUpload_.cmdAllocator->Reset());
-	DX::ThrowIfFailed(bufferUpload_.cmdList->Reset(bufferUpload_.cmdAllocator.Get(), nullptr));
 }
 namespace {
 	DXGI_FORMAT PixelFormatToDXGIFormat(Img::PixelFormat format) {
@@ -66,6 +69,14 @@ namespace {
 				return DXGI_FORMAT_R8G8B8A8_UNORM;
 			case Img::PixelFormat::BGRA8:
 				return DXGI_FORMAT_B8G8R8A8_UNORM;
+			case Img::PixelFormat::Greyscale8:
+				return DXGI_FORMAT_R8_UNORM;
+			case Img::PixelFormat::RGBAF16:
+				return DXGI_FORMAT_R16G16B16A16_FLOAT;
+			case Img::PixelFormat::RGBAF32:
+				return DXGI_FORMAT_R32G32B32A32_FLOAT;
+			case Img::PixelFormat::RGB8:
+			case Img::PixelFormat::BGR8:
 			default:
 				assert(false);
 		}
@@ -107,7 +118,7 @@ TextureIndex Renderer::CreateTexture(const void* buffer, uint64_t width, uint32_
 		nullptr,
 		IID_PPV_ARGS(&bufferUpload)));
 	bufferUpload_.intermediateResources.push_back(bufferUpload);
-	DX::SetName(resource.Get(), label);
+	if (label) DX::SetName(resource.Get(), label);
 	{
 		D3D12_SUBRESOURCE_DATA data = {};
 		data.pData = buffer;
@@ -167,7 +178,6 @@ BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes) {
 
 void Renderer::CreateDeviceDependentResources() {
 	auto device = m_deviceResources->GetD3DDevice();
-	rtv_.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, _countof(PipelineStates::deferredRTFmts), true);
 	for (int i = 0; i < _countof(frames_); ++i) {
 		frames_[i].cb.Init(device, defaultCBFrameAllocSize);
 		frames_[i].desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, true);
@@ -190,8 +200,15 @@ void Renderer::CreateDeviceDependentResources() {
 		loadingComplete_ = true;
 	});
 
+	//prepass
+	DX::ThrowIfFailed(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&prePass_.cmdAllocator)));
+	DX::ThrowIfFailed(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, prePass_.cmdAllocator.Get(), nullptr, IID_PPV_ARGS(&prePass_.cmdList)));
+	prePass_.cmdList->Close();
+	//DX::ThrowIfFailed(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&prePass_.computeCmdAllocator)));
+	//DX::ThrowIfFailed(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, prePass_.computeCmdAllocator.Get(), nullptr, IID_PPV_ARGS(&prePass_.computeCmdList)));
+	//prePass_.computeCmdList->Close();
+
 	for (size_t i = 0; i < pipelineStates_.states_.size(); ++i) {
-		if (pipelineStates_.states_[i].pass != PipelineStates::State::RenderPass::Lighting) continue;
 		ID3D12CommandAllocator* firstCommandAllocator = nullptr;
 		for (UINT n = 0; n < FrameCount; n++) {
 			Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
@@ -202,7 +219,7 @@ void Renderer::CreateDeviceDependentResources() {
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
 		DX::ThrowIfFailed(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, firstCommandAllocator, nullptr, IID_PPV_ARGS(&commandList)));
 		commandList->Close();
-		NAME_D3D12_OBJECT(commandList);
+		//NAME_D3D12_OBJECT(commandList);
 		commandLists_.push_back(commandList);
 	}
 
@@ -219,10 +236,11 @@ void Renderer::BeginPrePass() {
 	auto device = m_deviceResources->GetD3DDevice();
 	DX::ThrowIfFailed(prePass_.cmdAllocator->Reset());
 	DX::ThrowIfFailed(prePass_.cmdList->Reset(prePass_.cmdAllocator.Get(), nullptr));
-	DX::ThrowIfFailed(prePass_.computeCmdList->Reset(prePass_.cmdAllocator.Get(), nullptr));
+	//DX::ThrowIfFailed(prePass_.computeCmdAllocator->Reset());
+	//DX::ThrowIfFailed(prePass_.computeCmdList->Reset(prePass_.computeCmdAllocator.Get(), nullptr));
 	prePass_.cb.Init(device, bufferSize);
 	prePass_.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescCount, true);
-	prePass_.rtv.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultDescCount, true);
+	prePass_.rtv.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultDescCount, false);
 }
 TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, LPCWSTR label) {
 	assert(vb != InvalidBuffer);
@@ -234,6 +252,7 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 	{
 		CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(fmt, dim, dim, count, (mip) ? UINT16(NumMips(dim, dim)) : 0);
 		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		if (mip) desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
 		DX::ThrowIfFailed(device->CreateCommittedResource(
 			&defaultHeapProperties,
@@ -242,7 +261,7 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			nullptr,
 			IID_PPV_ARGS(&resource)));
-			DX::SetName(resource.Get(), label);
+			if (label) DX::SetName(resource.Get(), label);
 	}
 	TextureIndex res = (TextureIndex)buffers_.size();
 	buffers_.push_back({ resource, 0, 0, fmt });
@@ -259,7 +278,7 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 			D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 			desc.Format = fmt;
 			desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-			desc.Texture2DArray.ArraySize = count;
+			desc.Texture2DArray.ArraySize = 1;
 			desc.Texture2DArray.FirstArraySlice = i;
 			device->CreateRenderTargetView(resource.Get(), &desc, handle);
 			handle.Offset(rtvDescSize);
@@ -267,7 +286,7 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 	}
 	D3D12_VIEWPORT viewport = { 0, 0, FLOAT(dim), FLOAT(dim) };
 	D3D12_RECT scissor = { 0, 0, (LONG)dim, (LONG)dim };
-	auto& state = pipelineStates_.states_[ShaderStructures::CubeEnvMap];
+	auto& state = pipelineStates_.states_[shader];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
 	const auto descSize = prePass_.desc.GetDescriptorSize();
@@ -289,7 +308,11 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 		prePass_.desc.CreateCBV(handle, gpuAddress, inc);
 		handle.Offset(descSize); gpuAddress += inc;
 	}
-	prePass_.desc.CreateSRV(handle, buffers_[tex].resource.Get());
+
+	if (buffers_[tex].resource->GetDesc().DepthOrArraySize > 1)
+		prePass_.desc.CreateCubeSRV(handle, buffers_[tex].resource.Get());
+	else
+		prePass_.desc.CreateSRV(handle, buffers_[tex].resource.Get());
 
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
@@ -312,19 +335,25 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 	}
 	if (mip) {
 		GenMips(resource, fmt, dim, dim, count);
+	} else {
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		commandList->ResourceBarrier(1, &barrier);
 	}
 	PIXEndEvent(commandList);
 	return res;
 }
 
-void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT fmt, int w, int h, uint32_t arraySize) {
+void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT fmt, int width, int height, uint32_t arraySize) {
 	const uint32_t kMaxMipsPerCall = 4, kNumThreads = 8;
 	ID3D12GraphicsCommandList* commandList = prePass_.cmdList.Get();
 	PIXBeginEvent(commandList, 0, L"GenMips");
 	
-	enum class DescEntries{ kCBuffer, kSrcTexture, kDstUAVS, kCount};
-	const auto numMips = NumMips(w, h);
-	for (uint32_t arrayIndex = 0; arrayIndex < arraySize; ++arrayIndex)
+	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	commandList->ResourceBarrier(1, &barrier);
+	enum class DescEntries{ kCBuffer, kSrcTexture, kDstUAV0, kDstUAV1, kDstUAV2, kDstUAV3, kCount};
+	const auto numMips = NumMips(width, height) - 1;
+	for (uint32_t arrayIndex = 0; arrayIndex < arraySize; ++arrayIndex) {
+		int w = width, h = height;
 		for (uint32_t i = 0, srcMipLevel = 0; i < numMips;) {
 			auto shaderId = ShaderStructures::GenMips;
 			if (w & 1 && h & 1) shaderId = ShaderStructures::GenMipsOddXOddY;
@@ -332,22 +361,22 @@ void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FOR
 			else if (h & 1) shaderId = ShaderStructures::GenMipsOddY;
 			auto& state = pipelineStates_.states_[shaderId];
 			commandList->SetPipelineState(state.pipelineState.Get());
-			struct alignas(16) { 
+			struct alignas(16) {
 				uint32_t srcMipLevel;
 				uint32_t numMipLevels;
 				float2 texelSize; // 1. / dim
 			}cbuffer;
 			cbuffer.srcMipLevel = srcMipLevel;
 			cbuffer.texelSize = 1.f / float2{ w, h };
-			_BitScanForward((DWORD*)&cbuffer.numMipLevels, w | h);
+			_BitScanForward((DWORD*)& cbuffer.numMipLevels, w | h);
 			cbuffer.numMipLevels = std::min(kMaxMipsPerCall, cbuffer.numMipLevels);
 			if (cbuffer.numMipLevels + cbuffer.srcMipLevel > numMips) cbuffer.numMipLevels = numMips - cbuffer.srcMipLevel;
 			auto cb = prePass_.cb.Alloc(sizeof(cbuffer));
 			memcpy(cb.cpuAddress, &cbuffer, sizeof(cbuffer));
-			auto entry = prePass_.desc.Push(int(DescEntries::kCount) + cbuffer.numMipLevels - 1);
+			auto entry = prePass_.desc.Push(int(DescEntries::kCount));
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(entry.cpuHandle);
 			auto descSize = prePass_.desc.GetDescriptorSize();
-			prePass_.desc.CreateCBV(handle, cb.gpuAddress, sizeof(cbuffer));
+			prePass_.desc.CreateCBV(handle, cb.gpuAddress, AlignTo<size_t, 256>(sizeof(cbuffer)));
 			handle.Offset(descSize);
 			if (arraySize)
 				prePass_.desc.CreateSRV(handle, resource.Get(), arrayIndex);
@@ -363,20 +392,32 @@ void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FOR
 			}
 			for (int j = cbuffer.numMipLevels; j < kMaxMipsPerCall; ++j) {
 				prePass_.desc.CreateUAV(handle, nullptr);
+				handle.Offset(descSize);
 			}
 			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(entry.gpuHandle);
+			commandList->SetComputeRootSignature(state.rootSignature.Get());
 			commandList->SetComputeRootDescriptorTable(0, gpuHandle);
 			gpuHandle.Offset(descSize);
 			commandList->SetComputeRootDescriptorTable(1, gpuHandle);
 			gpuHandle.Offset(descSize);
 			commandList->SetComputeRootDescriptorTable(2, gpuHandle);
 			commandList->Dispatch(kNumThreads, kNumThreads, 1);
+			// TODO::???
+			/*if (DstWidth == 0)
+				DstWidth = 1;
+			if (DstHeight == 0)
+				DstHeight = 1;
+			Context.Dispatch2D(DstWidth, DstHeight);*/
+
 			w = std::max(1, w >> cbuffer.numMipLevels); h = std::max(1, h >> cbuffer.numMipLevels);
 			i += cbuffer.numMipLevels;
-
 		}
+	}
+	barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	commandList->ResourceBarrier(1, &barrier);
+	// TODO:: 	???		Context.InsertUAVBarrier(*this);
 	PIXEndEvent(commandList);
 }
 TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, LPCWSTR label) {
@@ -397,7 +438,7 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			nullptr,
 			IID_PPV_ARGS(&resource)));
-			DX::SetName(resource.Get(), label);
+			if (label) DX::SetName(resource.Get(), label);
 	}
 	TextureIndex res = (TextureIndex)buffers_.size();
 	buffers_.push_back({ resource, 0, 0, fmt });
@@ -407,6 +448,8 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 	auto& state = pipelineStates_.states_[shader];
 	commandList->SetPipelineState(state.pipelineState.Get());
 	// TODO::
+	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	commandList->ResourceBarrier(1, &barrier);
 	PIXEndEvent(commandList);
 	return res;
 }
@@ -425,7 +468,7 @@ TextureIndex Renderer::GenBRDFLUT(uint32_t dim, ShaderId shader, LPCWSTR label) 
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			nullptr,
 			IID_PPV_ARGS(&resource)));
-		DX::SetName(resource.Get(), label);
+		if (label) DX::SetName(resource.Get(), label);
 	}
 	TextureIndex res = (TextureIndex)buffers_.size();
 	buffers_.push_back({ resource, 0, 0, fmt });
@@ -435,13 +478,15 @@ TextureIndex Renderer::GenBRDFLUT(uint32_t dim, ShaderId shader, LPCWSTR label) 
 	auto& state = pipelineStates_.states_[shader];
 	commandList->SetPipelineState(state.pipelineState.Get());
 	// TODO::
+	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	commandList->ResourceBarrier(1, &barrier);
 	PIXEndEvent(commandList);
 	return res;
 }
 void Renderer::EndPrePass() {
 	DX::ThrowIfFailed(prePass_.cmdList->Close());
-	DX::ThrowIfFailed(prePass_.computeCmdList->Close());
-	ID3D12CommandList* ppCommandLists[] = { prePass_.cmdList.Get(), prePass_.computeCmdList.Get()};
+	//DX::ThrowIfFailed(prePass_.computeCmdList->Close());
+	ID3D12CommandList* ppCommandLists[] = { prePass_.cmdList.Get()/*, prePass_.computeCmdList.Get()*/};
 	
 	m_deviceResources->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	m_deviceResources->WaitForGpu();
@@ -450,14 +495,12 @@ void Renderer::EndPrePass() {
 	prePass_.rtv.desc = {};
 	prePass_.cb = {};
 	prePass_.desc = {};
-	DX::ThrowIfFailed(prePass_.cmdAllocator->Reset());
-	DX::ThrowIfFailed(prePass_.cmdList->Reset(prePass_.cmdAllocator.Get(), nullptr));
-	DX::ThrowIfFailed(prePass_.computeCmdList->Reset(prePass_.cmdAllocator.Get(), nullptr));
 }
 void Renderer::CreateWindowSizeDependentResources() {
+	auto device = m_deviceResources->GetD3DDevice();
 	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
 	scissorRect_ = { 0, 0, static_cast<LONG>(viewport.Width), static_cast<LONG>(viewport.Height) };
-
+	rtv_.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultRTVDescCount, false);
 	rtv_.entry = rtv_.desc.Push(_countof(PipelineStates::deferredRTFmts));
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = rtv_.entry.cpuHandle;
 	D3D12_CLEAR_VALUE clearValue;
@@ -467,7 +510,6 @@ void Renderer::CreateWindowSizeDependentResources() {
 		clearValue.Format = PipelineStates::deferredRTFmts[j];
 		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-		auto device = m_deviceResources->GetD3DDevice();
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 		CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
 		DX::ThrowIfFailed(device->CreateCommittedResource(
@@ -489,6 +531,29 @@ void Renderer::CreateWindowSizeDependentResources() {
 			handle.Offset(rtv_.desc.GetDescriptorSize());
 		}
 	}
+
+	// half-res depth
+	DXGI_FORMAT halfResDepthFmt = DXGI_FORMAT_R32_FLOAT;
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(halfResDepthFmt, ((UINT)viewport.Width) >> 1, ((UINT)viewport.Height) >> 1);
+	desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+	CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
+	DX::ThrowIfFailed(device->CreateCommittedResource(
+		&defaultHeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&desc,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		nullptr,
+		IID_PPV_ARGS(&halfResDepth_)));
+	NAME_D3D12_OBJECT(halfResDepth_);
+	{
+		rtv_.halfResDepthEntry = rtv_.desc.Push(1);
+		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
+		desc.Format = halfResDepthFmt;
+		desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		device->CreateRenderTargetView(halfResDepth_.Get(), &desc, handle);
+		handle.Offset(rtv_.desc.GetDescriptorSize());
+	}
 }
 
 void Renderer::Update(DX::StepTimer const& timer) {
@@ -499,7 +564,8 @@ void Renderer::Update(DX::StepTimer const& timer) {
 void Renderer::BeginRender() {
 	if (!loadingComplete_) return;
 
-	frame_ = &frames_[m_deviceResources->GetCurrentFrameIndex()];
+	auto currentFrameIndex = m_deviceResources->GetCurrentFrameIndex();
+	frame_ = &frames_[currentFrameIndex];
 	frame_->cb.Reset();
 	frame_->desc.Reset();
 	// TODO:: is this used???
@@ -511,14 +577,14 @@ void Renderer::BeginRender() {
 		DX::ThrowIfFailed(commandList->Reset(commandAllocator, nullptr));
 		++i;
 	}
-
+	DX::ThrowIfFailed(frame_->deferredCommandAllocator->Reset());
+	DX::ThrowIfFailed(deferredCommandList_->Reset(frame_->deferredCommandAllocator.Get(), nullptr));
 	// Initialise depth
+	// TODO:: !!! this commandlist might not be used everytime
 	auto* commandList = commandLists_[0].Get();
 	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
 	commandList->RSSetViewports(1, &viewport);
 	commandList->RSSetScissorRects(1, &scissorRect_);
-	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-	commandList->ResourceBarrier(1, &barrier);
 	D3D12_CPU_DESCRIPTOR_HANDLE depthStencilView = m_deviceResources->GetDepthStencilView();
 	commandList->ClearDepthStencilView(depthStencilView, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
@@ -603,18 +669,18 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 	PIXBeginEvent(commandList, 0, L"SubmitBgCmd");
 	const int descSize = frame_->desc.GetDescriptorSize();
 	DescriptorFrameAlloc::Entry entry = frame_->desc.Push(3);
+	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	auto cb = frame_->cb.Alloc(sizeof(float4x4));
 	memcpy(cb.cpuAddress, &cmd.vp, sizeof(float4x4));
 	frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
 	UINT index = 0;
 	commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 	++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
-	frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.cubeEnv].resource.Get());
+	frame_->desc.CreateCubeSRV(entry.cpuHandle, buffers_[cmd.cubeEnv].resource.Get());
 	commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 	++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
 
-	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
-	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	assert(cmd.vb != InvalidBuffer);
 	assert(cmd.ib != InvalidBuffer);
@@ -655,6 +721,8 @@ void Renderer::Submit(const DrawCmd& cmd) {
 		switch (id) {
 		case ShaderStructures::Debug: {
 			entry = frame_->desc.Push(2);
+			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			{
 				auto cb = frame_->cb.Alloc(sizeof(float4x4));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
@@ -673,6 +741,8 @@ void Renderer::Submit(const DrawCmd& cmd) {
 		}
 		case ShaderStructures::Pos: {
 			entry = frame_->desc.Push(2);
+			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			{
 				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::Object));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
@@ -694,6 +764,8 @@ void Renderer::Submit(const DrawCmd& cmd) {
 		}
 		case ShaderStructures::Tex: {
 			entry = frame_->desc.Push(3);
+			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			{
 				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::Object));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
@@ -721,8 +793,6 @@ void Renderer::Submit(const DrawCmd& cmd) {
 		default: assert(false);
 		}
 
-		ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
-		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		assert(cmd.vb != InvalidBuffer);
@@ -754,22 +824,21 @@ void Renderer::Submit(const DrawCmd& cmd) {
 }
 void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	PIXBeginEvent(commandList, 0, L"DownsampleDepth");
-	CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	CD3DX12_RESOURCE_BARRIER barriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET),
+		CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)};
+	commandList->ResourceBarrier(_countof(barriers), barriers);
 	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
 	const float factor = .5f;
 	const uint32_t step = 2;
 	viewport.Width *= factor; viewport.Height *= factor;
 	commandList->RSSetViewports(1, &viewport);
 	D3D12_RECT scissorRect = scissorRect_;
-	scissorRect.left *= factor; scissorRect.bottom *= factor;
+	scissorRect.right *= factor; scissorRect.bottom *= factor;
 	commandList->RSSetScissorRects(1, &scissorRect);
-	commandList->ResourceBarrier(1, &barrier);
 	auto& state = pipelineStates_.states_[Downsample];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtv;
-	rtv.InitOffsetted(rtv_.entry.cpuHandle, rtv_.desc.GetDescriptorSize() * BINDING_DOWNSAMPLE_DEPTH);
-	commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
+	commandList->OMSetRenderTargets(1, &rtv_.halfResDepthEntry.cpuHandle, false, nullptr);
 
 	auto cb = frame_->cb.Alloc(sizeof(uint32_t));
 	*((uint32_t*)cb.cpuAddress) = step;
@@ -777,7 +846,7 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
 	const int descSize = frame_->desc.GetDescriptorSize();
 	entry.cpuHandle.Offset(descSize);
-	frame_->desc.CreateSRV(entry.cpuHandle, rtt_[BINDING_DOWNSAMPLE_DEPTH].Get());
+	frame_->desc.CreateSRV(entry.cpuHandle, m_deviceResources->GetDepthStencil());
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
@@ -798,15 +867,14 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	if (!loadingComplete_) return;
 	ID3D12GraphicsCommandList* commandList = deferredCommandList_.Get();
-	DX::ThrowIfFailed(frame_->deferredCommandAllocator->Reset());
-	DX::ThrowIfFailed(commandList->Reset(frame_->deferredCommandAllocator.Get(), nullptr));
-	DownsampleDepth(commandList);
 
 	PIXBeginEvent(commandList, 0, L"DoLightingPass");
 	{
-		CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount];
+		CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount + 1];
 		for (int i = 0; i < RenderTargetCount; ++i)
 			presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		DownsampleDepth(commandList);
+		presentResourceBarriers[RenderTargetCount] = CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		// TODO:: done in startForwardPass presentResourceBarriers[RenderTargetCount + 1] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
@@ -845,13 +913,16 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 		entry.cpuHandle.Offset(descSize);
 
 		// Irradiance
-		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.irradiance].resource.Get());
+		frame_->desc.CreateCubeSRV(entry.cpuHandle, buffers_[cmd.irradiance].resource.Get());
 		entry.cpuHandle.Offset(descSize);
 		// Prefiltered env. map
-		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.prefilteredEnvMap].resource.Get());
+		frame_->desc.CreateCubeSRV(entry.cpuHandle, buffers_[cmd.prefilteredEnvMap].resource.Get());
 		entry.cpuHandle.Offset(descSize);
 		// BRDFLUT
 		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.BRDFLUT].resource.Get());
+		entry.cpuHandle.Offset(descSize);
+		// Halfresdepth
+		frame_->desc.CreateSRV(entry.cpuHandle, halfResDepth_.Get());
 		entry.cpuHandle.Offset(descSize);
 		// Random
 		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());
@@ -874,9 +945,11 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 		commandList->DrawInstanced(4, 1, 0, 0);
 
 		// Indicate that the render target will now be used to present when the command list is done executing.
-		CD3DX12_RESOURCE_BARRIER presentResourceBarrier =
-			CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-		commandList->ResourceBarrier(1, &presentResourceBarrier);
+		CD3DX12_RESOURCE_BARRIER presentResourceBarrier[] =
+		{ CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT),
+		 CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE) };
+		
+		commandList->ResourceBarrier(_countof(presentResourceBarrier), presentResourceBarrier);
 	}
 	PIXEndEvent(commandList);
 }

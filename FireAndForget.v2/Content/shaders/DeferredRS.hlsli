@@ -3,8 +3,7 @@
 			"DENY_DOMAIN_SHADER_ROOT_ACCESS |" \
 			"DENY_GEOMETRY_SHADER_ROOT_ACCESS |" \
 			"DENY_HULL_SHADER_ROOT_ACCESS)," \
-		"DescriptorTable(CBV(b0)," \
-						"CBV(b1)," \
+		"DescriptorTable(CBV(b0, numDescriptors = 2)," \
 						"SRV(t0, numDescriptors = 10), visibility = SHADER_VISIBILITY_PIXEL)," \
 		"StaticSampler(s0," \
 			"addressU = TEXTURE_ADDRESS_CLAMP," \

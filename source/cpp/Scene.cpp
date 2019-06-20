@@ -54,8 +54,8 @@ void Scene::PrepareScene() {
 	renderer_->BeginPrePass();
 	deferredCmd_.random = assets_.textures[assets::Assets::RANDOM];
 	Dim dim = renderer_->GetDimensions(deferredCmd_.random);
-	deferredCmd_.ao.random_size.x = dim.w;
-	deferredCmd_.ao.random_size.y = dim.h;
+	deferredCmd_.ao.random_size.x = (float)dim.w;
+	deferredCmd_.ao.random_size.y = (float)dim.h;
 	const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
 	auto& l = mesh.layers.front();
 	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
@@ -102,8 +102,13 @@ void Scene::Init(Renderer* renderer, int width, int height) {
 #endif
 }
 
-void Scene::Render() {
-	if (state != State::Ready) return;
+bool Scene::Render() {
+	if (state != State::Ready && assets_.status == assets::Assets::Status::kReady) {
+		PrepareScene();
+		state = State::Ready;
+	}
+	if (state != State::Ready) return false;
+	renderer_->BeginRender();
 	// bg
 	renderer_->StartForwardPass();
 	if (cubeEnv_ != InvalidTexture) {
@@ -132,6 +137,7 @@ void Scene::Render() {
 	}
 	
 	renderer_->DoLightingPass(deferredCmd_);
+	return renderer_->Render();
 }
 void Scene::UpdateCameraTransform() {
 	camera_.Translate(input.dpos);
@@ -147,7 +153,6 @@ void Scene::UpdateSceneTransform() {
 }
 void Scene::Update(double frame, double total) {
 	assets_.Update(renderer_);
-	if (assets_.status == assets::Assets::Status::kReady) PrepareScene();
 	if (state != State::Ready) return;
 	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);

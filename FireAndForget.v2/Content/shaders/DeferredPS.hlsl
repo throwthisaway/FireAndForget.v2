@@ -6,7 +6,9 @@
 cbuffer cScene : register(b0) {
 	Scene scene;
 };
-
+cbuffer cAO : register(b1) {
+	AO ao;
+};
 Texture2D tRTT[5] : register(t0);
 
 SamplerState smp : register(s0) {

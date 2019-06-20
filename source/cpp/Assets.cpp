@@ -206,7 +206,7 @@ namespace assets {
 		
 		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {
 			return Concurrency::when_all(std::begin(loadContext.imageLoadTasks), std::end(loadContext.imageLoadTasks)).then([this]() {
-				status = Status::kLoaded;
+				return status = Status::kLoaded;
 			}); });
 #elif defined(PLATFORM_MAC_OS)
 		renderer->BeginUploadResources();
@@ -230,6 +230,7 @@ namespace assets {
 	void Assets::ImagesToTextures(Renderer* renderer) {
 		for (int id = 0; id < (int)loadContext.images.size(); ++id) {
 			auto& img = loadContext.images[id];
+			if (textures.size() <= id) textures.resize(id + 1);
 			textures[id] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
 		}
 		// replace image ids with texture ids
@@ -303,7 +304,7 @@ namespace assets {
 				MaterialIndex materialIndex = res.first->second;
 				if (res.second) {
 					materials.push_back({});
-					Material material;
+					Material material{};
 					material.albedo = { surf.color[0], surf.color[1], surf.color[2] };
 					material.metallic = surf.surface_infos[MeshLoader::SPECULARITY_MAP].val;
 					material.roughness = surf.surface_infos[MeshLoader::GLOSSINESS_MAP].val;
@@ -314,12 +315,17 @@ namespace assets {
 						materials[materialIndex].texAlbedo = inserted.first->second;
 						if (inserted.second) {
 							images.push_back({});
+							auto path = s2ws(colLayers->image->path);
+							auto pos = path.rfind(L'\\');
+							if (pos == std::wstring::npos) pos = 0;
+							else ++pos;
+							path = path.substr(pos);
 #if defined(PLATFORM_WIN)
-							imageLoadTasks.push_back(LoadImage(s2ws(colLayers->image->path).c_str(), inserted.first->second));
+							imageLoadTasks.push_back(LoadImage(path.c_str(), inserted.first->second));
 #elif defined(PLATFORM_MAC_OS)
-							images[index] = LoadImage((s2ws(colLayers->image->path).c_str());
+							images[index] = LoadImage(path.c_str());
 #endif
-						} else ;
+						}
 					}
 				}
 				auto vOffset = (offset_t)vb.size(), iOffset = (offset_t)ib.size();

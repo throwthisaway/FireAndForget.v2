@@ -58,7 +58,10 @@ private:
 	}bufferUpload_;
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList, computeCmdList;
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
+		// TODO:: these are not used?
+		//Microsoft::WRL::ComPtr<ID3D12CommandAllocator> computeCmdAllocator;
+		//Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> computeCmdList;
 		struct {
 			DescriptorFrameAlloc desc;
 		}rtv;
@@ -81,10 +84,10 @@ private:
 	// render targets
 	struct {
 		DescriptorFrameAlloc desc;
-		DescriptorFrameAlloc::Entry entry;
+		DescriptorFrameAlloc::Entry entry, halfResDepthEntry;
 	}rtv_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> rtt_[_countof(PipelineStates::deferredRTFmts)];
-
+	Microsoft::WRL::ComPtr<ID3D12Resource> halfResDepth_;
 	// for per frame dynamic data
 	struct {
 		CBFrameAlloc cb;

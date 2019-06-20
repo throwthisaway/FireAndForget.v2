@@ -50,9 +50,7 @@ bool FireAndForget_v2Main::Render()
 		return false;
 	}
 
-	m_sceneRenderer->BeginRender();
-	scene_.Render();
-	return m_sceneRenderer->Render();
+	return scene_.Render();
 }
 
 // Updates application state when the window's size changes (e.g. device orientation change)

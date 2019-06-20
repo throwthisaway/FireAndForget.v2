@@ -17,7 +17,6 @@ public:
 		DXGI_FORMAT_R16G16_UNORM,	// compressed normals
 		DXGI_FORMAT_R8G8B8A8_UNORM, // material properties
 		DXGI_FORMAT_R32G32B32A32_FLOAT, // debug
-		DXGI_FORMAT_D32_FLOAT	// half-resolution depth
 	};
 	PipelineStates(const DX::DeviceResources*);
 	~PipelineStates();

@@ -97,7 +97,7 @@ PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
 			state.SampleMask = UINT_MAX;
 			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			state.NumRenderTargets = 1;
-			state.RTVFormats[0] = DXGI_FORMAT_D32_FLOAT;
+			state.RTVFormats[0] = DXGI_FORMAT_R32_FLOAT;
 			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
 			state.SampleDesc.Count = 1;
 			depth = state;
@@ -220,10 +220,10 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(ShaderStructures::Deferred, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPS.cso", { fsQuadLayout, _countof(fsQuadLayout) }, post, State::RenderPass::Lighting));
 	shaderTasks.push_back(CreateShader(ShaderStructures::DeferredPBR, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPBRPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, post, State::RenderPass::Lighting));
 
-	shaderTasks.push_back(CreateShader(ShaderStructures::CubeEnvMap, ROOT_UNKNOWN, L"FSQuadVS.cso", L"CubeEnvMapPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, pre, State::RenderPass::Pre));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Bg, ROOT_UNKNOWN, L"BgVS.cso", L"BgPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, forward, State::RenderPass::Forward));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Irradiance, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvIrPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, pre, State::RenderPass::Pre));
-	shaderTasks.push_back(CreateShader(ShaderStructures::PrefilterEnv, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvPrefilterPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, pre, State::RenderPass::Pre));
+	shaderTasks.push_back(CreateShader(ShaderStructures::CubeEnvMap, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvMapPS.cso", {pnLayout, _countof(pnLayout) }, pre, State::RenderPass::Pre));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Bg, ROOT_UNKNOWN, L"BgVS.cso", L"BgPS.cso", {pnLayout, _countof(pnLayout) }, forward, State::RenderPass::Forward));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Irradiance, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvIrPS.cso", {pnLayout, _countof(pnLayout) }, pre, State::RenderPass::Pre));
+	shaderTasks.push_back(CreateShader(ShaderStructures::PrefilterEnv, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvPrefilterPS.cso", {pnLayout, _countof(pnLayout) }, pre, State::RenderPass::Pre));
 	shaderTasks.push_back(CreateShader(ShaderStructures::BRDFLUT, ROOT_UNKNOWN, L"FSQuadVS.cso", L"BRDFLUTPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, rg16, State::RenderPass::Pre));
 	shaderTasks.push_back(CreateShader(ShaderStructures::Downsample, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DownsampleDepthPS.cso", { fsQuadLayout, _countof(fsQuadLayout) }, depth, State::RenderPass::Lighting));
 	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMips, ROOT_UNKNOWN, L"GenMips.cso", State::RenderPass::Pre));
@@ -255,21 +255,22 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderId id,
 		state.InputLayout = il;
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 		if (rootSignatureIndex == ROOT_UNKNOWN) {
-			state.pRootSignature = nullptr;
-			//ComPtr<ID3DBlob> blob;
-			//// rs from ps
-			//::D3DGetBlobPart(res[1]->data(), res[1]->size(), D3D_BLOB_ROOT_SIGNATURE, 0, blob.GetAddressOf());
-			//DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
-			//state.pRootSignature = rootSignature.Get();
-			//rootSignatures_.push_back(rootSignature);
+			//state.pRootSignature = nullptr;
+			ComPtr<ID3DBlob> blob;
+			// rs from ps
+			::D3DGetBlobPart(res[1]->data(), res[1]->size(), D3D_BLOB_ROOT_SIGNATURE, 0, blob.GetAddressOf());
+			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+			state.pRootSignature = rootSignature.Get();
+			rootSignatures_.push_back(rootSignature);
 		} else {
 			rootSignature = rootSignatures_[rootSignatureIndex];
-			state.pRootSignature =rootSignature.Get();
+			state.pRootSignature = rootSignature.Get();
 		}
 		state.VS = CD3DX12_SHADER_BYTECODE(&res[0]->front(), res[0]->size());
 		state.PS = CD3DX12_SHADER_BYTECODE(&res[1]->front(), res[1]->size());
 		ComPtr<ID3D12PipelineState> pipelineState;
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
+		rootSignature->SetName(ps);
 		states_[id] = { rootSignature, pipelineState, pass};
 	});
 }
@@ -282,14 +283,23 @@ Concurrency::task<void> PipelineStates::CreateComputeShader(ShaderId id,
 			CD3DX12_SHADER_BYTECODE(data.data(), data.size()),
 			0,
 			{},
-#ifndef NDEBUG 
-			D3D12_PIPELINE_STATE_FLAG_TOOL_DEBUG
-#else
 			D3D12_PIPELINE_STATE_FLAG_NONE
-#endif
 		};
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+		if (rootSignatureIndex == ROOT_UNKNOWN) {
+			//state.pRootSignature = nullptr;
+			ComPtr<ID3DBlob> blob;
+			// rs from ps
+			::D3DGetBlobPart(data.data(), data.size(), D3D_BLOB_ROOT_SIGNATURE, 0, blob.GetAddressOf());
+			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+			desc.pRootSignature = rootSignature.Get();
+			rootSignatures_.push_back(rootSignature);
+		} else {
+			rootSignature = rootSignatures_[rootSignatureIndex];
+			desc.pRootSignature = rootSignature.Get();
+		}
 		ComPtr<ID3D12PipelineState> pipelineState;
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateComputePipelineState(&desc, IID_PPV_ARGS(&pipelineState)));
-		states_[id] = { nullptr, pipelineState, pass};
+		states_[id] = { rootSignature, pipelineState, pass};
 	});
 }

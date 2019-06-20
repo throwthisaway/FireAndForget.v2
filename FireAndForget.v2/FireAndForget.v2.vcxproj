@@ -35,7 +35,7 @@
     <AppContainerApplication>true</AppContainerApplication>
     <ApplicationType>Windows Store</ApplicationType>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformMinVersion>10.0.17134.0</WindowsTargetPlatformMinVersion>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -195,6 +195,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga" />
+    <Image Include="..\source\assets\random.png" />
     <Image Include="Assets\LockScreenLogo.scale-200.png" />
     <Image Include="Assets\SplashScreen.scale-200.png" />
     <Image Include="Assets\Square150x150Logo.scale-200.png" />
@@ -266,6 +267,14 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="..\source\assets\Alexs_Apt_2k.hdr">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </None>
     <None Include="..\source\assets\BEETHOVE_object.mesh">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -429,17 +438,23 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
-      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)DeferredRootSig.cso</SetRootSignature>
+      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </SetRootSignature>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
-      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)DeferredRootSig.cso</SetRootSignature>
+      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </SetRootSignature>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">5.1</ShaderModel>
-      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">$(OutDir)DeferredRootSig.cso</SetRootSignature>
+      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+      </SetRootSignature>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">5.1</ShaderModel>
-      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">$(OutDir)DeferredRootSig.cso</SetRootSignature>
+      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+      </SetRootSignature>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
-      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)DeferredRootSig.cso</SetRootSignature>
+      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </SetRootSignature>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
-      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)DeferredRootSig.cso</SetRootSignature>
+      <SetRootSignature Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </SetRootSignature>
     </FxCompile>
     <FxCompile Include="Content\shaders\DeferredPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
