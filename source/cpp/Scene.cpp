@@ -73,6 +73,7 @@ void Scene::PrepareScene() {
 }
 void Scene::Init(Renderer* renderer, int width, int height) {
 	state = State::Start;
+	m = glm::identity<glm::mat4x4>();
 	using namespace ShaderStructures;
 	renderer_ = renderer;
 	viewport_.width = width; viewport_.height = height;

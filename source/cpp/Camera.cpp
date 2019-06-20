@@ -9,7 +9,7 @@ void Camera::Perspective(size_t w, size_t h) {
 }
 
 void Camera::Translate(const vec3_t& pos) {
-	view = glm::translate(view, pos);
+	view = glm::translate(glm::identity<glm::mat4x4>(), pos);
 }
 
 void Camera::RotatePreMultiply(const vec3_t& rot) {
