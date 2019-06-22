@@ -53,4 +53,5 @@ private:
 	}shaderStructures;
 	TextureIndex cubeEnv_ = InvalidTexture;
 	ShaderStructures::DeferredCmd deferredCmd_;
+	bool prepared_ = false;
 };

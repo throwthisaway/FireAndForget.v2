@@ -10,7 +10,13 @@
 #include "CBFrameAlloc.h"
 #include "DescriptorFrameAlloc.h"
 #include "..\source\cpp\ShaderStructures.h"
-
+#define DXGI_ANALYSIS
+#ifdef DXGI_ANALYSIS
+#include <DXGItype.h>
+#include <dxgi1_2.h>
+#include <dxgi1_3.h>
+#include <DXProgrammableCapture.h>
+#endif
 struct Mesh;
 
 struct Dim {
@@ -100,4 +106,7 @@ private:
 
 	D3D12_RECT scissorRect_;
 	bool loadingComplete_ = false;
+#ifdef DXGI_ANALYSIS
+	Microsoft::WRL::ComPtr<IDXGraphicsAnalysis> pGraphicsAnalysis;
+#endif
 };

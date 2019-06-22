@@ -15,6 +15,8 @@ namespace {
 		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange), defaultLightRange }, /* attenuation and range */};
 }
 void Scene::PrepareScene() {
+	if (prepared_) return;
+	prepared_ = true;
 	objects_.push_back({ lights_[0].pointLight.pos, {}, assets::Assets::LIGHT });
 	lights_[0].placeholder = index_t(objects_.size() - 1);
 	objects_.push_back({ lights_[1].pointLight.pos, {}, assets::Assets::LIGHT });
@@ -105,11 +107,11 @@ void Scene::Init(Renderer* renderer, int width, int height) {
 
 bool Scene::Render() {
 	if (state != State::Ready && assets_.status == assets::Assets::Status::kReady) {
-		PrepareScene();
 		state = State::Ready;
 	}
 	if (state != State::Ready) return false;
 	renderer_->BeginRender();
+	PrepareScene();
 	// bg
 	renderer_->StartForwardPass();
 	if (cubeEnv_ != InvalidTexture) {

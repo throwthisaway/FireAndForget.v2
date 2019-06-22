@@ -177,6 +177,9 @@ BufferIndex Renderer::CreateBuffer(const void* buffer, size_t sizeInBytes) {
 }
 
 void Renderer::CreateDeviceDependentResources() {
+#ifdef DXGI_ANALYSIS
+	DX::ThrowIfFailed(DXGIGetDebugInterface1(0, __uuidof(pGraphicsAnalysis), reinterpret_cast<void**>(pGraphicsAnalysis.GetAddressOf())));
+#endif
 	auto device = m_deviceResources->GetD3DDevice();
 	for (int i = 0; i < _countof(frames_); ++i) {
 		frames_[i].cb.Init(device, defaultCBFrameAllocSize);
@@ -232,6 +235,9 @@ void Renderer::CreateDeviceDependentResources() {
 	EndUploadResources();
 }
 void Renderer::BeginPrePass() {
+#ifdef DXGI_ANALYSIS
+	pGraphicsAnalysis->BeginCapture();
+#endif
 	const int bufferSize = defaultBufferSize;
 	auto device = m_deviceResources->GetD3DDevice();
 	DX::ThrowIfFailed(prePass_.cmdAllocator->Reset());
@@ -286,6 +292,8 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 	}
 	D3D12_VIEWPORT viewport = { 0, 0, FLOAT(dim), FLOAT(dim) };
 	D3D12_RECT scissor = { 0, 0, (LONG)dim, (LONG)dim };
+	commandList->RSSetViewports(1, &viewport);
+	commandList->RSSetScissorRects(1, &scissor);
 	auto& state = pipelineStates_.states_[shader];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
@@ -447,6 +455,10 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 	PIXBeginEvent(commandList, 0, L"GenPrefilteredEnvCubeMap");
 	auto& state = pipelineStates_.states_[shader];
 	commandList->SetPipelineState(state.pipelineState.Get());
+	D3D12_VIEWPORT viewport = { 0, 0, FLOAT(dim), FLOAT(dim) };
+	D3D12_RECT scissor = { 0, 0, (LONG)dim, (LONG)dim };
+	commandList->RSSetViewports(1, &viewport);
+	commandList->RSSetScissorRects(1, &scissor);
 	// TODO::
 	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	commandList->ResourceBarrier(1, &barrier);
@@ -477,6 +489,10 @@ TextureIndex Renderer::GenBRDFLUT(uint32_t dim, ShaderId shader, LPCWSTR label) 
 	PIXBeginEvent(commandList, 0, L"GenBRDFLUT");
 	auto& state = pipelineStates_.states_[shader];
 	commandList->SetPipelineState(state.pipelineState.Get());
+	D3D12_VIEWPORT viewport = { 0, 0, FLOAT(dim), FLOAT(dim) };
+	D3D12_RECT scissor = { 0, 0, (LONG)dim, (LONG)dim };
+	commandList->RSSetViewports(1, &viewport);
+	commandList->RSSetScissorRects(1, &scissor);
 	// TODO::
 	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	commandList->ResourceBarrier(1, &barrier);
@@ -490,7 +506,9 @@ void Renderer::EndPrePass() {
 	
 	m_deviceResources->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	m_deviceResources->WaitForGpu();
-
+#ifdef DXGI_ANALYSIS
+	pGraphicsAnalysis->EndCapture();
+#endif
 	//cleanup
 	prePass_.rtv.desc = {};
 	prePass_.cb = {};
