@@ -4,7 +4,7 @@
 
 struct Camera {
 	const float fovy = 45.f, n = .1f, f = 100.f;
-	glm::mat4 view, proj, vp, ivp, ip;
+	glm::mat4 view{1.f}, proj, vp, ivp, ip;
 	void Translate(const vec3_t& pos);
 	void RotatePreMultiply(const vec3_t& rot);
 	vec3_t GetEyePos() const;
