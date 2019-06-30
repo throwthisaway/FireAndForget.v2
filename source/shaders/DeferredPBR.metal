@@ -14,6 +14,7 @@ struct DeferredOut {
 	float4 debug [[color(1)]];
 };
 
+//https://martinkschroder.wordpress.com/2014/02/24/screen-space-ambient-occlusion-in-opengl-and-glsl/
 float AOPass(float2 uv, float3 p, float3 n, constant AO& ao, float4x4 ivp, texture2d<float> depth, sampler smp) {
 	float3 worldPos = WorldPosFormDepth(uv, ivp, depth.sample(smp, uv).x);
 	float3 diff = worldPos - p;
@@ -117,7 +118,7 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 
 	float2 envBRDF = BRDFLUT.sample(clampsmp, float2(ndotv, roughness)).rg;
 	float3 specular = prefilerColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnek Shlick
-	float3 ambient = (kd * diffuse + specular) - aoResult; // * aoResult;
+	float3 ambient = (kd * diffuse + specular) * (1.f - aoResult); // * aoResult;
 	//
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
@@ -127,9 +128,10 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	res.frag = float4(color, albedo.a);
 
 	//res.frag = float4(irradiance, albedo.a);
-	//res.frag = float4(aoResult, aoResult, aoResult, 1.f);
-	float4 debug_n = debug.sample(linearsmp, input.uv);
-	res.debug = debug_n;
+	//res.frag = 1.f-float4(aoResult, aoResult, aoResult, 0.f);
+	//float4 debug_n = debug.sample(linearsmp, input.uv);
+	//res.debug = float4(worldPos, 1.f);
+	res.debug = 1.f-float4(aoResult, aoResult, aoResult, 0.f);
 	//res.frag = float4(float3(debug_n), 1.f);
 	return res;
 }

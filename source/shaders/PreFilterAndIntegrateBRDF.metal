@@ -95,10 +95,10 @@ float2 IntegrateBRDF(float ndotv, float roughness) {
 		float vdoth = dot(v, h);
 		float3 l = normalize(2.f * vdoth * h - v);
 
-		float ndotl = l.z; // ???
+		float ndotl = l.z; // ??? are we in a v-l plane in 2d?
 		if (ndotl > 0.f) {
 			float g = GF_Smith(ndotv, ndotl, k);
-			float ndoth = h.z; // ???
+			float ndoth = h.z; // ??? are we in a v-l plane in 2d?
 			vdoth = max(vdoth, 0.f);
 			float gvis = (g * vdoth) / (ndoth * ndotv); // ???
 			float fc = pow(1.f - vdoth, 5.f);
