@@ -62,14 +62,14 @@ void Scene::PrepareScene() {
 	auto& l = mesh.layers.front();
 	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
 	const uint64_t cubeEnvMapDim = 512;
-	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  L"CubeEnvMap");
+	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  __T("CubeEnvMap"));
 	//cubeEnv_ = renderer_->GenTestCubeMap();
 	const uint64_t irradianceDim = 32;
-	deferredCmd_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, L"Irradiance");
+	deferredCmd_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, __T("Irradiance"));
 	const uint64_t preFilterEnvDim = 128;
-	deferredCmd_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, L"PrefilterEnv");
+	deferredCmd_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, __T("PrefilterEnv"));
 	const uint64_t brdfLUTDim = 512;
-	deferredCmd_.BRDFLUT = renderer_->GenBRDFLUT(brdfLUTDim, ShaderStructures::BRDFLUT, L"BRDFLUT");
+	deferredCmd_.BRDFLUT = renderer_->GenBRDFLUT(brdfLUTDim, ShaderStructures::BRDFLUT, __T("BRDFLUT"));
 	renderer_->EndPrePass();
 	state = State::Ready;
 }
@@ -90,26 +90,15 @@ void Scene::Init(Renderer* renderer, int width, int height) {
 //	shaderStructures.cScene.scene.light[1].diffuse[0] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[1] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[2] = 150.0f;
-#ifdef PLATFORM_WIN
-
-#elif defined(PLATFORM_MAC_OS)
-	deferredBuffers_.fsBuffers[DeferredBuffers::FSParams::index<cScene>::value] = {shaderResources.cScene, cScene::frame_count};
-	deferredBuffers_.fsBuffers[DeferredBuffers::FSParams::index<cAO>::value] = {shaderResources.cAO, cAO::frame_count};
-#endif
-
 	state = State::AssetsLoading;
-	assets_.Init();
-#ifdef PLATFORM_WIN
-#elif defined(PLATFORM_MAC_OS)
-	OnAssetsLoaded();
-#endif
+	assets_.Init(renderer);
 }
 
-bool Scene::Render() {
+void Scene::Render() {
 	if (state != State::Ready && assets_.status == assets::Assets::Status::kReady) {
 		state = State::Ready;
 	}
-	if (state != State::Ready) return false;
+	if (state != State::Ready) return;
 	renderer_->BeginRender();
 	PrepareScene();
 	// bg
@@ -140,7 +129,7 @@ bool Scene::Render() {
 	}
 	
 	renderer_->DoLightingPass(deferredCmd_);
-	return renderer_->Render();
+	renderer_->Render();
 }
 void Scene::UpdateCameraTransform() {
 	camera_.Translate(input.dpos);

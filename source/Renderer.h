@@ -1,54 +1,84 @@
+#ifdef __OBJC__
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
+#import "Shaders.h"
+#include "CBFrameAlloc.hpp"
+#endif
 #include "cpp/RendererTypes.h"
 #include "cpp/ShaderStructures.h"
+#include "Img.h"
 struct Mesh;
 
-@interface Renderer : NSObject
-- (nullable instancetype) initWithDevice: (id<MTLDevice> _Nonnull) device andPixelFormat: (MTLPixelFormat) pixelFormat;
-- (BufferIndex) createBuffer: (const void*_Nonnull) data withLength: (size_t) length;
-- (TextureIndex) createTexture: (const void*_Nullable) data
-					 withWidth: (uint64_t) width
-					withHeight: (uint32_t) height
-			 withBytesPerPixel: (uint8_t) bytesPerPixel
-			   withPixelFormat: (MTLPixelFormat) format
-					 withLabel: (NSString* _Nullable) label;
-- (TextureIndex) genCubeMap: (TextureIndex) tex
-							  withVB: (BufferIndex) vb
-							  withIB: (BufferIndex) ib
-						 withSubmesh: (const assets::Submesh&) submesh
-						 withDimension: (NSUInteger) dim
-						  withShader: (ShaderId) shader
-						     withMip: (bool) mip
-						   withLabel: (NSString* _Nullable) label;
-- (TextureIndex) genTestCubeMap;
-- (TextureIndex) genPrefilteredEnvCubeMap: (TextureIndex) tex
-								   withVB: (BufferIndex) vb
-								   withIB: (BufferIndex) ib
-							  withSubmesh: (const assets::Submesh&) submesh
-							withDimension: (NSUInteger) dim
-							   withShader: (ShaderId) shader
-								withLabel: (NSString* _Nullable) label;
-- (TextureIndex) genBRDFLUT: (NSUInteger) dim
-					   withShader: (ShaderId) shader
-						withLabel: (NSString* _Nullable) label;
-- (void) beginRender: (id<MTLTexture> _Nonnull) surface;
-- (void) startForwardPass;
-- (void) startDeferredPass;
-- (void) downsampleWithCommandBuffer: (id<MTLCommandBuffer> _Nonnull) commandBuffer
-						withPipeline: (id<MTLRenderPipelineState> _Nonnull) pipelineState
-							  source: (id<MTLTexture> _Nonnull) srcTex
-						destination: (id<MTLTexture> _Nonnull) dstTex;
+struct Dim {
+	uint32_t w, h;
+};
+class Renderer {
+public:
+#ifdef __OBJC__
+	void BeginRender(id<MTLTexture> _Nonnull surface);
+	void SetDrawable(id<CAMetalDrawable> _Nonnull drawable);
+	void Init(id<MTLDevice> _Nonnull device, MTLPixelFormat pixelFormat);
+#endif
+	void CreateDeviceDependentResources();
+	void CreateWindowSizeDependentResources();
+	uint32_t GetCurrenFrameIndex() const;
 
-- (void) renderTo: (id<CAMetalDrawable> _Nonnull) drawable;
-- (ShaderResourceIndex) createShaderResource: (uint32_t) length withCount: (uint16_t) count;
-- (void) updateShaderResource: (ShaderResourceIndex)shaderResourceIndex withData: (const void* _Null_unspecified)data andSize: (size_t)size;
-- (uint32_t) getCurrentFrameIndex;
+	void BeginUploadResources();
+	BufferIndex CreateBuffer(const void* _Nonnull buffer, size_t length);
+	BufferIndex CreateBuffer(size_t length);
+	TextureIndex CreateTexture(const void* _Nonnull buffer, uint64_t width, uint32_t height, Img::PixelFormat format, const char* _Nullable label = nullptr);
+	Dim GetDimensions(TextureIndex);
+	void EndUploadResources();
 
--(void) submitDebugCmd: (const ShaderStructures::DebugCmd&) cmd;
--(void) submitPosCmd: (const ShaderStructures::PosCmd&) cmd;
--(void) submitTexCmd: (const ShaderStructures::TexCmd&) cmd;
--(void) submitBgCmd: (const ShaderStructures::BgCmd&) cmd;
--(void) submitDrawCmd: (const ShaderStructures::DrawCmd&) cmd;
--(void) setDeferredBuffers: (const ShaderStructures::DeferredBuffers&) buffers;
-@end
+	void BeginRender();
+	void BeginPrePass();
+	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, const char* _Nullable label = nullptr);
+	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, const char* _Nullable label = nullptr);
+	TextureIndex GenBRDFLUT(uint32_t dim, ShaderId shader, const char* _Nullable label = nullptr);
+	void EndPrePass();
+	void StartForwardPass();
+	void Submit(const ShaderStructures::BgCmd& cmd);
+	void StartGeometryPass();
+	void Submit(const ShaderStructures::DrawCmd& cmd);
+	void DoLightingPass(const ShaderStructures::DeferredCmd& cmd);
+	void Render();
+private:
+#ifdef __OBJC__
+	void MakeColorAttachmentTextures(NSUInteger width, NSUInteger height);
+	void MakeDepthTexture(NSUInteger width, NSUInteger height);
+	void Downsample(id<MTLCommandBuffer> _Nonnull commandBuffer,
+				 id<MTLRenderPipelineState> _Nonnull pipelineState,
+				 id<MTLTexture> _Nonnull srcTex,
+				 id<MTLTexture> _Nonnull dstTex);
+	id<MTLDevice> _Nonnull device_;
+	id<MTLCommandQueue> _Nonnull commandQueue_;
+	id<MTLTexture> _Nonnull depthTextures_[ShaderStructures::FrameCount], halfResDepthTextures_[ShaderStructures::FrameCount];
+	id<MTLTexture> _Nonnull colorAttachmentTextures_[ShaderStructures::FrameCount][ShaderStructures::RenderTargetCount];
+	std::vector<id<MTLBuffer>> buffers_;
+	struct Texture {
+		id<MTLTexture> _Nonnull texture;
+		uint64_t width;
+		uint32_t height;
+		uint8_t bytesPerPixel;
+		MTLPixelFormat format;
+
+	};
+	std::vector<Texture> textures_;
+	std::vector<id<MTLRenderCommandEncoder>> encoders_;
+	std::vector<id<MTLCommandBuffer>> commandBuffers_;
+	Shaders* _Nonnull shaders_;
+	id<MTLDepthStencilState> _Nonnull depthStencilState_;
+
+	id<MTLSamplerState> _Nonnull defaultSamplerState_, deferredSamplerState_, mipmapSamplerState_, clampSamplerState_;
+	id<MTLBuffer> _Nonnull fullscreenTexturedQuad_, cubeViews_;
+	int cubeViewBufInc_;
+	id<MTLTexture> _Nonnull deferredDebugColorAttachments_[ShaderStructures::FrameCount];
+
+	dispatch_semaphore_t _Nonnull frameBoundarySemaphore_;
+	uint32_t currentFrameIndex_ = 0;
+	id<CAMetalDrawable> drawable_;
+	id<MTLCommandBuffer> deferredCommandBuffer_;
+
+	CBFrameAlloc frame_[ShaderStructures::FrameCount];
+#endif
+};

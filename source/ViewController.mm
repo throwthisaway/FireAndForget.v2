@@ -2,7 +2,6 @@
 #import "MetalView.h"
 #import <Metal/Metal.h>
 #import "Renderer.h"
-#import "cpp/RendererWrapper.h"
 #include "cpp/Scene.hpp"
 #include "cpp/Timer.hpp"
 #include <Carbon/Carbon.h>
@@ -18,8 +17,7 @@
 
 	MTLPixelFormat pixelformat_;
 	MetalView* metalView;
-	Renderer* renderer_;
-	RendererWrapper rendererWrapper_;
+	Renderer renderer_;
 	Timer timer_;
 	Scene scene_;
 	bool keys[512];
@@ -40,9 +38,8 @@
 
 	metalLayer.device = device;
 	metalLayer.pixelFormat = pixelformat_;
-	renderer_ = [[Renderer alloc] initWithDevice: device andPixelFormat: pixelformat_];
-	rendererWrapper_.Init((__bridge void*)renderer_);
-	scene_.Init(&rendererWrapper_, metalLayer.bounds.size.width, metalLayer.bounds.size.height);
+	renderer_.Init(device, pixelformat_);
+	scene_.Init(&renderer_, metalLayer.bounds.size.width, metalLayer.bounds.size.height);
 	////[metalLayer setNeedsDisplay];
 	//commandQueue = [[metalView getMetalLayer].device newCommandQueue];
 }
@@ -105,10 +102,8 @@
 	@autoreleasepool {
 		// TODO:: triple buffering!!!
 		id<CAMetalDrawable> drawable = [[metalView getMetalLayer] nextDrawable];
-		id<MTLTexture> texture = drawable.texture;
-		[renderer_ beginRender: texture];
+		renderer_.SetDrawable(drawable);
 		scene_.Render();
-		[renderer_ renderTo: drawable];
 	}
 }
 

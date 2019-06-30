@@ -26,7 +26,7 @@ struct Scene {
 	};
 	void Init(Renderer*, int, int);
 	void PrepareScene();
-	bool Render();
+	void Render();
 	void Update(double frame, double total);
 	void UpdateCameraTransform();
 	void UpdateSceneTransform();

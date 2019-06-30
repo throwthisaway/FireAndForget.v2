@@ -10,11 +10,13 @@
 #include <ppltasks.h>
 #include <concurrent_vector.h>
 #include <concurrent_unordered_map.h>
+#elif defined(PLATFORM_MAC_OS)
+#include "../Renderer.h"
 #endif
 namespace assets {
 	struct Assets {
 		~Assets();
-		void Init();
+		void Init(Renderer* renderer);
 		void Update(Renderer* renderer);
 		static constexpr size_t LIGHT = 0;
 		static constexpr size_t PLACEHOLDER = 1;
@@ -37,9 +39,9 @@ namespace assets {
 				std::vector<uint8_t> vb, ib;
 			};
 			CreateModelResult CreateModel(const wchar_t* name, const std::vector<uint8_t>& data);
+#if defined(PLATFORM_WIN)
 			Concurrency::task<void> LoadMesh(const wchar_t* fname, size_t id);
 			Concurrency::task<void> LoadImage(const wchar_t* fname, size_t id);
-#if defined(PLATFORM_WIN)
 			concurrency::concurrent_unordered_map<std::wstring, TextureIndex> imageMap;
 			concurrency::concurrent_vector<Img::ImgData> images;
 			concurrency::concurrent_unordered_map<std::wstring, MaterialIndex> materialMap;

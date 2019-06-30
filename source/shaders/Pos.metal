@@ -23,7 +23,7 @@ vertex PSIn pos_vs_main(const device VertexPN* input[[buffer(0)]],
 }
 
 fragment FragOut pos_fs_main(PSIn input [[stage_in]],
-							 constant Material& material [[buffer(0)]]) {
+							 constant GPUMaterial& material [[buffer(0)]]) {
 	FragOut output;
 	output.albedo = float4(material.diffuse, 1.f);
 	output.normal = Encode(normalize(input.n));

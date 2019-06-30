@@ -27,7 +27,7 @@ vertex FSIn tex_vs_main(const device VertexPNT* input [[buffer(0)]],
 fragment FragOut tex_fs_main(FSIn input [[stage_in]],
 							texture2d<float> diffuseTexture [[texture(0)]],
 							sampler smp [[sampler(0)]],
-							constant Material& material [[buffer(0)]]) {
+							constant GPUMaterial& material [[buffer(0)]]) {
 	float4 diffuseColor = diffuseTexture.sample(smp, input.uv0);
 	FragOut output;
 	output.albedo = diffuseColor;

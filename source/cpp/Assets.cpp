@@ -154,6 +154,7 @@ namespace {
 			case ImageFileType::kTGA: return DecodeTGA(data);
 			case ImageFileType::kPNG: return StbDecodeImageFromData(data, Img::PixelFormat::RGBA8);
 			case ImageFileType::kHDR: return StbDecodeImageFromData(data, Img::PixelFormat::RGBAF32);
+			case ImageFileType::kUnknown: assert(false);
 		}
 		assert(false);
 		return {};
@@ -186,7 +187,7 @@ namespace assets {
 	}
 #endif
 
-	void Assets::Init() {
+	void Assets::Init(Renderer* renderer) {
 		status = Status::kInitialized;
 		models.resize(STATIC_MODEL_COUNT);
 		textures.resize(STATIC_IMAGE_COUNT);
@@ -217,14 +218,18 @@ namespace assets {
 		LoadMesh(renderer, L"sphere.mesh", SPHERE);
 		LoadMesh(renderer, L"textured_unit_cube.mesh", UNITCUBE);
 		materials = std::move(loadContext.materials);
-		Img::ImgData img = assets::Assets::LoadImage(L"random.png", Img::PixelFormat::RGBA8);
-		textures[RANDOM] = renderer_->CreateTexture(img.data.get(), img.width, img.height, img.pf);
-		Img::ImgData img = assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/, Img::PixelFormat::RGBAF32);
-		textures[ENVIRONMENT_MAP] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
+		{
+			Img::ImgData img = assets::Assets::LoadImage(L"random.png");
+			textures[RANDOM] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
+		}
+		{
+			Img::ImgData img = assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/);
+			textures[ENVIRONMENT_MAP] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
+		}
 		ImagesToTextures(renderer);
 		renderer->EndUploadResources();
 		loadContext = LoadContext{};
-		status = Status::kAvailable;
+		status = Status::kReady;
 #endif
 	}
 	void Assets::ImagesToTextures(Renderer* renderer) {
@@ -314,7 +319,6 @@ namespace assets {
 						auto inserted = imageMap.insert({ s2ws(colLayers->image->path), (TextureIndex)images.size() });
 						materials[materialIndex].texAlbedo = inserted.first->second;
 						if (inserted.second) {
-							images.push_back({});
 							auto path = s2ws(colLayers->image->path);
 							auto pos = path.rfind(L'\\');
 							if (pos == std::wstring::npos) pos = 0;
@@ -323,7 +327,7 @@ namespace assets {
 #if defined(PLATFORM_WIN)
 							imageLoadTasks.push_back(LoadImage(path.c_str(), inserted.first->second));
 #elif defined(PLATFORM_MAC_OS)
-							images[index] = LoadImage(path.c_str());
+							images.push_back(LoadImage(path.c_str()));
 #endif
 						}
 					}
