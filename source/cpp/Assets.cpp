@@ -210,6 +210,9 @@ namespace assets {
 				return status = Status::kLoaded;
 			}); });
 #elif defined(PLATFORM_MAC_OS)
+		loadContext.images.resize(STATIC_IMAGE_COUNT);
+		loadContext.images[RANDOM] = assets::Assets::LoadImage(L"random.png");
+		loadContext.images[ENVIRONMENT_MAP] =  assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/);
 		renderer->BeginUploadResources();
 		LoadMesh(renderer, L"light.mesh", LIGHT);
 		LoadMesh(renderer, L"box.mesh", PLACEHOLDER);
@@ -218,14 +221,6 @@ namespace assets {
 		LoadMesh(renderer, L"sphere.mesh", SPHERE);
 		LoadMesh(renderer, L"textured_unit_cube.mesh", UNITCUBE);
 		materials = std::move(loadContext.materials);
-		{
-			Img::ImgData img = assets::Assets::LoadImage(L"random.png");
-			textures[RANDOM] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
-		}
-		{
-			Img::ImgData img = assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/);
-			textures[ENVIRONMENT_MAP] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
-		}
 		ImagesToTextures(renderer);
 		renderer->EndUploadResources();
 		loadContext = LoadContext{};
@@ -325,6 +320,7 @@ namespace assets {
 							else ++pos;
 							path = path.substr(pos);
 #if defined(PLATFORM_WIN)
+							images.push_back({});
 							imageLoadTasks.push_back(LoadImage(path.c_str(), inserted.first->second));
 #elif defined(PLATFORM_MAC_OS)
 							images.push_back(LoadImage(path.c_str()));

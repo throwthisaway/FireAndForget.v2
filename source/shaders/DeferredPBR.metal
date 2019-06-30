@@ -125,7 +125,9 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	color = color / (color + 1.f);
 	color = pow(color, 1.f/2.2f);
 	res.frag = float4(color, albedo.a);
-//	res.frag = float4(irradiance, albedo.a);
+
+	//res.frag = float4(irradiance, albedo.a);
+	//res.frag = float4(aoResult, aoResult, aoResult, 1.f);
 	float4 debug_n = debug.sample(linearsmp, input.uv);
 	res.debug = debug_n;
 	//res.frag = float4(float3(debug_n), 1.f);
