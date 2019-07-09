@@ -43,6 +43,9 @@ CBFrameAlloc::Entry CBFrameAlloc::Alloc(unsigned int size) {
 	offset_ += size;
 	return result;
 }
+void CBFrameAlloc::Fill(uint8_t val) {
+	memset(mappedBufferBase_, val, max_);
+}
 // Call beginning of a frame
 void CBFrameAlloc::Reset() {
 	if (index_ != 0) {

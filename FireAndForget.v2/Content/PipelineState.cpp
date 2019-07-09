@@ -3,6 +3,7 @@
 #include "PipelineState.h"
 #include "..\Common\DeviceResources.h"
 #include "..\Common\DirectXHelper.h"
+#include <string>
 using namespace Microsoft::WRL;
 using namespace concurrency;
 
@@ -254,6 +255,7 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderId id,
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC state = desc;
 		state.InputLayout = il;
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+		auto name = (std::wstring{ ps } + std::to_wstring(id));
 		if (rootSignatureIndex == ROOT_UNKNOWN) {
 			//state.pRootSignature = nullptr;
 			ComPtr<ID3DBlob> blob;
@@ -261,7 +263,9 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderId id,
 			::D3DGetBlobPart(res[1]->data(), res[1]->size(), D3D_BLOB_ROOT_SIGNATURE, 0, blob.GetAddressOf());
 			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 			state.pRootSignature = rootSignature.Get();
-			rootSignatures_.push_back(rootSignature);
+			// TODO:: seems to be d3d somehow recognizes the same rootsignatures and returns an existing one instead of creating a new one
+			rootSignature->SetName(name.c_str());
+			// don't store it in rootSignatures_ not thread safe
 		} else {
 			rootSignature = rootSignatures_[rootSignatureIndex];
 			state.pRootSignature = rootSignature.Get();
@@ -270,7 +274,7 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderId id,
 		state.PS = CD3DX12_SHADER_BYTECODE(&res[1]->front(), res[1]->size());
 		ComPtr<ID3D12PipelineState> pipelineState;
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
-		rootSignature->SetName(ps);
+		pipelineState->SetName(name.c_str());
 		states_[id] = { rootSignature, pipelineState, pass};
 	});
 }
@@ -286,6 +290,7 @@ Concurrency::task<void> PipelineStates::CreateComputeShader(ShaderId id,
 			D3D12_PIPELINE_STATE_FLAG_NONE
 		};
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+		auto name = std::wstring{ cs } +std::to_wstring(id);
 		if (rootSignatureIndex == ROOT_UNKNOWN) {
 			//state.pRootSignature = nullptr;
 			ComPtr<ID3DBlob> blob;
@@ -293,13 +298,15 @@ Concurrency::task<void> PipelineStates::CreateComputeShader(ShaderId id,
 			::D3DGetBlobPart(data.data(), data.size(), D3D_BLOB_ROOT_SIGNATURE, 0, blob.GetAddressOf());
 			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 			desc.pRootSignature = rootSignature.Get();
-			rootSignatures_.push_back(rootSignature);
+			rootSignature->SetName(name.c_str());
+			// don't store it in rootSignatures_ not thread safe
 		} else {
 			rootSignature = rootSignatures_[rootSignatureIndex];
 			desc.pRootSignature = rootSignature.Get();
 		}
 		ComPtr<ID3D12PipelineState> pipelineState;
 		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateComputePipelineState(&desc, IID_PPV_ARGS(&pipelineState)));
+		pipelineState->SetName(name.c_str());
 		states_[id] = { rootSignature, pipelineState, pass};
 	});
 }

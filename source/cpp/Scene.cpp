@@ -62,14 +62,14 @@ void Scene::PrepareScene() {
 	auto& l = mesh.layers.front();
 	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
 	const uint64_t cubeEnvMapDim = 512;
-	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  __T("CubeEnvMap"));
+	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  "CubeEnvMap");
 	//cubeEnv_ = renderer_->GenTestCubeMap();
 	const uint64_t irradianceDim = 32;
-	deferredCmd_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, __T("Irradiance"));
+	deferredCmd_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, "Irradiance");
 	const uint64_t preFilterEnvDim = 128;
-	deferredCmd_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, __T("PrefilterEnv"));
+	deferredCmd_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, "PrefilterEnv");
 	const uint64_t brdfLUTDim = 512;
-	deferredCmd_.BRDFLUT = renderer_->GenBRDFLUT(brdfLUTDim, ShaderStructures::BRDFLUT, __T("BRDFLUT"));
+	deferredCmd_.BRDFLUT = renderer_->GenBRDFLUT(brdfLUTDim, ShaderStructures::BRDFLUT, "BRDFLUT");
 	renderer_->EndPrePass();
 	state = State::Ready;
 }
@@ -156,7 +156,7 @@ void Scene::Update(double frame, double total) {
 	deferredCmd_.scene.ip = glm::inverse(camera_.proj);
 	deferredCmd_.scene.ivp = camera_.ivp;
 	deferredCmd_.scene.nf.x = camera_.n; deferredCmd_.scene.nf.y = camera_.f;
-	deferredCmd_.scene.viewport.x = viewport_.width; deferredCmd_.scene.viewport.y = viewport_.height;
+	deferredCmd_.scene.viewport.x = (float)viewport_.width; deferredCmd_.scene.viewport.y = viewport_.height;
 	for (auto& o : objects_) {
 		o.Update(frame, total);
 	}

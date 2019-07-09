@@ -2,7 +2,7 @@
 #include "PSInput.hlsli"
 
 cbuffer cb : register(b0) {
-	uint factor;
+	float factor;
 };
 Texture2D<float4> tex : register(t0);
 

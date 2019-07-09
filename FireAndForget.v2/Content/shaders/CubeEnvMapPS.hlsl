@@ -12,5 +12,6 @@ float4 main(PS_P input) : SV_TARGET {
 	float3 p = normalize(input.p);
 	float2 uv = float2(atan2(p.z, p.x), asin(p.y)) * inv + .5f;
 	float4 color = envMap.Sample(smp, uv);
-	return float4(RemoveSRGBCurve_Fast(color.rgb), color.a);
+	//return float4(color.rgb, 1.f);// float4(RemoveSRGBCurve_Fast(color.rgb), color.a);
+	return color;
 }
