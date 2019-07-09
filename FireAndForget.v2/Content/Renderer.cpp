@@ -9,7 +9,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 // TODO::
 // - irradiance is flipped
-// - 9th mip level of cubeenv is empty
 // - requesting new ppol in cbframealloc causes "CPU descriptor handle expected, but specified handle refers to a GPU descriptor handle." during CreateCBV
 // - all embedded rootsignatures are read from the ps source
 // - depthstencil transition to depth write happens at the present resource barrier at the very end
@@ -421,7 +420,7 @@ void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FOR
 			commandList->SetComputeRootDescriptorTable(1, gpuHandle);
 			gpuHandle.Offset(descSize);
 			commandList->SetComputeRootDescriptorTable(2, gpuHandle);
-			auto d = AlignTo<int, kNumThreads>(w) / kNumThreads;
+			//auto d = AlignTo<int, kNumThreads>(w) / kNumThreads;
 			commandList->Dispatch(AlignTo<int, kNumThreads>(w) / kNumThreads, AlignTo<int, kNumThreads>(h) / kNumThreads, 1);
 			// TODO::???
 			/*if (DstWidth == 0)
@@ -430,6 +429,15 @@ void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FOR
 				DstHeight = 1;
 			Context.Dispatch2D(DstWidth, DstHeight);*/
 			i += cbuffer.numMipLevels;
+			{
+				// Otherwise the mip levels become glitchy between loop iteration
+				// Insert UAV barrier
+				D3D12_RESOURCE_BARRIER desc = {};
+				desc.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+				desc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+				desc.UAV.pResource = resource.Get();
+				commandList->ResourceBarrier(1, &desc);
+			}
 		}
 	}
 	barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
