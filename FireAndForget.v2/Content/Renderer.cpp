@@ -32,7 +32,7 @@ using namespace DirectX;
 using namespace Windows::Foundation;
 
 namespace {
-	static constexpr size_t defaultCBFrameAllocSize = 16384, defaultDescFrameAllocCount = 256,
+	static constexpr size_t defaultCBFrameAllocSize = 16384, defaultDescFrameAllocCount = 32,
 		defaultRTVDescCount = 16;
 	inline uint32_t NumMips(uint32_t w, uint32_t h) {
         uint32_t res;

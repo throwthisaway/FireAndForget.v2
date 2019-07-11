@@ -25,8 +25,8 @@ void DescriptorFrameAlloc::Init(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE
 
 DescriptorFrameAlloc::Entry DescriptorFrameAlloc::Push(UINT count) {
 	assert(count <= max_);
-	if (offset_ + count > max_ && ++index_ >= pool_.size()) {
-		Request();
+	if (offset_ + count >= max_) {
+		if (++index_ >= pool_.size()) Request();
 		offset_ = 0;
 	}
 	auto heap = pool_[index_].Get();
