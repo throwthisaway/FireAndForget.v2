@@ -10,7 +10,6 @@ void DescriptorFrameAlloc::Request() {
 	pool_.push_back(CreateDescriptorHeap(device_, type_, max_, shaderVisible_,
 		(std::wstring(L"frame alloc. desc. heap #") + std::to_wstring(pool_.size())).c_str()));
 	index_ = (UINT)pool_.size() - 1;
-	offset_ = 0;
 }
 void DescriptorFrameAlloc::Init(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, UINT maxDesc, bool shaderVisible) {
 	index_ = 0;
@@ -26,7 +25,10 @@ void DescriptorFrameAlloc::Init(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE
 
 DescriptorFrameAlloc::Entry DescriptorFrameAlloc::Push(UINT count) {
 	assert(count <= max_);
-	if (offset_ + count > max_ &&  ++index_>= pool_.size()) Request();
+	if (offset_ + count > max_ && ++index_ >= pool_.size()) {
+		Request();
+		offset_ = 0;
+	}
 	auto heap = pool_[index_].Get();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(heap->GetCPUDescriptorHandleForHeapStart(), offset_, descSize_);
 	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(heap->GetGPUDescriptorHandleForHeapStart(), offset_, descSize_);

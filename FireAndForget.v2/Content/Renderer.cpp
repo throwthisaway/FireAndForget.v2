@@ -32,7 +32,7 @@ using namespace DirectX;
 using namespace Windows::Foundation;
 
 namespace {
-	static constexpr size_t defaultDescCount = 256, defaultBufferSize = 65536, defaultCBFrameAllocSize = 65536, defaultDescFrameAllocCount = 256,
+	static constexpr size_t defaultCBFrameAllocSize = 16384, defaultDescFrameAllocCount = 256,
 		defaultRTVDescCount = 16;
 	inline uint32_t NumMips(uint32_t w, uint32_t h) {
         uint32_t res;
@@ -241,15 +241,14 @@ void Renderer::BeginPrePass() {
 #ifdef DXGI_ANALYSIS
 	if (graphicsDebugging) pGraphicsAnalysis->BeginCapture();
 #endif
-	const int bufferSize = defaultBufferSize;
 	auto device = m_deviceResources->GetD3DDevice();
 	DX::ThrowIfFailed(prePass_.cmdAllocator->Reset());
 	DX::ThrowIfFailed(prePass_.cmdList->Reset(prePass_.cmdAllocator.Get(), nullptr));
 	//DX::ThrowIfFailed(prePass_.computeCmdAllocator->Reset());
 	//DX::ThrowIfFailed(prePass_.computeCmdList->Reset(prePass_.computeCmdAllocator.Get(), nullptr));
-	prePass_.cb.Init(device, bufferSize);
-	prePass_.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescCount, true);
-	prePass_.rtv.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultDescCount, false);
+	prePass_.cb.Init(device, defaultCBFrameAllocSize);
+	prePass_.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, true);
+	prePass_.rtv.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultDescFrameAllocCount, false);
 }
 TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, LPCSTR label) {
 	assert(vb != InvalidBuffer);
