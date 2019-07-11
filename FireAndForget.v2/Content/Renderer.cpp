@@ -473,6 +473,7 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 	PIXBeginEvent(commandList, 0, L"GenPrefilteredEnvCubeMap");
 	auto& state = pipelineStates_.states_[shader];
 	commandList->SetPipelineState(state.pipelineState.Get());
+	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	D3D12_VIEWPORT viewport = { 0, 0, FLOAT(dim), FLOAT(dim) };
 	D3D12_RECT scissor = { 0, 0, (LONG)dim, (LONG)dim };
 	commandList->RSSetViewports(1, &viewport);
@@ -496,6 +497,7 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 	}
 	
 	CD3DX12_GPU_DESCRIPTOR_HANDLE psGPUHandle = entry.gpuHandle; psGPUHandle.Offset(faceCount * descSize); // for ps bindings
+	handle = entry.cpuHandle; handle.Offset(faceCount * descSize);
 	// roughness
 	auto cb0 = prePass_.cb.Alloc(AlignTo<int, 256>(sizeof(float)) * mipLevelCount);
 	const int inc0 = AlignTo<int, 256>(sizeof(float));
@@ -576,7 +578,7 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 }
 TextureIndex Renderer::GenBRDFLUT(uint32_t dim, ShaderId shader, LPCSTR label) {
 	auto device = m_deviceResources->GetD3DDevice();
-	DXGI_FORMAT fmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	DXGI_FORMAT fmt = DXGI_FORMAT_R16G16_FLOAT;
 	ComPtr<ID3D12Resource> resource;
 	{
 		CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(fmt, dim, dim, 1, 1);
@@ -604,6 +606,7 @@ TextureIndex Renderer::GenBRDFLUT(uint32_t dim, ShaderId shader, LPCSTR label) {
 	PIXBeginEvent(commandList, 0, L"GenBRDFLUT");
 	auto& state = pipelineStates_.states_[shader];
 	commandList->SetPipelineState(state.pipelineState.Get());
+	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	D3D12_VIEWPORT viewport = { 0, 0, FLOAT(dim), FLOAT(dim) };
 	D3D12_RECT scissor = { 0, 0, (LONG)dim, (LONG)dim };
 	commandList->RSSetViewports(1, &viewport);
