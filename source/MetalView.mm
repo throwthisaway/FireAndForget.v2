@@ -46,6 +46,16 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 //		//[self setNeedsDisplay:YES];
 //		[delegate render];
 //	});
+
+	// TODO:: this should work:
+//	-(void) engineUpdate {
+//		GetEngine().Frame();
+//	}
+//
+//	-(void)renderForTime: (CVTimeStamp)time {
+//		//[self engineUpdate];
+//		[self performSelectorOnMainThread: @selector(engineUpdate) withObject: nil waitUntilDone: TRUE];
+//	}
 	[delegate render];
 }
 - (BOOL) wantsLayer {
