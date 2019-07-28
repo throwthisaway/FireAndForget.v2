@@ -13,6 +13,8 @@
 #elif defined(PLATFORM_MAC_OS)
 #include "../Renderer.h"
 #endif
+#include "ModoMesh.h"
+
 namespace assets {
 	struct Assets {
 		~Assets();
@@ -55,9 +57,15 @@ namespace assets {
 			std::vector<Material> materials;
 #endif
 		}loadContext;
+		struct ModoLoadContext {
+			std::vector<std::string> images;
+			std::unordered_map<std::string, size_t> imageMap;
+			std::vector<ModoMesh> meshes;
+		}loadContextModo;
 #if defined(PLATFORM_WIN)
 #elif defined(PLATFORM_MAC_OS)
 		void LoadMesh(Renderer* renderer, const wchar_t* fname, size_t id);
+		void LoadModoMesh(Renderer* renderer, const wchar_t* fname);
 		static Img::ImgData LoadImage(const wchar_t* fname);
 #endif
 		void ImagesToTextures(Renderer*);

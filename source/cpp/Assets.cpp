@@ -181,6 +181,24 @@ namespace assets {
 		models[id].vb = renderer->CreateBuffer(res.vb.data(), res.vb.size());
 		models[id].ib = renderer->CreateBuffer(res.ib.data(), res.ib.size());
 	}
+	void Assets::LoadModoMesh(Renderer* renderer, const wchar_t* fname) {
+		auto data = ::LoadFromBundle(fname);
+		auto res = ModoMeshLoader::Load(data);
+		for (auto& mat : res.materials)
+			for (auto& tex : mat.textures) {
+				auto& str = res.images[tex.id];
+				auto result = loadContextModo.imageMap.insert(make_pair(str, loadContextModo.images.size()));
+				if (result.second) {
+					tex.id = (uint32_t)loadContextModo.images.size();
+					loadContextModo.images.push_back(str);
+				} else {
+					tex.id = (uint32_t)result.first->second;
+				}
+			}
+		loadContextModo.meshes.push_back({ renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
+			renderer->CreateBuffer(res.indices.data(), res.indices.size()),
+			std::move(res.materials) });
+	}
 	Img::ImgData Assets::LoadImage(const wchar_t* fname) {
 		std::vector<uint8_t> data = ::LoadFromBundle(fname);
 		return DecodeImageFromData(data, GetImageFileType(fname, wcslen(fname)));
@@ -224,6 +242,24 @@ namespace assets {
 		ImagesToTextures(renderer);
 		renderer->EndUploadResources();
 		loadContext = LoadContext{};
+		LoadModoMesh(renderer, L"test_torus.mesh");
+
+		// generate textures
+		auto offset = textures.size();
+		for (auto& fname : loadContextModo.images) {
+			auto img = LoadImage(s2ws(fname).c_str());
+			textures.push_back(renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf));
+		}
+
+		// replace image ids with texture ids
+		for (auto& mesh : loadContextModo.meshes)
+			for (auto& material : mesh.materials)
+				for (auto& texture : material.textures) {
+					 // texture.image was replaced with an index into the context's images array
+					 texture.id = (uint32_t)offset + texture.id;
+				}
+
+		loadContextModo = ModoLoadContext{};
 		status = Status::kReady;
 #endif
 	}
