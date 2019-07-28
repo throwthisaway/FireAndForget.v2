@@ -15,6 +15,7 @@
 cbuffer cb : register(b0)  {
 	uint srcMipLevel;   
 	uint numMipLevels;
+	float pad0, pad1;
 	float2 texelSize;    // 1. / dim
 };
 
@@ -89,7 +90,7 @@ void main(uint tid : SV_GroupIndex, uint3 dtid : SV_DispatchThreadID) {
 	// multiple of four threads
 	if (!(tid & 0x1b/*0b011011*/)) {
 		color = (color + Load(tid + 0x2) + Load(tid + 0x10) + Load(tid + 0x12)) * .25f;
-		out2[dtid.xy >> 2] = CONVERT(color);
+		out3[dtid.xy >> 2] = CONVERT(color);
 		Store(tid, color);
 	}
 	if (numMipLevels == 3) return;
@@ -98,7 +99,7 @@ void main(uint tid : SV_GroupIndex, uint3 dtid : SV_DispatchThreadID) {
 	// multiple of eight threads
 	if (!tid) {
 		color = (color + Load(tid + 0x4) + Load(tid + 0x20) + Load(tid + 0x24)) * .25f;
-		out2[dtid.xy >> 3] = CONVERT(color);
+		out4[dtid.xy >> 3] = CONVERT(color);
 		Store(tid, color);
 	}
 }

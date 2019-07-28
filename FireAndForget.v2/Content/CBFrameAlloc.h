@@ -16,6 +16,7 @@ class CBFrameAlloc {
 	void Map(UINT index);
 	void Unmap(UINT index);
 public:
+	void Fill(uint8_t val);
 	void Init(ID3D12Device* device, uint64_t bufferSize);
 	struct Entry {
 		ID3D12Resource* resource;

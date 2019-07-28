@@ -240,7 +240,7 @@ std::shared_ptr<DX::DeviceResources> App::GetDeviceResources()
 
 	if (m_deviceResources == nullptr)
 	{
-		m_deviceResources = std::make_shared<DX::DeviceResources>();
+		m_deviceResources = std::make_shared<DX::DeviceResources>(DXGI_FORMAT_B8G8R8A8_UNORM,  DXGI_FORMAT_R32_TYPELESS);
 		m_deviceResources->SetWindow(CoreWindow::GetForCurrentThread());
 		m_main->CreateRenderers(m_deviceResources);
 	}

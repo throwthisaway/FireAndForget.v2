@@ -64,12 +64,13 @@ namespace ScreenRotation
 };
 
 // Constructor for DeviceResources.
-DX::DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat) :
+DX::DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthResourceFormat, DXGI_FORMAT depthBufferFormat) :
 	m_currentFrame(0),
 	m_screenViewport(),
 	m_rtvDescriptorSize(0),
 	m_fenceEvent(0),
 	m_backBufferFormat(backBufferFormat),
+	m_depthResourceFormat(depthResourceFormat),
 	m_depthBufferFormat(depthBufferFormat),
 	m_fenceValues{},
 	m_d3dRenderTargetSize(),
@@ -305,7 +306,7 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
 	{
 		D3D12_HEAP_PROPERTIES depthHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-		D3D12_RESOURCE_DESC depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(m_depthBufferFormat, backBufferWidth, backBufferHeight, 1, 1);
+		D3D12_RESOURCE_DESC depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(m_depthResourceFormat, backBufferWidth, backBufferHeight, 1, 1);
 		depthResourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
 		CD3DX12_CLEAR_VALUE depthOptimizedClearValue(m_depthBufferFormat, 1.0f, 0);

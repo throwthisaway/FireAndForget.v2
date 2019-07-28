@@ -10,7 +10,7 @@
 #include "CBFrameAlloc.h"
 #include "DescriptorFrameAlloc.h"
 #include "..\source\cpp\ShaderStructures.h"
-#define DXGI_ANALYSIS
+//#define DXGI_ANALYSIS
 #ifdef DXGI_ANALYSIS
 #include <DXGItype.h>
 #include <dxgi1_2.h>
@@ -37,15 +37,15 @@ public:
 
 	void BeginUploadResources();
 	BufferIndex CreateBuffer(const void* buffer, size_t sizeInBytes);
-	TextureIndex CreateTexture(const void* buffer, uint64_t width, uint32_t height, Img::PixelFormat format, LPCWSTR label = nullptr);
+	TextureIndex CreateTexture(const void* buffer, uint64_t width, uint32_t height, Img::PixelFormat format, LPCSTR label = nullptr);
 	Dim GetDimensions(TextureIndex);
 	void EndUploadResources();
 
 	void BeginRender();
 	void BeginPrePass();
-	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, LPCWSTR label = nullptr);
-	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, LPCWSTR label = nullptr);
-	TextureIndex GenBRDFLUT(uint32_t dim, ShaderId shader, LPCWSTR label = nullptr);
+	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, LPCSTR label = nullptr);
+	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, LPCSTR label = nullptr);
+	TextureIndex GenBRDFLUT(uint32_t dim, ShaderId shader, LPCSTR label = nullptr);
 	void EndPrePass();
 	void StartForwardPass();
 	void Submit(const ShaderStructures::BgCmd& cmd);
@@ -108,5 +108,6 @@ private:
 	bool loadingComplete_ = false;
 #ifdef DXGI_ANALYSIS
 	Microsoft::WRL::ComPtr<IDXGraphicsAnalysis> pGraphicsAnalysis;
+	bool graphicsDebugging = false;
 #endif
 };

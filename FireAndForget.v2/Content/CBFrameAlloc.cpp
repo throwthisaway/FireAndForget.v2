@@ -22,7 +22,6 @@ void CBFrameAlloc::Request() {
 		(std::wstring(L"frame alloc. constant buffer #") + std::to_wstring(pool_.size())).c_str()));
 	index_ = UINT(pool_.size() - 1);
 	Map(index_);
-	offset_ = 0;
 }
 // Call after device acquired
 void CBFrameAlloc::Init(ID3D12Device* device, uint64_t bufferSize) {
@@ -35,13 +34,19 @@ void CBFrameAlloc::Init(ID3D12Device* device, uint64_t bufferSize) {
 }
 CBFrameAlloc::Entry CBFrameAlloc::Alloc(unsigned int size) {
 	size = AlignTo<decltype(size), 256>(size);
-	if (offset_ + size > max_) {
+	if (offset_ + size >= max_) {
 		if (index_ < pool_.size()) Unmap(index_);
-		if (++index_ >= pool_.size()) Request();
+		++index_;
+		if (index_ >= pool_.size()) Request();
+		else Map(index_);
+		offset_ = 0;
 	}
 	Entry result = { pool_[index_].Get(), GPUAddressBase_ + offset_, mappedBufferBase_ + offset_, size};
 	offset_ += size;
 	return result;
+}
+void CBFrameAlloc::Fill(uint8_t val) {
+	memset(mappedBufferBase_, val, max_);
 }
 // Call beginning of a frame
 void CBFrameAlloc::Reset() {
