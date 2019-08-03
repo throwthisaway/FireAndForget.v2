@@ -37,6 +37,7 @@ using namespace ShaderStructures;
 
 - (void) setupPipeline: (MTLPixelFormat) pixelFormat {
 	NSError* error = nullptr;
+	pipelines_.resize(ShaderStructures::Count);
 	{
 		// Pos
 		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
@@ -56,7 +57,7 @@ using namespace ShaderStructures;
 			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];
 		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Deferred});
+		pipelines_[ShaderStructures::Pos] = {pipeline, RenderPass::Geometry};
 		if (error) NSLog(@"Pos: %@", [error localizedDescription]);
 	}
 
@@ -82,7 +83,7 @@ using namespace ShaderStructures;
 			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];
 		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Deferred});
+		pipelines_[ShaderStructures::Tex] = {pipeline, RenderPass::Geometry};
 		if (error) NSLog(@"Tex %@", [error localizedDescription]);
 	}
 
@@ -105,7 +106,7 @@ using namespace ShaderStructures;
 			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];
 		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Deferred});
+		pipelines_[ShaderStructures::Debug] = {pipeline, RenderPass::Geometry};
 		if (error) NSLog(@"Debug %@", [error localizedDescription]);
 	}
 
@@ -129,7 +130,7 @@ using namespace ShaderStructures;
 		pipelineDescriptor.colorAttachments[1].pixelFormat = MTLPixelFormatRGBA32Float;
 
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Post});
+		pipelines_[ShaderStructures::Deferred] = {pipeline, RenderPass::Post};
 		if (error) NSLog(@"Deferred %@", [error localizedDescription]);
 	}
 
@@ -160,7 +161,7 @@ using namespace ShaderStructures;
 		pipelineDescriptor.colorAttachments[1].pixelFormat = MTLPixelFormatRGBA32Float;
 
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Post});
+		pipelines_[ShaderStructures::DeferredPBR] = {pipeline, RenderPass::Post};
 		if (error) NSLog(@"DeferredPBR %@", [error localizedDescription]);
 	}
 
@@ -181,7 +182,7 @@ using namespace ShaderStructures;
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"cubeenv_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA16Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Pre});
+		pipelines_[ShaderStructures::CubeEnvMap] = {pipeline, RenderPass::Pre};
 		if (error) NSLog(@"CubeEnvMap %@", [error localizedDescription]);
 	}
 
@@ -203,7 +204,7 @@ using namespace ShaderStructures;
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
 		//pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Forward});
+		pipelines_[ShaderStructures::Bg] = {pipeline, RenderPass::Forward};
 		if (error) NSLog(@"Bg %@", [error localizedDescription]);
 	}
 
@@ -224,7 +225,7 @@ using namespace ShaderStructures;
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"cubeir_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA16Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Pre});
+		pipelines_[ShaderStructures::Irradiance] = {pipeline, RenderPass::Pre};
 		if (error) NSLog(@"Irradiance %@", [error localizedDescription]);
 	}
 
@@ -245,7 +246,7 @@ using namespace ShaderStructures;
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"prefilter_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA16Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Pre});
+		pipelines_[ShaderStructures::PrefilterEnv] = {pipeline, RenderPass::Pre};
 		if (error) NSLog(@"Prefilter env %@", [error localizedDescription]);
 	}
 
@@ -266,7 +267,7 @@ using namespace ShaderStructures;
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"integratebrdf_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatRG16Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Pre});
+		pipelines_[ShaderStructures::BRDFLUT] = {pipeline, RenderPass::Pre};
 		if (error) NSLog(@"BRDF LUT%@", [error localizedDescription]);
 	}
 
@@ -289,8 +290,34 @@ using namespace ShaderStructures;
 		pipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
 
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_.push_back({pipeline, RenderPass::Post});
+		pipelines_[ShaderStructures::Downsample] = {pipeline, RenderPass::Post};
 		if (error) NSLog(@"Downsample %@", [error localizedDescription]);
+	}
+
+	{
+		// ModoTex
+		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
+		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
+		vertexDesc.attributes[0].format = MTLVertexFormatFloat3;
+		vertexDesc.attributes[0].bufferIndex = 0;
+		vertexDesc.attributes[0].offset = 0;
+		vertexDesc.attributes[1].format = MTLVertexFormatFloat3;
+		vertexDesc.attributes[1].bufferIndex = 0;
+		vertexDesc.attributes[1].offset = 3 * sizeof(float);
+		vertexDesc.attributes[2].format = MTLVertexFormatFloat2;
+		vertexDesc.attributes[2].bufferIndex = 0;
+		vertexDesc.attributes[2].offset = 3 * sizeof(float) + 3 * sizeof(float);
+		vertexDesc.layouts[0].stride = 3 * sizeof(float) + 3 * sizeof(float) + 2 * sizeof(float);
+		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+		pipelineDescriptor.vertexDescriptor = vertexDesc;
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"modo_tex_vs_main"];
+		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"modo_tex_fs_main"];
+		for (int i = 0; i < RenderTargetCount; ++i)
+			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];
+		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
+		pipelines_[ShaderStructures::ModoTex] = {pipeline, RenderPass::Geometry};
+		if (error) NSLog(@"ModoTex %@", [error localizedDescription]);
 	}
 }
 

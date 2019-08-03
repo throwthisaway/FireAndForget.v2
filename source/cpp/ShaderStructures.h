@@ -5,6 +5,7 @@
 #include "compatibility.h"
 #include "ShaderTypeAliases.h"
 #include "Mesh.h"
+#include "ModoMesh.h"
 
 namespace ShaderStructures {
 #include "ShaderStructs.h"
@@ -28,7 +29,8 @@ const ShaderId GenMipsSRGB = 15; // POT, SRGB
 const ShaderId GenMipsOddXSRGB = 16; // SRGB
 const ShaderId GenMipsOddYSRGB = 17; // SRGB
 const ShaderId GenMipsOddXOddYSRGB = 18; // SRGB
-const ShaderId Count = 19;
+const ShaderId ModoTex = 19;
+const ShaderId Count = 20;
 const int RenderTargetCount = 4;
 
 // resource types
@@ -87,6 +89,14 @@ struct DrawCmd {
 	BufferIndex vb, ib;
 	ShaderId shader;
 };
+
+struct ModoDrawCmd {
+	const float4x4& m, mvp;
+	const ModoMeshLoader::Material& material;
+	BufferIndex vb, ib;
+	ShaderId shader;
+};
+
 struct BgCmd {
 	const float4x4& vp;
 	const Submesh& submesh;

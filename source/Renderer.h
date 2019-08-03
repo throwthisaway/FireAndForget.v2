@@ -40,6 +40,7 @@ public:
 	void Submit(const ShaderStructures::BgCmd& cmd);
 	void StartGeometryPass();
 	void Submit(const ShaderStructures::DrawCmd& cmd);
+	void Submit(const ShaderStructures::ModoDrawCmd& cmd);
 	void DoLightingPass(const ShaderStructures::DeferredCmd& cmd);
 	void Render();
 private:

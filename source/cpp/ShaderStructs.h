@@ -16,6 +16,10 @@ MSVC_ALIGN16 struct GPUMaterial {
 	CLANG_ALIGN16 float3 diffuse;
 	CLANG_ALIGN16 float2 specular_power;
 };
+MSVC_ALIGN16 struct ModoGPUMaterial {
+	CLANG_ALIGN16 float3 albedo;
+	CLANG_ALIGN16 float2 metallic_roughness;
+};
 MSVC_ALIGN16 struct PointLight {
 	CLANG_ALIGN16 float3 diffuse;
 	CLANG_ALIGN16 float3 ambient;

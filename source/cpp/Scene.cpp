@@ -13,6 +13,17 @@ namespace {
 		{.8f, .8f, .8f},/* specular highlight */
 		{ 4.f, 4.f, 10.f}, /* position */
 		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange), defaultLightRange }, /* attenuation and range */};
+	ShaderId SelectModoShader(uint32_t uvCount, uint32_t textureMask) {
+		switch(uvCount) {
+			case 0:
+				assert(!textureMask);
+				return ShaderStructures::Pos;
+			case 1:
+				assert(textureMask == 0xf);
+				return ShaderStructures::ModoTex;
+		}
+		assert(false);
+	}
 }
 void Scene::PrepareScene() {
 	if (prepared_) return;
@@ -24,6 +35,10 @@ void Scene::PrepareScene() {
 	objects_.push_back({ {}, {}, assets::Assets::PLACEHOLDER });
 	objects_.push_back({ {}, {}, assets::Assets::CHECKERBOARD });
 	objects_.push_back({ { 0.f, .5f, 0.f }, {}, assets::Assets::BEETHOVEN });
+	for (int i = 0; i < assets_.meshes.size(); ++i) {
+//		auto& mesh = assets_.meshes[i];
+		modoObjects_.push_back({{ 0.f, -.5f * i, 0.f }, {}, (index_t)i});
+	}
 	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
 	const float incX = 2.4f, incY = 2.9f;
 	auto pos = glm::vec3{ -3 * incX, -3 * incY, -2.f };
@@ -111,23 +126,35 @@ void Scene::Render() {
 	}
 
 	renderer_->StartGeometryPass();
-	for (const auto& o : objects_) {
-		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
-		const auto& mesh = assets_.models[o.mesh];
-		for (const auto& l : mesh.layers) {
-			auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
-			m[3] += float4(l.pivot, 0.f);
-			auto mvp = glm::transpose(camera_.vp * m);
-			m = glm::transpose(m);
-			for (const auto& submesh : l.submeshes) {
-				const auto& material = assets_.materials[submesh.material];
-				ShaderId shader = (material.texAlbedo != InvalidTexture && submesh.vertexType == VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
-				ShaderStructures::DrawCmd cmd{ m, mvp, submesh, material, mesh.vb, mesh.ib, shader};
-				renderer_->Submit(cmd);
-			}
+//	for (const auto& o : objects_) {
+//		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
+//		const auto& mesh = assets_.models[o.mesh];
+//		for (const auto& l : mesh.layers) {
+//			auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
+//			m[3] += float4(l.pivot, 0.f);
+//			auto mvp = glm::transpose(camera_.vp * m);
+//			m = glm::transpose(m);
+//			for (const auto& submesh : l.submeshes) {
+//				const auto& material = assets_.materials[submesh.material];
+//				ShaderId shader = (material.texAlbedo != InvalidTexture && submesh.vertexType == VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
+//				ShaderStructures::DrawCmd cmd{ m, mvp, submesh, material, mesh.vb, mesh.ib, shader};
+//				renderer_->Submit(cmd);
+//			}
+//		}
+//	}
+
+	for (const auto& o : modoObjects_) {
+		const auto& mesh = assets_.meshes[o.mesh];
+		auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
+		//m[3] += float4(l.pivot, 0.f);
+		auto mvp = glm::transpose(camera_.vp * m);
+		m = glm::transpose(m);
+		for (const auto& material : mesh.materials) {
+			ShaderId shader = SelectModoShader(material.uvCount, material.textureMask);
+			ShaderStructures::ModoDrawCmd cmd{ m, mvp, material, mesh.vb, mesh.ib, shader};
+			renderer_->Submit(cmd);
 		}
 	}
-	
 	renderer_->DoLightingPass(deferredCmd_);
 	renderer_->Render();
 }

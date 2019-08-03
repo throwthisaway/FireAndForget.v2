@@ -1,6 +1,6 @@
 #import <Metal/Metal.h>
 
-enum class RenderPass {Pre, Forward, Deferred, Post};
+enum class RenderPass {Pre, Forward, Geometry, Post};
 struct PipelineState {
 	id<MTLRenderPipelineState> _Nonnull pipeline;
 	RenderPass renderPass;

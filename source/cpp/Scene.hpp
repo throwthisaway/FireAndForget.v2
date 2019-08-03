@@ -47,6 +47,7 @@ private:
 	Renderer* renderer_;
 	assets::Assets assets_;
 	std::vector<Object> objects_;
+	std::vector<Object> modoObjects_;
 	struct {
 		ShaderStructures::Scene scene;
 		ShaderStructures::AO AO;

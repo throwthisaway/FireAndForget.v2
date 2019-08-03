@@ -24,6 +24,7 @@ namespace {
 		}
 		return MTLPixelFormatInvalid;
 	}
+
 }
 void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 	device_ = device;
@@ -376,7 +377,7 @@ void Renderer::StartGeometryPass() {
 	bool first = true;
 	for (size_t i = 0; i < [shaders_ getPipelineCount]; ++i) {
 		auto& pipeline = [shaders_ selectPipeline: i];
-		if (pipeline.renderPass == RenderPass::Deferred) {
+		if (pipeline.renderPass == RenderPass::Geometry) {
 			MTLRenderPassDescriptor * passDesc = (first) ? firstPassDescriptor : followingPassDescriptor;
 			auto encoder = [commandBuffers_[i] renderCommandEncoderWithDescriptor: passDesc];
 			encoders_[i] = encoder;
@@ -591,6 +592,56 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 		[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
 	}
 	[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.submesh.ibByteOffset instanceCount: 1 baseVertex: 0 baseInstance: 0];
+}
+
+void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
+	id<MTLRenderCommandEncoder> commandEncoder = encoders_[cmd.shader];
+
+	NSUInteger vsAttribIndex = 0, fsAttribIndex = 0, textureIndex = 0;
+	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: cmd.material.vertexByteOffset atIndex: vsAttribIndex++];
+
+	CBFrameAlloc& frame = frame_[currentFrameIndex_];
+	switch (cmd.shader) {
+		case ShaderStructures::Pos: {
+			{
+				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
+				((ShaderStructures::Object*)cb.address)->m = cmd.m;
+				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
+			}
+			{
+				auto cb = frame.Alloc(sizeof(ShaderStructures::GPUMaterial));
+				memcpy(&((ShaderStructures::GPUMaterial*)cb.address)->diffuse, cmd.material.rgb, sizeof(cmd.material.rgb));
+				((ShaderStructures::GPUMaterial*)cb.address)->specular_power = {cmd.material.metallic, cmd.material.roughness};
+				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
+			}
+//			{
+//				auto cb = frame.Alloc(sizeof(ShaderStructures::ModoGPUMaterial));
+//				auto* material = (ShaderStructures::ModoGPUMaterial*)cb.address;
+//				memcpy(&material->albedo, cmd.material.rgb, sizeof(cmd.material.rgb));
+//				material->metallic_roughness = {cmd.material.metallic, cmd.material.roughness};
+//				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
+//			}
+			break;
+		}
+		case ShaderStructures::ModoTex: {
+			{
+				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
+				((ShaderStructures::Object*)cb.address)->m = cmd.m;
+				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
+			}
+			for (int i = 0; i < sizeof(cmd.material.textures) / sizeof(cmd.material.textures[0]); ++i) {
+				if (!(cmd.material.textureMask & (1 << i))) continue;
+				auto& texture = textures_[cmd.material.textures[i].id];
+				[commandEncoder setFragmentTexture: texture.texture atIndex: textureIndex++];
+				[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
+			}
+			break;
+		}
+		default: assert(false);
+	}
+	[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.material.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.material.indexByteOffset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 }
 
 void Renderer::Submit(const ShaderStructures::DrawCmd& cmd) {

@@ -28,6 +28,7 @@ namespace assets {
 		static constexpr size_t UNITCUBE = 5;
 		static constexpr size_t STATIC_MODEL_COUNT = 6;
 		std::vector<Mesh> models;
+		std::vector<ModoMesh> meshes;
 		static constexpr size_t RANDOM = 0;
 		static constexpr size_t ENVIRONMENT_MAP = 1;
 		static constexpr size_t STATIC_IMAGE_COUNT = 2;

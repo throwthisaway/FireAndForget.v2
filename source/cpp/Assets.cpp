@@ -258,7 +258,7 @@ namespace assets {
 					 // texture.image was replaced with an index into the context's images array
 					 texture.id = (uint32_t)offset + texture.id;
 				}
-
+		meshes = std::move(loadContextModo.meshes);
 		loadContextModo = ModoLoadContext{};
 		status = Status::kReady;
 #endif
