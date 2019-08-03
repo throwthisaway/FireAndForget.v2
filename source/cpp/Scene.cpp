@@ -18,9 +18,15 @@ namespace {
 			case 0:
 				assert(!textureMask);
 				return ShaderStructures::Pos;
-			case 1:
-				assert(textureMask == 0xf);
-				return ShaderStructures::ModoTex;
+			case 1: {
+				switch(textureMask) {
+					case 0xf:
+						return ShaderStructures::ModoDNMR;
+					case 0x3:
+						return ShaderStructures::ModoDN;
+					default: assert(false);
+				}
+			}
 		}
 		assert(false);
 	}
@@ -37,7 +43,7 @@ void Scene::PrepareScene() {
 	objects_.push_back({ { 0.f, .5f, 0.f }, {}, assets::Assets::BEETHOVEN });
 	for (int i = 0; i < assets_.meshes.size(); ++i) {
 //		auto& mesh = assets_.meshes[i];
-		modoObjects_.push_back({{ 0.f, -.5f * i, -5.f }, {}, (index_t)i});
+		modoObjects_.push_back({{ 0.f, -.5f * i, -5.f * (i+1)}, {}, (index_t)i});
 	}
 	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
 	const float incX = 2.4f, incY = 2.9f;

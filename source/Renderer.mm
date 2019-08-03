@@ -615,21 +615,36 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 				((ShaderStructures::GPUMaterial*)cb.address)->specular_power = {cmd.material.metallic, cmd.material.roughness};
 				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
 			}
-//			{
-//				auto cb = frame.Alloc(sizeof(ShaderStructures::ModoGPUMaterial));
-//				auto* material = (ShaderStructures::ModoGPUMaterial*)cb.address;
-//				memcpy(&material->albedo, cmd.material.rgb, sizeof(cmd.material.rgb));
-//				material->metallic_roughness = {cmd.material.metallic, cmd.material.roughness};
-//				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
-//			}
 			break;
 		}
-		case ShaderStructures::ModoTex: {
+		case ShaderStructures::ModoDNMR: {
 			{
 				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
 				((ShaderStructures::Object*)cb.address)->m = cmd.m;
 				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
+			}
+			for (int i = 0; i < sizeof(cmd.material.textures) / sizeof(cmd.material.textures[0]); ++i) {
+				if (!(cmd.material.textureMask & (1 << i))) continue;
+				auto& texture = textures_[cmd.material.textures[i].id];
+				[commandEncoder setFragmentTexture: texture.texture atIndex: textureIndex++];
+				[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
+			}
+			break;
+		}
+		case ShaderStructures::ModoDN: {
+			{
+				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
+				((ShaderStructures::Object*)cb.address)->m = cmd.m;
+				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
+			}
+			{
+				auto cb = frame.Alloc(sizeof(ShaderStructures::ModoGPUMaterial));
+				auto* material = (ShaderStructures::ModoGPUMaterial*)cb.address;
+				memcpy(&material->diffuse, cmd.material.rgb, sizeof(cmd.material.rgb));
+				material->metallic_roughness = {cmd.material.metallic, cmd.material.roughness};
+				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
 			}
 			for (int i = 0; i < sizeof(cmd.material.textures) / sizeof(cmd.material.textures[0]); ++i) {
 				if (!(cmd.material.textureMask & (1 << i))) continue;

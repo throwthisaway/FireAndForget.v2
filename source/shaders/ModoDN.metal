@@ -11,12 +11,12 @@ struct uObject {
 struct FSIn {
 	float4 pos [[position]];
 	float3 it [[user(it)]],
-		ib[[user(ib)]],
-		in[[user(in)]];
+	ib[[user(ib)]],
+	in[[user(in)]];
 	float3 n [[user(normal)]];
 	float2 uv0 [[user(texcoord0)]];
 };
-float3 CalcTangent(float3 n) {
+static float3 CalcTangent(float3 n) {
 	float3 t(1.f, 0.f, 0.f);
 	float d = dot(t, n);
 	if (d < .001f) {
@@ -28,9 +28,9 @@ float3 CalcTangent(float3 n) {
 	return t;
 
 }
-vertex FSIn modo_tex_vs_main(const device VertexPNT* input [[buffer(0)]],
-						constant uObject& obj [[buffer(1)]],
-						uint id [[vertex_id]]) {
+vertex FSIn modo_dn_vs_main(const device VertexPNT* input [[buffer(0)]],
+							  constant uObject& obj [[buffer(1)]],
+							  uint id [[vertex_id]]) {
 	FSIn output;
 	float4 pos = float4(input[id].pos, 1.f);
 	output.pos = obj.mvp * pos;
@@ -45,17 +45,16 @@ vertex FSIn modo_tex_vs_main(const device VertexPNT* input [[buffer(0)]],
 	output.uv0 = input[id].uv0;
 	return output;
 }
-fragment FragOut modo_tex_fs_main(FSIn input [[stage_in]],
-							 array<texture2d<float>, 4> textures [[texture(0)]],
-							 sampler smp [[sampler(0)]]) {
+fragment FragOut modo_dn_fs_main(FSIn input [[stage_in]],
+								   array<texture2d<float>, 2> textures [[texture(0)]],
+								   sampler smp [[sampler(0)]],
+								   constant ModoGPUMaterial& material [[buffer(0)]]) {
 	FragOut output;
 	output.albedo = textures[0].sample(smp, input.uv0);
 	float3 n = textures[1].sample(smp, input.uv0).xyz * 2.f - 1.f;
 	n = n * float3x3(normalize(input.it), normalize(input.ib), normalize(input.in));
 	output.normal = Encode(n);
-	float metallic = textures[2].sample(smp, input.uv0).x;
-	float roughness = textures[3].sample(smp, input.uv0).x;
-	output.material = float4(metallic, roughness, 0.f, 1.f);
+	output.material = float4(material.metallic_roughness, 0.f, 1.f);
 	output.debug = float4(input.n, 1.f);
 	return output;
 }

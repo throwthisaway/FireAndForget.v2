@@ -243,6 +243,7 @@ namespace assets {
 		renderer->EndUploadResources();
 		loadContext = LoadContext{};
 		LoadModoMesh(renderer, L"test_torus.mesh");
+		LoadModoMesh(renderer, L"checkerboard_modo.mesh");
 
 		// generate textures
 		auto offset = textures.size();

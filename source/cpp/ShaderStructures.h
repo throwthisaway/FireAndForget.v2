@@ -29,8 +29,9 @@ const ShaderId GenMipsSRGB = 15; // POT, SRGB
 const ShaderId GenMipsOddXSRGB = 16; // SRGB
 const ShaderId GenMipsOddYSRGB = 17; // SRGB
 const ShaderId GenMipsOddXOddYSRGB = 18; // SRGB
-const ShaderId ModoTex = 19;
-const ShaderId Count = 20;
+const ShaderId ModoDNMR = 19;
+const ShaderId ModoDN = 20;
+const ShaderId Count = 21;
 const int RenderTargetCount = 4;
 
 // resource types

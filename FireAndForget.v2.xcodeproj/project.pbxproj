@@ -54,12 +54,19 @@
 		BDE816F52191B11C00B091F1 /* CBFrameAlloc.mm in Sources */ = {isa = PBXBuildFile; fileRef = BDE816F32191B11C00B091F1 /* CBFrameAlloc.mm */; };
 		BDE817032191F8EB00B091F1 /* libmeshoptimizer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BDE817022191F8EB00B091F1 /* libmeshoptimizer.a */; };
 		BDE817042192216F00B091F1 /* Tex.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD0E83621FF010FA005A2F8A /* Tex.metal */; };
-		E7325D7322EF6393007FDF43 /* ModoTex.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7325D7222EF6393007FDF43 /* ModoTex.metal */; };
+		E7325D7322EF6393007FDF43 /* ModoDNMR.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7325D7222EF6393007FDF43 /* ModoDNMR.metal */; };
 		E79B3F4D22EDD601008A34A7 /* rusted metal color.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4422EDD600008A34A7 /* rusted metal color.png */; };
 		E79B3F4E22EDD601008A34A7 /* rusted metal normal.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4922EDD600008A34A7 /* rusted metal normal.png */; };
 		E79B3F4F22EDD601008A34A7 /* test_torus.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4A22EDD600008A34A7 /* test_torus.mesh */; };
 		E79B3F5022EDD601008A34A7 /* rusted metal metallic.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4B22EDD600008A34A7 /* rusted metal metallic.png */; };
 		E79B3F5122EDD601008A34A7 /* rusted metal roughness.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4C22EDD600008A34A7 /* rusted metal roughness.png */; };
+		E7AF512522F6042F00A98E6F /* checkerboard_modo.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E7AF511C22F6042F00A98E6F /* checkerboard_modo.mesh */; };
+		E7AF512622F6042F00A98E6F /* 7582-normal.png in Resources */ = {isa = PBXBuildFile; fileRef = E7AF512222F6042F00A98E6F /* 7582-normal.png */; };
+		E7AF512722F6042F00A98E6F /* box_modo.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E7AF512322F6042F00A98E6F /* box_modo.mesh */; };
+		E7AF512822F6042F00A98E6F /* sphere_modo.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E7AF512422F6042F00A98E6F /* sphere_modo.mesh */; };
+		E7AF512B22F6048000A98E6F /* light_modo.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E7AF512922F6048000A98E6F /* light_modo.mesh */; };
+		E7AF512C22F6048000A98E6F /* textured_unit_cube_modo.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E7AF512A22F6048000A98E6F /* textured_unit_cube_modo.mesh */; };
+		E7AF512E22F6053300A98E6F /* ModoDN.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7AF512D22F6053300A98E6F /* ModoDN.metal */; };
 		E7E1BE7022EDDED3001E0DDD /* libModoMeshLoader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E79B3F6D22EDDDC9008A34A7 /* libModoMeshLoader.a */; };
 /* End PBXBuildFile section */
 
@@ -166,13 +173,20 @@
 		E72D361122EDFD0B00B373EF /* DeferredBindings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DeferredBindings.h; path = cpp/DeferredBindings.h; sourceTree = "<group>"; };
 		E72D361722EDFD0B00B373EF /* Mesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Mesh.h; path = cpp/Mesh.h; sourceTree = "<group>"; };
 		E72D361822EDFD4900B373EF /* ModoMesh.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ModoMesh.h; path = cpp/ModoMesh.h; sourceTree = "<group>"; };
-		E7325D7222EF6393007FDF43 /* ModoTex.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ModoTex.metal; path = shaders/ModoTex.metal; sourceTree = "<group>"; };
+		E7325D7222EF6393007FDF43 /* ModoDNMR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ModoDNMR.metal; path = shaders/ModoDNMR.metal; sourceTree = "<group>"; };
 		E79B3F4422EDD600008A34A7 /* rusted metal color.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal color.png"; path = "assets/rusted metal color.png"; sourceTree = "<group>"; };
 		E79B3F4922EDD600008A34A7 /* rusted metal normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal normal.png"; path = "assets/rusted metal normal.png"; sourceTree = "<group>"; };
 		E79B3F4A22EDD600008A34A7 /* test_torus.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = test_torus.mesh; path = assets/test_torus.mesh; sourceTree = "<group>"; };
 		E79B3F4B22EDD600008A34A7 /* rusted metal metallic.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal metallic.png"; path = "assets/rusted metal metallic.png"; sourceTree = "<group>"; };
 		E79B3F4C22EDD600008A34A7 /* rusted metal roughness.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal roughness.png"; path = "assets/rusted metal roughness.png"; sourceTree = "<group>"; };
 		E79B3F6822EDDDC8008A34A7 /* ModoMeshLoader.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ModoMeshLoader.xcodeproj; path = ../ModoMeshLoader/ModoMeshLoader.xcodeproj; sourceTree = "<group>"; };
+		E7AF511C22F6042F00A98E6F /* checkerboard_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = checkerboard_modo.mesh; path = assets/checkerboard_modo.mesh; sourceTree = "<group>"; };
+		E7AF512222F6042F00A98E6F /* 7582-normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "7582-normal.png"; path = "assets/7582-normal.png"; sourceTree = "<group>"; };
+		E7AF512322F6042F00A98E6F /* box_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = box_modo.mesh; path = assets/box_modo.mesh; sourceTree = "<group>"; };
+		E7AF512422F6042F00A98E6F /* sphere_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = sphere_modo.mesh; path = assets/sphere_modo.mesh; sourceTree = "<group>"; };
+		E7AF512922F6048000A98E6F /* light_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = light_modo.mesh; path = assets/light_modo.mesh; sourceTree = "<group>"; };
+		E7AF512A22F6048000A98E6F /* textured_unit_cube_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = textured_unit_cube_modo.mesh; path = assets/textured_unit_cube_modo.mesh; sourceTree = "<group>"; };
+		E7AF512D22F6053300A98E6F /* ModoDN.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ModoDN.metal; path = shaders/ModoDN.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -212,7 +226,8 @@
 				BD1B64242233E1BA00B7D806 /* PreFilterAndIntegrateBRDF.metal */,
 				BD621880223E6DA800468779 /* FragInput.h.metal */,
 				BDE7ECBB224FC8A300BB9171 /* Downsample_half.metal */,
-				E7325D7222EF6393007FDF43 /* ModoTex.metal */,
+				E7325D7222EF6393007FDF43 /* ModoDNMR.metal */,
+				E7AF512D22F6053300A98E6F /* ModoDN.metal */,
 			);
 			name = shaders;
 			sourceTree = "<group>";
@@ -336,6 +351,12 @@
 		BD72038D1EEC1A7400B2C914 /* assets */ = {
 			isa = PBXGroup;
 			children = (
+				E7AF512922F6048000A98E6F /* light_modo.mesh */,
+				E7AF512A22F6048000A98E6F /* textured_unit_cube_modo.mesh */,
+				E7AF512222F6042F00A98E6F /* 7582-normal.png */,
+				E7AF512322F6042F00A98E6F /* box_modo.mesh */,
+				E7AF511C22F6042F00A98E6F /* checkerboard_modo.mesh */,
+				E7AF512422F6042F00A98E6F /* sphere_modo.mesh */,
 				E79B3F4422EDD600008A34A7 /* rusted metal color.png */,
 				E79B3F4B22EDD600008A34A7 /* rusted metal metallic.png */,
 				E79B3F4922EDD600008A34A7 /* rusted metal normal.png */,
@@ -468,17 +489,23 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E7AF512822F6042F00A98E6F /* sphere_modo.mesh in Resources */,
 				BD45E01721CFA23800ABBD5B /* Serpentine_Valley_3k.hdr in Resources */,
 				E79B3F5022EDD601008A34A7 /* rusted metal metallic.png in Resources */,
 				E79B3F4F22EDD601008A34A7 /* test_torus.mesh in Resources */,
 				BD9FA6BF1F2E2CBE00978F61 /* checkerboard.tga in Resources */,
+				E7AF512622F6042F00A98E6F /* 7582-normal.png in Resources */,
 				BDE0F10B227DACC200CD85D9 /* random.png in Resources */,
 				E79B3F4E22EDD601008A34A7 /* rusted metal normal.png in Resources */,
 				BD1DA54C20724065004EF62A /* light.mesh in Resources */,
 				BD7203941EEC1FDA00B2C914 /* BEETHOVE_object.mesh in Resources */,
+				E7AF512B22F6048000A98E6F /* light_modo.mesh in Resources */,
+				E7AF512522F6042F00A98E6F /* checkerboard_modo.mesh in Resources */,
 				BD1DA54B20724065004EF62A /* box.mesh in Resources */,
+				E7AF512722F6042F00A98E6F /* box_modo.mesh in Resources */,
 				BD9FA6BE1F2E2CBE00978F61 /* checkerboard.mesh in Resources */,
 				BD2E31DA21D3CD900085F6DA /* textured_unit_cube.mesh in Resources */,
+				E7AF512C22F6048000A98E6F /* textured_unit_cube_modo.mesh in Resources */,
 				BD4992F720DFB351009DA76D /* sphere.mesh in Resources */,
 				E79B3F4D22EDD601008A34A7 /* rusted metal color.png in Resources */,
 				BD3D1AB81E895BFC00F7311A /* Assets.xcassets in Resources */,
@@ -496,7 +523,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BD6A4168208CE5D50027E1D7 /* Common.h.metal in Sources */,
-				E7325D7322EF6393007FDF43 /* ModoTex.metal in Sources */,
+				E7325D7322EF6393007FDF43 /* ModoDNMR.metal in Sources */,
 				BD4992F020DE64E1009DA76D /* PBR.metal in Sources */,
 				BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */,
 				BD2E31DE21DA3DD20085F6DA /* VertexTypes.h.metal in Sources */,
@@ -509,6 +536,7 @@
 				BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */,
 				BD4992F520DE9B12009DA76D /* DeferredPBR.metal in Sources */,
 				BD1DA545206FDABC004EF62A /* Debug.metal in Sources */,
+				E7AF512E22F6053300A98E6F /* ModoDN.metal in Sources */,
 				BD6A40E2208230BA0027E1D7 /* Phong.h.metal in Sources */,
 				BD4992F320DE6C79009DA76D /* PBR.h.metal in Sources */,
 				BD6A416A208CE7DD0027E1D7 /* Common.metal in Sources */,

@@ -295,7 +295,7 @@ using namespace ShaderStructures;
 	}
 
 	{
-		// ModoTex
+		// ModoDNMR
 		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
 		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
 		vertexDesc.attributes[0].format = MTLVertexFormatFloat3;
@@ -310,14 +310,40 @@ using namespace ShaderStructures;
 		vertexDesc.layouts[0].stride = 3 * sizeof(float) + 3 * sizeof(float) + 2 * sizeof(float);
 		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
 		pipelineDescriptor.vertexDescriptor = vertexDesc;
-		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"modo_tex_vs_main"];
-		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"modo_tex_fs_main"];
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"modo_dnmr_vs_main"];
+		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"modo_dnmr_fs_main"];
 		for (int i = 0; i < RenderTargetCount; ++i)
 			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];
 		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
-		pipelines_[ShaderStructures::ModoTex] = {pipeline, RenderPass::Geometry};
-		if (error) NSLog(@"ModoTex %@", [error localizedDescription]);
+		pipelines_[ShaderStructures::ModoDNMR] = {pipeline, RenderPass::Geometry};
+		if (error) NSLog(@"ModoDNMR %@", [error localizedDescription]);
+	}
+
+	{
+		// ModoDN
+		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
+		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
+		vertexDesc.attributes[0].format = MTLVertexFormatFloat3;
+		vertexDesc.attributes[0].bufferIndex = 0;
+		vertexDesc.attributes[0].offset = 0;
+		vertexDesc.attributes[1].format = MTLVertexFormatFloat3;
+		vertexDesc.attributes[1].bufferIndex = 0;
+		vertexDesc.attributes[1].offset = 3 * sizeof(float);
+		vertexDesc.attributes[2].format = MTLVertexFormatFloat2;
+		vertexDesc.attributes[2].bufferIndex = 0;
+		vertexDesc.attributes[2].offset = 3 * sizeof(float) + 3 * sizeof(float);
+		vertexDesc.layouts[0].stride = 3 * sizeof(float) + 3 * sizeof(float) + 2 * sizeof(float);
+		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+		pipelineDescriptor.vertexDescriptor = vertexDesc;
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"modo_dn_vs_main"];
+		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"modo_dn_fs_main"];
+		for (int i = 0; i < RenderTargetCount; ++i)
+			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];
+		pipelineDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
+		pipelines_[ShaderStructures::ModoDN] = {pipeline, RenderPass::Geometry};
+		if (error) NSLog(@"ModoDN %@", [error localizedDescription]);
 	}
 }
 
