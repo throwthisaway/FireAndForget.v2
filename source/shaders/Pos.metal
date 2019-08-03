@@ -10,14 +10,14 @@ struct PSIn {
 };
 
 vertex PSIn pos_vs_main(const device VertexPN* input[[buffer(0)]],
-						// TODO:: apparently the count depends on how the vertex buffers attached, 1 for vb, 1 for nb
+						// TODO:: apparently the count depends on how the vertex buffers attached, 1 for vb
 						constant Object& obj [[buffer(1)]],
 						uint id [[vertex_id]]) {
 	PSIn output;
 	float4 pos = float4(input[id].pos, 1.f);
-	output.pos = pos * obj.mvp;
-	output.worldPos = pos * obj.m;
-	output.n = float3(float4(input[id].n, 0.f) * obj.m);// TODO:: float3x3(obj.m[0].xyz, obj.m[1].xyz, obj.m[2].xyz);
+	output.pos = obj.mvp * pos;
+	output.worldPos = obj.m * pos;
+	output.n = float3(obj.m * float4(input[id].n, 0.f));// TODO:: float3x3(obj.m[0].xyz, obj.m[1].xyz, obj.m[2].xyz);
 	output.depthCS = float2(output.pos.z, output.pos.w);
 	return output;
 }

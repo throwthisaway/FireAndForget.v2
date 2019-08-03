@@ -17,7 +17,7 @@ vec3_t Input::Rotate(float x, float y) {
 }
 
 vec3_t Input::TranslateXZ(float x, float y) {
-	float dx = x - x_, dy = 0.f, dz = y - y_;
+	float dx = x_ - x , dy = 0.f, dz = y - y_;
 	x_ = x; y_ = y;
 	drot = {};
 	return dpos = vec3_t{ dx, dy, dz } * pixelToTrRatio;

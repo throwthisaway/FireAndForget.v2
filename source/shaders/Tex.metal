@@ -18,8 +18,8 @@ vertex FSIn tex_vs_main(const device VertexPNT* input [[buffer(0)]],
 						uint id [[vertex_id]]) {
 	FSIn output;
 	float4 pos = float4(input[id].pos, 1.f);
-	output.pos = pos * obj.mvp;
-	output.n = float3(input[id].n) * float3x3(obj.m[0].xyz, obj.m[1].xyz, obj.m[2].xyz);
+	output.pos = obj.mvp * pos;
+	output.n = float3x3(obj.m[0].xyz, obj.m[1].xyz, obj.m[2].xyz) * float3(input[id].n);
 	output.uv0 = input[id].uv0;
 
 	return output;

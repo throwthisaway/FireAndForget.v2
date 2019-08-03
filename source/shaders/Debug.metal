@@ -5,7 +5,7 @@
 vertex float4 debug_vs_main(const device VertexPN* input [[buffer(0)]],
 							constant float4x4& mvp [[buffer(1)]],
 							uint vid [[vertex_id]]) {
-	return float4(input[vid].pos, 1.f) * mvp;
+	return mvp * float4(input[vid].pos, 1.f);
 }
 
 fragment FragOut debug_fs_main(float4 vert_in [[stage_in]],

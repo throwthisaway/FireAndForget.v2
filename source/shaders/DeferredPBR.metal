@@ -131,7 +131,8 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	//res.frag = 1.f-float4(aoResult, aoResult, aoResult, 0.f);
 	//float4 debug_n = debug.sample(linearsmp, input.uv);
 	//res.debug = float4(worldPos, 1.f);
-	res.debug = 1.f-float4(aoResult, aoResult, aoResult, 0.f);
+	//res.debug = 1.f-float4(aoResult, aoResult, aoResult, 0.f);
 	//res.frag = float4(float3(debug_n), 1.f);
+	//res.frag = debug.sample(linearsmp, input.uv);
 	return res;
 }

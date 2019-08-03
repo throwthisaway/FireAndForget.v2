@@ -11,7 +11,7 @@ namespace {
 	const ShaderStructures::PointLight defaultPointLight = { {300.f, 300.f, 300.f}, /*{.4f, .4f, .4f}*//*{23.47f, 21.31f, 20.79f}*//* diffuse */
 		{.0f, .0f, .0f}, /* ambient */
 		{.8f, .8f, .8f},/* specular highlight */
-		{ 4.f, 4.f, 10.f}, /* position */
+		{ 4.f, 4.f, -10.f}, /* position */
 		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange), defaultLightRange }, /* attenuation and range */};
 	ShaderId SelectModoShader(uint32_t uvCount, uint32_t textureMask) {
 		switch(uvCount) {
@@ -37,18 +37,18 @@ void Scene::PrepareScene() {
 	objects_.push_back({ { 0.f, .5f, 0.f }, {}, assets::Assets::BEETHOVEN });
 	for (int i = 0; i < assets_.meshes.size(); ++i) {
 //		auto& mesh = assets_.meshes[i];
-		modoObjects_.push_back({{ 0.f, -.5f * i, 0.f }, {}, (index_t)i});
+		modoObjects_.push_back({{ 0.f, -.5f * i, -5.f }, {}, (index_t)i});
 	}
 	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
 	const float incX = 2.4f, incY = 2.9f;
-	auto pos = glm::vec3{ -3 * incX, -3 * incY, -2.f };
+	auto pos = glm::vec3{ -3 * incX, -3 * incY, 2.f };
 	const int count = 7;
 	for (int i = 0; i < count; ++i) {
 		for (int j = 0; j < count; ++j) {
 			auto model = assets_.models[assets::Assets::SPHERE];
 			assets_.models.push_back(model);
 			objects_.push_back({ pos, {}, index_t(assets_.models.size() - 1) });
-			assets_.materials.push_back({ { .5f, .5f, .5f },
+			assets_.materials.push_back({ { .5f, .0f, .0f },
 				glm::clamp((float)j / count, .05f, 1.f),
 				(float)i / count,
 				InvalidTexture });
@@ -96,8 +96,6 @@ void Scene::Init(Renderer* renderer, int width, int height) {
 	viewport_.width = width; viewport_.height = height;
 	camera_.Perspective(width, height);
 
-	const float Z = -10.5f;
-	camera_.Translate({ 0.f, 0.f, Z });
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
 		lights_[i].pointLight = defaultPointLight;
 	}
@@ -126,29 +124,27 @@ void Scene::Render() {
 	}
 
 	renderer_->StartGeometryPass();
-//	for (const auto& o : objects_) {
-//		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
-//		const auto& mesh = assets_.models[o.mesh];
-//		for (const auto& l : mesh.layers) {
-//			auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
-//			m[3] += float4(l.pivot, 0.f);
-//			auto mvp = glm::transpose(camera_.vp * m);
-//			m = glm::transpose(m);
-//			for (const auto& submesh : l.submeshes) {
-//				const auto& material = assets_.materials[submesh.material];
-//				ShaderId shader = (material.texAlbedo != InvalidTexture && submesh.vertexType == VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
-//				ShaderStructures::DrawCmd cmd{ m, mvp, submesh, material, mesh.vb, mesh.ib, shader};
-//				renderer_->Submit(cmd);
-//			}
-//		}
-//	}
+	for (const auto& o : objects_) {
+		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
+		const auto& mesh = assets_.models[o.mesh];
+		for (const auto& l : mesh.layers) {
+			auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
+			m[3] += float4(l.pivot, 0.f);
+			auto mvp = camera_.vp * m;
+			for (const auto& submesh : l.submeshes) {
+				const auto& material = assets_.materials[submesh.material];
+				ShaderId shader = (material.texAlbedo != InvalidTexture && submesh.vertexType == VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
+				ShaderStructures::DrawCmd cmd{ m, mvp, submesh, material, mesh.vb, mesh.ib, shader};
+				renderer_->Submit(cmd);
+			}
+		}
+	}
 
 	for (const auto& o : modoObjects_) {
 		const auto& mesh = assets_.meshes[o.mesh];
 		auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
 		//m[3] += float4(l.pivot, 0.f);
-		auto mvp = glm::transpose(camera_.vp * m);
-		m = glm::transpose(m);
+		auto mvp = camera_.vp * m;
 		for (const auto& material : mesh.materials) {
 			ShaderId shader = SelectModoShader(material.uvCount, material.textureMask);
 			ShaderStructures::ModoDrawCmd cmd{ m, mvp, material, mesh.vb, mesh.ib, shader};
@@ -160,7 +156,7 @@ void Scene::Render() {
 }
 void Scene::UpdateCameraTransform() {
 	camera_.Translate(input.dpos);
-	camera_.RotatePreMultiply(input.drot);
+	camera_.Rotate(input.drot);
 }
 
 void Scene::UpdateSceneTransform() {
@@ -178,7 +174,7 @@ void Scene::Update(double frame, double total) {
 	}
 	camera_.Update();
 	// need to determine it from view because of ScreenSpaceRotator...
-	deferredCmd_.scene.eyePos = camera_.GetEyePos();
+	deferredCmd_.scene.eyePos = camera_.pos;
 	// TODO:: WTF?
 	deferredCmd_.scene.ip = glm::inverse(camera_.proj);
 	deferredCmd_.scene.ivp = camera_.ivp;
