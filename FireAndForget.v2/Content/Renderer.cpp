@@ -981,7 +981,98 @@ void Renderer::Submit(const DrawCmd& cmd) {
 	PIXEndEvent(commandList);
 }
 void Renderer::Submit(const ModoDrawCmd& cmd) {
+	if (!loadingComplete_) return;
+	auto id = cmd.shader;
+	auto& state = pipelineStates_.states_[id];
+	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
+	PIXBeginEvent(commandList, 0, L"SubmitDrawCmd"); 
+	{
+		DescriptorFrameAlloc::Entry entry;
+		UINT index = 0;
+		const int descSize = frame_->desc.GetDescriptorSize();
+		switch (id) {
+		case ShaderStructures::Pos: {
+			entry = frame_->desc.Push(2);
+			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+			{
+				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::Object));
+				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
+				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
+				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
+			}
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
+			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
+			{
+				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::GPUMaterial));
+				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
+				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->diffuse = cmd.material.rgb;
+				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
+				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
+			}
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
+			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
+			break;
+		}
+		case ShaderStructures::Tex: {
+			entry = frame_->desc.Push(3);
+			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+			{
+				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::Object));
+				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
+				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
+				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
+			}
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
+			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
+			{
+				auto& texture = buffers_[cmd.material.texAlbedo];
+				frame_->desc.CreateSRV(entry.cpuHandle, texture.resource.Get());
+			}
+			entry.cpuHandle.Offset(descSize);
+			{
+				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::GPUMaterial));
+				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
+				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->diffuse = cmd.material.albedo;
+				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
+				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
+			}
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
+			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
+			break;
+		}
+		default: assert(false);
+		}
 
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		assert(cmd.vb != InvalidBuffer);
+		assert(cmd.ib != InvalidBuffer);
+		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
+			{ buffers_[cmd.vb].bufferLocation + cmd.submesh.vbByteOffset,
+			(UINT)buffers_[cmd.vb].size - +cmd.submesh.vbByteOffset,
+			cmd.submesh.stride } };
+
+		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
+
+		if (cmd.ib != InvalidBuffer) {
+			D3D12_INDEX_BUFFER_VIEW	indexBufferView;
+			{
+				const auto& buffer = buffers_[cmd.ib];
+				indexBufferView.BufferLocation = buffer.bufferLocation + cmd.submesh.ibByteOffset;
+				indexBufferView.SizeInBytes = (UINT)buffer.size - cmd.submesh.ibByteOffset;
+				indexBufferView.Format = DXGI_FORMAT_R16_UINT;
+			}
+
+			commandList->IASetIndexBuffer(&indexBufferView);
+			commandList->DrawIndexedInstanced(cmd.submesh.count, 1, 0, 0, 0);
+		}
+		else {
+			commandList->DrawInstanced(cmd.submesh.count, 1, cmd.submesh.vbByteOffset, 0);
+		}
+	}
+	PIXEndEvent(commandList);
 }
 void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	PIXBeginEvent(commandList, 0, L"DownsampleDepth");

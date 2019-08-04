@@ -1,8 +1,8 @@
 #include "Common.hlsli"
+#include "PSInput.hlsli"
 #include "../../../source/cpp/ShaderStructs.h"
 
 Texture2D<float4> tColor : register(t0);
-
 ConstantBuffer<GPUMaterial> mat : register(b0);
 
 SamplerState smp : register(s0) {
@@ -11,15 +11,8 @@ SamplerState smp : register(s0) {
 	AddressV = Wrap;
 };
 
-struct PSIn {
-	float4 pos : SV_POSITION;
-	float3 n : NORMAL0;
-	float2 uv0 : TEXCOORD0;
-	float4 worldPos : POSITION0;
-};
-
-MRTOut main(PSIn input) {
-	float4 diffuseColor = tColor.Sample(smp, input.uv0);
+MRTOut main(PS_TN input) {
+	float4 diffuseColor = tColor.Sample(smp, input.uv);
 	MRTOut output;
 	output.albedo = diffuseColor;
 	output.normal = Encode(input.n);

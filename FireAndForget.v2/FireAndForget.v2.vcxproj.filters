@@ -264,6 +264,12 @@
     <None Include="..\source\assets\textured_unit_cube_modo.mesh">
       <Filter>Assets</Filter>
     </None>
+    <None Include="Content\shaders\ModoDNRS.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
+    <None Include="Content\shaders\ModoDNMRRS.hlsli">
+      <Filter>Content\shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">
@@ -362,6 +368,15 @@
       <Filter>Content\shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\shaders\GenMipsOddXOddYSRGB.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\ModoDNVS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\ModoDNPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\ModoDNMRPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
   </ItemGroup>
