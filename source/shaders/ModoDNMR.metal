@@ -56,6 +56,6 @@ fragment FragOut modo_dnmr_fs_main(FSIn input [[stage_in]],
 	float metallic = textures[2].sample(smp, input.uv0).x;
 	float roughness = textures[3].sample(smp, input.uv0).x;
 	output.material = float4(metallic, roughness, 0.f, 1.f);
-	output.debug = float4(input.n, 1.f);
+	output.debug = float4(n, 1.f);
 	return output;
 }
