@@ -246,12 +246,45 @@
     <None Include="..\source\assets\Alexs_Apt_2k.hdr">
       <Filter>Assets</Filter>
     </None>
+    <None Include="..\source\assets\box_modo.mesh">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\source\assets\checkerboard_modo.mesh">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\source\assets\light_modo.mesh">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\source\assets\sphere_modo.mesh">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\source\assets\test_torus.mesh">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\source\assets\textured_unit_cube_modo.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">
       <Filter>Assets</Filter>
     </Image>
     <Image Include="..\source\assets\random.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\7582-normal.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\rusted metal color.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\rusted metal metallic.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\rusted metal normal.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\rusted metal roughness.png">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>

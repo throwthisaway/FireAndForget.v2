@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2009
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FireAndForget.v2", "FireAndForget.v2.vcxproj", "{2EC8955C-572F-47A1-9F45-D22B2C522CE3}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FireAndForget.v2", "FireAnd
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshLoader", "..\..\MeshLoader\MeshLoader\MeshLoader.vcxproj", "{2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModoMeshLoader", "..\..\ModoMeshLoader\ModoMeshLoader\ModoMeshLoader.vcxproj", "{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -48,6 +50,16 @@ Global
 		{2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC}.Release|x64.Build.0 = Release|x64
 		{2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC}.Release|x86.ActiveCfg = Release|Win32
 		{2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC}.Release|x86.Build.0 = Release|Win32
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Debug|ARM.ActiveCfg = Debug|Win32
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Debug|x64.ActiveCfg = Debug|x64
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Debug|x64.Build.0 = Debug|x64
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Debug|x86.ActiveCfg = Debug|Win32
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Debug|x86.Build.0 = Debug|Win32
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Release|ARM.ActiveCfg = Release|Win32
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Release|x64.ActiveCfg = Release|x64
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Release|x64.Build.0 = Release|x64
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Release|x86.ActiveCfg = Release|Win32
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

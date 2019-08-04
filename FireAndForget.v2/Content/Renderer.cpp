@@ -980,6 +980,9 @@ void Renderer::Submit(const DrawCmd& cmd) {
 	}
 	PIXEndEvent(commandList);
 }
+void Renderer::Submit(const ModoDrawCmd& cmd) {
+
+}
 void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	PIXBeginEvent(commandList, 0, L"DownsampleDepth");
 	CD3DX12_RESOURCE_BARRIER barriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET),

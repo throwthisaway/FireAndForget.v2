@@ -9,5 +9,5 @@ cbuffer cMVP : register(b0) {
 };
 
 float4 main(VIn input) : SV_POSITION {
-	return mul(float4(input.pos, 1.0f), mvp);
+	return mul(mvp, float4(input.pos, 1.0f));
 }

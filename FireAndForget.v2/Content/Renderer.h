@@ -51,6 +51,7 @@ public:
 	void Submit(const ShaderStructures::BgCmd& cmd);
 	void StartGeometryPass();
 	void Submit(const ShaderStructures::DrawCmd& cmd);
+	void Submit(const ShaderStructures::ModoDrawCmd&);
 	void DoLightingPass(const ShaderStructures::DeferredCmd& cmd);
 
 	std::shared_ptr<DX::DeviceResources> m_deviceResources;
