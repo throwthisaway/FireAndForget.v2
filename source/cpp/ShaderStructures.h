@@ -3,12 +3,12 @@
 #include <glm/glm.hpp>
 #include "RendererTypes.h"
 #include "compatibility.h"
-#include "ShaderTypeAliases.h"
+#include "SIMDTypeAliases.h"
 #include "Mesh.h"
 #include "ModoMesh.h"
+#include "ShaderStructs.h"
 
 namespace ShaderStructures {
-#include "ShaderStructs.h"
 const int FrameCount = 3;
 const ShaderId Pos = 0;
 const ShaderId Tex = 1;
@@ -92,8 +92,9 @@ struct DrawCmd {
 };
 
 struct ModoDrawCmd {
-	const float4x4& m, mvp;
-	const ModoMeshLoader::Material& material;
+	const Object& o;
+	const ModoMeshLoader::Submesh& submesh;
+	const Material& material;
 	BufferIndex vb, ib;
 	ShaderId shader;
 };
@@ -107,7 +108,7 @@ struct BgCmd {
 };
 
 struct DeferredCmd {
-	Scene scene;
+	SceneCB scene;
 	AO ao;
 	TextureIndex irradiance = InvalidTexture,
 		prefilteredEnvMap = InvalidTexture,

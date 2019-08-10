@@ -1,7 +1,7 @@
 #include "Common.hlsli"
-#include "../../../source/cpp/ShaderStructs.h"
+#include "ShaderStructs.h"
 
-ConstantBuffer<GPUMaterial> mat : register(b0);
+ConstantBuffer<Material> mat : register(b0);
 
 struct PSIn {
 	float4 pos : SV_POSITION;
@@ -12,7 +12,7 @@ MRTOut main(PSIn input) {
 	MRTOut output;
 	output.albedo = float4(mat.diffuse, 1.f);
 	output.normal = Encode(normalize(input.n));
-	output.material = float4(mat.specular_power, 0.f, 1.f);
+	output.material = float4(mat.metallic_roughness, 0.f, 1.f);
 	output.debug = input.worldPos;
 	return output;
 }

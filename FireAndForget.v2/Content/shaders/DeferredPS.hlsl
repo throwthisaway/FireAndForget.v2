@@ -1,10 +1,10 @@
-#include "../../../source/cpp/ShaderStructs.h"
+#include "ShaderStructs.h"
 #include "Phong.hlsli"
 #include "Common.hlsli"
 #include "DeferredRS.hlsli"
 
 cbuffer cScene : register(b0) {
-	Scene scene;
+	SceneCB scene;
 };
 cbuffer cAO : register(b1) {
 	AO ao;

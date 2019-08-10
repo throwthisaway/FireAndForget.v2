@@ -1,6 +1,6 @@
 #include "VertexTypes.hlsli"
 #include "PSInput.hlsli"
-#include "../../../source/cpp/ShaderStructs.h"
+#include "ShaderStructs.h"
 ConstantBuffer<Object> obj : register(b0);
 
 PS_TN main(VertexPNT input) {

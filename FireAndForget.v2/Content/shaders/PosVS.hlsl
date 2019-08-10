@@ -1,4 +1,4 @@
-#include "../../../source/cpp/ShaderStructs.h"
+#include "ShaderStructs.h"
 ConstantBuffer<Object> obj : register(b0);
 
 struct VIn {

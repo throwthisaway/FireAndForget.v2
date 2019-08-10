@@ -2,7 +2,7 @@
 #include "compatibility.h"
 #include "Assets.hpp"
 #include <assert.h>
-#include "VertexTypeAliases.h"
+#include "SIMDTypeAliases.h"
 #include "VertexTypes.h"
 #ifdef PLATFORM_MAC_OS
 #include <CoreFoundation/CFBundle.h>
@@ -271,10 +271,9 @@ namespace assets {
 			textures[id] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
 		}
 		// replace image ids with texture ids
-		for (auto& material : materials) {
-			material.texAlbedo = textures[material.texAlbedo];
-			// ...
-		}
+		for (auto& m : models)
+			for (auto& l : m.layers)
+				for (auto& s : l.submeshes) if (s.texAlbedo != InvalidTexture) s.texAlbedo = textures[s.texAlbedo];
 	}
 	void Assets::Update(Renderer* renderer) {
 #if defined(PLATFORM_WIN)
@@ -337,19 +336,20 @@ namespace assets {
 				auto colLayers = surf.surface_infos[MeshLoader::COLOR_MAP].layers;
 
 				auto res = materialMap.insert({ std::wstring{ name } +L'_' + std::wstring{ s2ws(surf.name) }, (MaterialIndex)materials.size() });
-				VertexType vertexType = VertexType::PN;
 				MaterialIndex materialIndex = res.first->second;
+				auto vOffset = (offset_t)vb.size(), iOffset = (offset_t)ib.size();
+				l.submeshes.push_back({ materialIndex, InvalidTexture, vOffset, iOffset, 0/*stride*/, 0/*count*/, VertexType::PN });	
 				if (res.second) {
 					materials.push_back({});
 					Material material{};
-					material.albedo = { surf.color[0], surf.color[1], surf.color[2] };
-					material.metallic = surf.surface_infos[MeshLoader::SPECULARITY_MAP].val;
-					material.roughness = surf.surface_infos[MeshLoader::GLOSSINESS_MAP].val;
+					material.diffuse = { surf.color[0], surf.color[1], surf.color[2] };
+					material.metallic_roughness = { surf.surface_infos[MeshLoader::SPECULARITY_MAP].val,
+						surf.surface_infos[MeshLoader::GLOSSINESS_MAP].val };
 					materials[materialIndex] = material;
 					if (colLayers && colLayers->image && colLayers->image->path) {
-						vertexType = VertexType::PNT;
+						l.submeshes.back().vertexType = VertexType::PNT;
 						auto inserted = imageMap.insert({ s2ws(colLayers->image->path), (TextureIndex)images.size() });
-						materials[materialIndex].texAlbedo = inserted.first->second;
+						l.submeshes.back().texAlbedo = inserted.first->second;
 						if (inserted.second) {
 							auto path = s2ws(colLayers->image->path);
 							auto pos = path.rfind(L'\\');
@@ -365,9 +365,7 @@ namespace assets {
 						}
 					}
 				}
-				auto vOffset = (offset_t)vb.size(), iOffset = (offset_t)ib.size();
-				l.submeshes.push_back({ materialIndex, vOffset, iOffset, 0/*stride*/, 0/*count*/, vertexType });
-				if (vertexType == VertexType::PN) {
+				if (l.submeshes.back().vertexType == VertexType::PN) {
 					MeshGen<VertexPN> pn;
 					l.submeshes.back().stride = sizeof(decltype(pn)::VertexType);
 					for (MeshLoader::index_t i = section.offset, end = section.offset + section.count; i < end; ++i) {
@@ -385,7 +383,7 @@ namespace assets {
 					memcpy(vb.data() + vOffset, pn.vertices.data(), vSize);
 					memcpy(ib.data() + iOffset, pn.indices.data(), iSize);
 				}
-				else if (vertexType == VertexType::PNT) {
+				else if (l.submeshes.back().vertexType == VertexType::PNT) {
 					MeshGen<VertexPNT> pnt;
 					l.submeshes.back().stride = sizeof(decltype(pnt)::VertexType);
 					const auto& uv = mesh.uvs.uvmaps[surfaceIndex][colLayers->uvmap];

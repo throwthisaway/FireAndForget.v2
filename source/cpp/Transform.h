@@ -2,5 +2,5 @@
 #include"types.h"
 
 struct Transform {
-	vec3_t pos, center, rot;
+	float3 pos, center, rot;
 };

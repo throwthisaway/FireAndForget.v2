@@ -150,12 +150,6 @@
     <ClInclude Include="Content\shaders\Common.hlsli">
       <Filter>Content\shaders</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\cpp\ShaderStructs.h">
-      <Filter>cpp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\source\cpp\ShaderTypeAliases.h">
-      <Filter>cpp</Filter>
-    </ClInclude>
     <ClInclude Include="Content\shaders\Phong.hlsli">
       <Filter>Content\shaders</Filter>
     </ClInclude>
@@ -168,15 +162,19 @@
     <ClInclude Include="Content\DescriptorFrameAlloc.h">
       <Filter>Content</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\cpp\VertexTypeAliases.h">
-      <Filter>cpp</Filter>
-    </ClInclude>
     <ClInclude Include="..\source\cpp\Mesh.h">
       <Filter>cpp</Filter>
     </ClInclude>
     <ClInclude Include="..\source\cpp\DeferredBindings.h">
       <Filter>cpp</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Shared\Platform.h" />
+    <ClInclude Include="..\..\Shared\SIMDTypeAliases.h" />
+    <ClInclude Include="..\..\Shared\ShaderStructs.h" />
+    <ClInclude Include="..\source\cpp\ModoMesh.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\VertexTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -270,6 +268,7 @@
     <None Include="Content\shaders\ModoDNMRRS.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">

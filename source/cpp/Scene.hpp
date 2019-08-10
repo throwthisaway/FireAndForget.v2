@@ -20,7 +20,7 @@
 struct Time;
 struct Scene {
 	struct Object {
-		vec3_t pos, rot;
+		float3 pos, rot;
 		index_t mesh;
 		void Update(double frame, double total);
 	};
@@ -41,7 +41,7 @@ private:
 	}viewport_;
 	Camera camera_;
 	struct Light {
-		ShaderStructures::PointLight pointLight;
+		PointLight pointLight;
 		index_t placeholder;
 	}lights_[MAX_LIGHTS];
 	Renderer* renderer_;
@@ -49,8 +49,8 @@ private:
 	std::vector<Object> objects_;
 	std::vector<Object> modoObjects_;
 	struct {
-		ShaderStructures::Scene scene;
-		ShaderStructures::AO AO;
+		SceneCB scene;
+		AO AO;
 	}shaderStructures;
 	TextureIndex cubeEnv_ = InvalidTexture;
 	ShaderStructures::DeferredCmd deferredCmd_;

@@ -4,9 +4,9 @@
 class Input {
 	float x_, y_;
 public:
-	vec3_t dpos, drot;
+	float3 dpos, drot;
 	void Start(float x, float y);
-	vec3_t Rotate(float x, float y);
-	vec3_t TranslateXZ(float x, float y);
-	vec3_t TranslateY(float y);
+	float3 Rotate(float x, float y);
+	float3 TranslateXZ(float x, float y);
+	float3 TranslateY(float y);
 };

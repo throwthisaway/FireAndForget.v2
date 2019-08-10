@@ -9,13 +9,13 @@ void Camera::Perspective(size_t w, size_t h) {
 	ip = glm::inverse(proj);
 }
 
-void Camera::Translate(const vec3_t& d) {
+void Camera::Translate(const float3& d) {
 	pos += d;
 	at += d;
 	//std::cout<<std::setw(10)<<std::setprecision(8)<<this->pos.x<<std::setw(10)<<std::setprecision(8)<<this->pos.y<<std::setw(10)<<std::setprecision(8)<<this->pos.z<<std::endl;
 }
 
-void Camera::Rotate(const vec3_t& d) {
+void Camera::Rotate(const float3& d) {
 	rot += d;
 }
 

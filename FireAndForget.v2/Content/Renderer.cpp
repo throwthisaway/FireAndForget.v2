@@ -2,10 +2,11 @@
 #include "Renderer.h"
 #include "StringUtil.h"
 #include "..\Common\DirectXHelper.h"
-#include "..\source\cpp\VertexTypeAliases.h"
+#include "SIMDTypeAliases.h"
 #include "..\source\cpp\VertexTypes.h"
 #include "..\source\cpp\DeferredBindings.h"
-#include "../../source/cpp/BufferUtils.h"
+#include "..\..\source\cpp\BufferUtils.h"
+#include "..\..\source\cpp\ShaderStructures.h"
 #include <glm/gtc/matrix_transform.hpp>
 // TODO::
 // - irradiance is flipped
@@ -507,7 +508,7 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 	auto cb1 = prePass_.cb.Alloc(sizeof(float));
 	const int inc1 = AlignTo<int, 256>(sizeof(float));
 	float* p1 = (float*)cb1.cpuAddress;
-	*p1 = dim;
+	*p1 = (float)dim;
 
 	for (int i = 0; i < mipLevelCount; ++i, p0 += inc0 / sizeof(*p0)) {
 		*p0 = (float) i / (mipLevelCount - 1);
@@ -891,7 +892,7 @@ void Renderer::Submit(const DrawCmd& cmd) {
 			{
 				auto cb = frame_->cb.Alloc(sizeof(float4));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				memcpy(cb.cpuAddress, &cmd.material.albedo, sizeof(float4));
+				memcpy(cb.cpuAddress, &cmd.material.diffuse, sizeof(float4));
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
@@ -902,19 +903,18 @@ void Renderer::Submit(const DrawCmd& cmd) {
 			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			{
-				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::Object));
+				auto cb = frame_->cb.Alloc(sizeof(Object));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
-				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
+				((Object*)cb.cpuAddress)->m = cmd.m;
+				((Object*)cb.cpuAddress)->mvp = cmd.mvp;
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
 			{
-				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::GPUMaterial));
+				auto cb = frame_->cb.Alloc(sizeof(Material));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->diffuse = cmd.material.albedo;
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
+				((Material*)cb.cpuAddress)->diffuse = cmd.material.diffuse;
+				((Material*)cb.cpuAddress)->metallic_roughness = cmd.material.metallic_roughness;
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
@@ -925,24 +925,23 @@ void Renderer::Submit(const DrawCmd& cmd) {
 			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			{
-				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::Object));
+				auto cb = frame_->cb.Alloc(sizeof(Object));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
-				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
+				((Object*)cb.cpuAddress)->m = cmd.m;
+				((Object*)cb.cpuAddress)->mvp = cmd.mvp;
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
 			{
-				auto& texture = buffers_[cmd.material.texAlbedo];
+				auto& texture = buffers_[cmd.submesh.texAlbedo];
 				frame_->desc.CreateSRV(entry.cpuHandle, texture.resource.Get());
 			}
 			entry.cpuHandle.Offset(descSize);
 			{
-				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::GPUMaterial));
+				auto cb = frame_->cb.Alloc(sizeof(Material));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->diffuse = cmd.material.albedo;
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
+				((Material*)cb.cpuAddress)->diffuse = cmd.material.diffuse;
+				((Material*)cb.cpuAddress)->metallic_roughness = cmd.material.metallic_roughness;
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
@@ -996,47 +995,45 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			{
-				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::Object));
+				auto cb = frame_->cb.Alloc(sizeof(Object));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
-				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
+				((Object*)cb.cpuAddress)->m = cmd.o.m;
+				((Object*)cb.cpuAddress)->mvp = cmd.o.mvp;
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
 			{
-				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::GPUMaterial));
+				auto cb = frame_->cb.Alloc(sizeof(Material));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->diffuse = cmd.material.rgb;
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
+				((Material*)cb.cpuAddress)->diffuse = cmd.material.diffuse;
+				((Material*)cb.cpuAddress)->metallic_roughness = cmd.material.metallic_roughness;
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
 			break;
 		}
-		case ShaderStructures::Tex: {
-			entry = frame_->desc.Push(3);
+		case ShaderStructures::ModoDN: {
+			entry = frame_->desc.Push(2 + __popcnt(cmd.submesh.textureMask));
 			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			{
-				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::Object));
+				auto cb = frame_->cb.Alloc(sizeof(Object));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((ShaderStructures::Object*)cb.cpuAddress)->m = cmd.m;
-				((ShaderStructures::Object*)cb.cpuAddress)->mvp = cmd.mvp;
+				((Object*)cb.cpuAddress)->m = cmd.o.m;
+				((Object*)cb.cpuAddress)->mvp = cmd.o.mvp;
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
-			{
-				auto& texture = buffers_[cmd.material.texAlbedo];
+			for (int i = 0; i < _countof(cmd.submesh.textures); ++i) {
+				auto& texture = buffers_[cmd.submesh.textures[i].id];
 				frame_->desc.CreateSRV(entry.cpuHandle, texture.resource.Get());
+				entry.cpuHandle.Offset(descSize);
 			}
-			entry.cpuHandle.Offset(descSize);
 			{
-				auto cb = frame_->cb.Alloc(sizeof(ShaderStructures::GPUMaterial));
+				auto cb = frame_->cb.Alloc(sizeof(Material));
 				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->diffuse = cmd.material.albedo;
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.x = cmd.material.metallic;
-				((ShaderStructures::GPUMaterial*)cb.cpuAddress)->specular_power.y = cmd.material.roughness;
+				((Material*)cb.cpuAddress)->diffuse = cmd.material.diffuse;
+				((Material*)cb.cpuAddress)->metallic_roughness = cmd.material.metallic_roughness;
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
@@ -1050,8 +1047,8 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 		assert(cmd.vb != InvalidBuffer);
 		assert(cmd.ib != InvalidBuffer);
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
-			{ buffers_[cmd.vb].bufferLocation + cmd.submesh.vbByteOffset,
-			(UINT)buffers_[cmd.vb].size - +cmd.submesh.vbByteOffset,
+			{ buffers_[cmd.vb].bufferLocation + cmd.submesh.vertexByteOffset,
+			(UINT)buffers_[cmd.vb].size - cmd.submesh.vertexByteOffset,
 			cmd.submesh.stride } };
 
 		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
@@ -1060,16 +1057,15 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 			D3D12_INDEX_BUFFER_VIEW	indexBufferView;
 			{
 				const auto& buffer = buffers_[cmd.ib];
-				indexBufferView.BufferLocation = buffer.bufferLocation + cmd.submesh.ibByteOffset;
-				indexBufferView.SizeInBytes = (UINT)buffer.size - cmd.submesh.ibByteOffset;
+				indexBufferView.BufferLocation = buffer.bufferLocation + cmd.submesh.indexByteOffset;
+				indexBufferView.SizeInBytes = (UINT)buffer.size - cmd.submesh.indexByteOffset;
 				indexBufferView.Format = DXGI_FORMAT_R16_UINT;
 			}
 
 			commandList->IASetIndexBuffer(&indexBufferView);
 			commandList->DrawIndexedInstanced(cmd.submesh.count, 1, 0, 0, 0);
-		}
-		else {
-			commandList->DrawInstanced(cmd.submesh.count, 1, cmd.submesh.vbByteOffset, 0);
+		} else {
+			commandList->DrawInstanced(cmd.submesh.count, 1, cmd.submesh.vertexByteOffset, 0);
 		}
 	}
 	PIXEndEvent(commandList);

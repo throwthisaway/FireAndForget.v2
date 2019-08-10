@@ -8,7 +8,7 @@ void Scene::Object::Update(double frame, double total) {
 
 namespace {
 	const float defaultLightRange = 25.f;
-	const ShaderStructures::PointLight defaultPointLight = { {300.f, 300.f, 300.f}, /*{.4f, .4f, .4f}*//*{23.47f, 21.31f, 20.79f}*//* diffuse */
+	const PointLight defaultPointLight = { {300.f, 300.f, 300.f}, /*{.4f, .4f, .4f}*//*{23.47f, 21.31f, 20.79f}*//* diffuse */
 		{.0f, .0f, .0f}, /* ambient */
 		{.8f, .8f, .8f},/* specular highlight */
 		{ 4.f, 4.f, -10.f}, /* position */
@@ -29,6 +29,7 @@ namespace {
 			}
 		}
 		assert(false);
+		return (uint16_t)-1;
 	}
 }
 void Scene::PrepareScene() {
@@ -55,12 +56,11 @@ void Scene::PrepareScene() {
 			assets_.models.push_back(model);
 			objects_.push_back({ pos, {}, index_t(assets_.models.size() - 1) });
 			assets_.materials.push_back({ { .5f, .0f, .0f },
-				glm::clamp((float)j / count, .05f, 1.f),
-				(float)i / count,
-				InvalidTexture });
+				{glm::clamp((float)j / count, .05f, 1.f), (float)i / count } });
 			pos.x += incX;
 			auto& submesh = assets_.models[objects_.back().mesh].layers.front().submeshes.front();
 			submesh.material = (MaterialIndex)assets_.materials.size() - 1;
+			submesh.texAlbedo = InvalidTexture;
 		}
 		pos.y += incY;
 		pos.x = -3 * incX;
@@ -139,7 +139,7 @@ void Scene::Render() {
 			auto mvp = camera_.vp * m;
 			for (const auto& submesh : l.submeshes) {
 				const auto& material = assets_.materials[submesh.material];
-				ShaderId shader = (material.texAlbedo != InvalidTexture && submesh.vertexType == VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
+				ShaderId shader = (submesh.texAlbedo != InvalidTexture && submesh.vertexType == VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
 				ShaderStructures::DrawCmd cmd{ m, mvp, submesh, material, mesh.vb, mesh.ib, shader};
 				renderer_->Submit(cmd);
 			}
@@ -151,9 +151,9 @@ void Scene::Render() {
 		auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
 		//m[3] += float4(l.pivot, 0.f);
 		auto mvp = camera_.vp * m;
-		for (const auto& material : mesh.materials) {
-			ShaderId shader = SelectModoShader(material.uvCount, material.textureMask);
-			ShaderStructures::ModoDrawCmd cmd{ m, mvp, material, mesh.vb, mesh.ib, shader};
+		for (const auto& submesh : mesh.submeshes) {
+			ShaderId shader = SelectModoShader(submesh.uvCount, submesh.textureMask);
+			ShaderStructures::ModoDrawCmd cmd{ {m, mvp}, submesh, submesh.material, mesh.vb, mesh.ib, shader };
 			renderer_->Submit(cmd);
 		}
 	}
@@ -185,7 +185,7 @@ void Scene::Update(double frame, double total) {
 	deferredCmd_.scene.ip = glm::inverse(camera_.proj);
 	deferredCmd_.scene.ivp = camera_.ivp;
 	deferredCmd_.scene.nf.x = camera_.n; deferredCmd_.scene.nf.y = camera_.f;
-	deferredCmd_.scene.viewport.x = (float)viewport_.width; deferredCmd_.scene.viewport.y = viewport_.height;
+	deferredCmd_.scene.viewport = { (float)viewport_.width, (float)viewport_.height };
 	for (auto& o : objects_) {
 		o.Update(frame, total);
 	}

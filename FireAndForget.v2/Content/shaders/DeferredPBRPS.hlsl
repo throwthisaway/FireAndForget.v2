@@ -1,11 +1,11 @@
-#include "../../../source/cpp/ShaderStructs.h"
+#include "ShaderStructs.h"
 #include "PSInput.hlsli"
 #include "PI.hlsli"
 #include "PBR.hlsli"
 #include "Common.hlsli"
 #include "DeferredRS.hlsli"
 
-ConstantBuffer<Scene> scene: register(b0);
+ConstantBuffer<SceneCB> scene: register(b0);
 ConstantBuffer<AO> ao : register(b1);
 Texture2D<float4> texAlbedo : register(t0);
 Texture2D<float2> texNormal : register(t1);
@@ -126,4 +126,5 @@ float4 main(PS_T input) : SV_TARGET{
 	color = color / (color + 1.f);
 	color = pow(color, 1.f/2.2f);
 	return float4(color, albedo.a);
+	//return float4(albedo.rgb, 1.f);
 }
