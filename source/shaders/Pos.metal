@@ -1,6 +1,6 @@
 #include "Common.h.metal"
 #include "VertexTypes.h.metal"
-#include "../cpp/ShaderStructs.h"
+#include "ShaderStructs.h"
 
 struct PSIn {
 	float4 pos [[position]];
@@ -23,11 +23,11 @@ vertex PSIn pos_vs_main(const device VertexPN* input[[buffer(0)]],
 }
 
 fragment FragOut pos_fs_main(PSIn input [[stage_in]],
-							 constant GPUMaterial& material [[buffer(0)]]) {
+							 constant Material& material [[buffer(0)]]) {
 	FragOut output;
 	output.albedo = float4(material.diffuse, 1.f);
 	output.normal = Encode(normalize(input.n));
-	output.material = float4(material.specular_power, 0.f, 1.f);
+	output.material = float4(material.metallic_roughness, 0.f, 1.f);
 	//output.debug = float4(float3(input.worldPos), 1.f);
 	output.debug = float4(normalize(input.n), 1.f);
 	return output;

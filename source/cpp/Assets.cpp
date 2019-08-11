@@ -184,8 +184,8 @@ namespace assets {
 	void Assets::LoadModoMesh(Renderer* renderer, const wchar_t* fname) {
 		auto data = ::LoadFromBundle(fname);
 		auto res = ModoMeshLoader::Load(data);
-		for (auto& mat : res.materials)
-			for (auto& tex : mat.textures) {
+		for (auto& s : res.submeshes)
+			for (auto& tex : s.textures) {
 				auto& str = res.images[tex.id];
 				auto result = loadContextModo.imageMap.insert(make_pair(str, loadContextModo.images.size()));
 				if (result.second) {
@@ -197,7 +197,7 @@ namespace assets {
 			}
 		loadContextModo.meshes.push_back({ renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
 			renderer->CreateBuffer(res.indices.data(), res.indices.size()),
-			std::move(res.materials) });
+			std::move(res.submeshes) });
 	}
 	Img::ImgData Assets::LoadImage(const wchar_t* fname) {
 		std::vector<uint8_t> data = ::LoadFromBundle(fname);
@@ -254,8 +254,8 @@ namespace assets {
 
 		// replace image ids with texture ids
 		for (auto& mesh : loadContextModo.meshes)
-			for (auto& material : mesh.materials)
-				for (auto& texture : material.textures) {
+			for (auto& s : mesh.submeshes)
+				for (auto& texture : s.textures) {
 					 // texture.image was replaced with an index into the context's images array
 					 texture.id = (uint32_t)offset + texture.id;
 				}

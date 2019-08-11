@@ -3,7 +3,7 @@
 #include "cpp/Assets.hpp"
 #include "cpp/BufferUtils.h"
 #include <glm/gtc/matrix_transform.hpp>
-#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
+//#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
 
 using namespace ShaderStructures;
 namespace {
@@ -84,8 +84,8 @@ void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 	}
 
 	struct PosUV {
-		simd::float2 pos;
-		simd::float2 uv;
+		packed_float2 pos;
+		packed_float2 uv;
 	};
 	// top: uv.y = 0
 	PosUV quad[] = {{{-1., -1.f}, {0.f, 1.f}}, {{-1., 1.f}, {0.f, 0.f}}, {{1., -1.f}, {1.f, 1.f}}, {{1., 1.f}, {1.f, 0.f}}};
@@ -598,35 +598,35 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 	id<MTLRenderCommandEncoder> commandEncoder = encoders_[cmd.shader];
 
 	NSUInteger vsAttribIndex = 0, fsAttribIndex = 0, textureIndex = 0;
-	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: cmd.material.vertexByteOffset atIndex: vsAttribIndex++];
+	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: cmd.submesh.vertexByteOffset atIndex: vsAttribIndex++];
 
 	CBFrameAlloc& frame = frame_[currentFrameIndex_];
 	switch (cmd.shader) {
 		case ShaderStructures::Pos: {
 			{
-				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
-				((ShaderStructures::Object*)cb.address)->m = cmd.m;
-				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				auto cb = frame.Alloc(sizeof(Object));
+				((Object*)cb.address)->m = cmd.o.m;
+				((Object*)cb.address)->mvp = cmd.o.mvp;
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			{
-				auto cb = frame.Alloc(sizeof(ShaderStructures::GPUMaterial));
-				memcpy(&((ShaderStructures::GPUMaterial*)cb.address)->diffuse, cmd.material.rgb, sizeof(cmd.material.rgb));
-				((ShaderStructures::GPUMaterial*)cb.address)->specular_power = {cmd.material.metallic, cmd.material.roughness};
+				auto cb = frame.Alloc(sizeof(Material));
+				((Material*)cb.address)->diffuse = cmd.material.diffuse;
+				((Material*)cb.address)->metallic_roughness = cmd.material.metallic_roughness;
 				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
 			}
 			break;
 		}
 		case ShaderStructures::ModoDNMR: {
 			{
-				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
-				((ShaderStructures::Object*)cb.address)->m = cmd.m;
-				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				auto cb = frame.Alloc(sizeof(Object));
+				((Object*)cb.address)->m = cmd.o.m;
+				((Object*)cb.address)->mvp = cmd.o.mvp;
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
-			for (int i = 0; i < sizeof(cmd.material.textures) / sizeof(cmd.material.textures[0]); ++i) {
-				if (!(cmd.material.textureMask & (1 << i))) continue;
-				auto& texture = textures_[cmd.material.textures[i].id];
+			for (int i = 0; i < sizeof(cmd.submesh.textures) / sizeof(cmd.submesh.textures[0]); ++i) {
+				if (!(cmd.submesh.textureMask & (1 << i))) continue;
+				auto& texture = textures_[cmd.submesh.textures[i].id];
 				[commandEncoder setFragmentTexture: texture.texture atIndex: textureIndex++];
 				[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
 			}
@@ -634,21 +634,21 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 		}
 		case ShaderStructures::ModoDN: {
 			{
-				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
-				((ShaderStructures::Object*)cb.address)->m = cmd.m;
-				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				auto cb = frame.Alloc(sizeof(Object));
+				((Object*)cb.address)->m = cmd.o.m;
+				((Object*)cb.address)->mvp = cmd.o.mvp;
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			{
-				auto cb = frame.Alloc(sizeof(ShaderStructures::ModoGPUMaterial));
-				auto* material = (ShaderStructures::ModoGPUMaterial*)cb.address;
-				memcpy(&material->diffuse, cmd.material.rgb, sizeof(cmd.material.rgb));
-				material->metallic_roughness = {cmd.material.metallic, cmd.material.roughness};
+				auto cb = frame.Alloc(sizeof(Material));
+				auto* material = (Material*)cb.address;
+				material->diffuse = cmd.material.diffuse;
+				material->metallic_roughness = cmd.material.metallic_roughness;
 				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
 			}
-			for (int i = 0; i < sizeof(cmd.material.textures) / sizeof(cmd.material.textures[0]); ++i) {
-				if (!(cmd.material.textureMask & (1 << i))) continue;
-				auto& texture = textures_[cmd.material.textures[i].id];
+			for (int i = 0; i < sizeof(cmd.submesh.textures) / sizeof(cmd.submesh.textures[0]); ++i) {
+				if (!(cmd.submesh.textureMask & (1 << i))) continue;
+				auto& texture = textures_[cmd.submesh.textures[i].id];
 				[commandEncoder setFragmentTexture: texture.texture atIndex: textureIndex++];
 				[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
 			}
@@ -656,7 +656,7 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 		}
 		default: assert(false);
 	}
-	[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.material.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.material.indexByteOffset instanceCount: 1 baseVertex: 0 baseInstance: 0];
+	[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.submesh.indexByteOffset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 }
 
 void Renderer::Submit(const ShaderStructures::DrawCmd& cmd) {
@@ -675,42 +675,43 @@ void Renderer::Submit(const ShaderStructures::DrawCmd& cmd) {
 			}
 			{
 				auto cb = frame.Alloc(sizeof(float4));
-				memcpy(cb.address, &cmd.material.albedo, sizeof(float4));
+				memcpy(cb.address, &cmd.material.diffuse, sizeof(float3));
+				((float*)cb.address)[3] = 1.f;
 				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
 			}
 			break;
 		}
 		case ShaderStructures::Pos: {
 			{
-				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
-				((ShaderStructures::Object*)cb.address)->m = cmd.m;
-				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				auto cb = frame.Alloc(sizeof(Object));
+				((Object*)cb.address)->m = cmd.m;
+				((Object*)cb.address)->mvp = cmd.mvp;
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			{
-				auto cb = frame.Alloc(sizeof(ShaderStructures::GPUMaterial));
-				((ShaderStructures::GPUMaterial*)cb.address)->diffuse = cmd.material.albedo;
-				((ShaderStructures::GPUMaterial*)cb.address)->specular_power = {cmd.material.metallic, cmd.material.roughness};
+				auto cb = frame.Alloc(sizeof(Material));
+				((Material*)cb.address)->diffuse = cmd.material.diffuse;
+				((Material*)cb.address)->metallic_roughness = cmd.material.metallic_roughness;
 				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
 			}
 			break;
 		}
 		case ShaderStructures::Tex: {
 			{
-				auto cb = frame.Alloc(sizeof(ShaderStructures::Object));
-				((ShaderStructures::Object*)cb.address)->m = cmd.m;
-				((ShaderStructures::Object*)cb.address)->mvp = cmd.mvp;
+				auto cb = frame.Alloc(sizeof(Object));
+				((Object*)cb.address)->m = cmd.m;
+				((Object*)cb.address)->mvp = cmd.mvp;
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			{
-				auto& texture = textures_[cmd.material.texAlbedo];
+				auto& texture = textures_[cmd.submesh.texAlbedo];
 				[commandEncoder setFragmentTexture: texture.texture atIndex:textureIndex++];
 				[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
 			}
 			{
-				auto cb = frame.Alloc(sizeof(ShaderStructures::GPUMaterial));
-				((ShaderStructures::GPUMaterial*)cb.address)->diffuse = cmd.material.albedo;
-				((ShaderStructures::GPUMaterial*)cb.address)->specular_power = {cmd.material.metallic, cmd.material.roughness};
+				auto cb = frame.Alloc(sizeof(Material));
+				((Material*)cb.address)->diffuse = cmd.material.diffuse;
+				((Material*)cb.address)->metallic_roughness = cmd.material.metallic_roughness;
 				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
 			}
 			break;

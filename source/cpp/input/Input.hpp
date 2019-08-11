@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include "SIMDTypeAliases.h"
 
 class Input {
 	float x_, y_;

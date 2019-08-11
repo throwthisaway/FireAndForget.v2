@@ -7,6 +7,8 @@
 #include "Camera.hpp"
 #ifdef PLATFORM_WIN
 #include "../Content/Renderer.h"
+#elif defined(PLATFORM_MAC_OS)
+#include "../Renderer.h"
 #endif // PLATFORM_WIN
 
 // TODO::

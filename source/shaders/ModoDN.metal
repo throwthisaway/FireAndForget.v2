@@ -1,6 +1,6 @@
 #include "Common.h.metal"
 #include "VertexTypes.h.metal"
-#include "../cpp/ShaderStructs.h"
+#include "ShaderStructs.h"
 
 // TODO:: declare sampler and texture
 struct uObject {
@@ -52,7 +52,7 @@ vertex FSIn modo_dn_vs_main(const device VertexPNT* input [[buffer(0)]],
 fragment FragOut modo_dn_fs_main(FSIn input [[stage_in]],
 								   array<texture2d<float>, 2> textures [[texture(0)]],
 								   sampler smp [[sampler(0)]],
-								   constant ModoGPUMaterial& material [[buffer(0)]]) {
+								   constant Material& material [[buffer(0)]]) {
 	FragOut output;
 	output.albedo = textures[0].sample(smp, input.uv0);
 	float3 n = textures[1].sample(smp, input.uv0).xyz * 2.f - 1.f;

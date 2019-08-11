@@ -45,7 +45,7 @@ float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, constant AO& ao,
 	return sum;
 }
 fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
-									  constant Scene& scene [[buffer(0)]],
+									  constant SceneCB& scene [[buffer(0)]],
 									  constant AO& ao [[buffer(1)]],
 									  texture2d<float> albedoTx [[texture(0)]],
 									  texture2d<float> normal [[texture(1)]],

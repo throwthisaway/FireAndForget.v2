@@ -18,7 +18,7 @@ struct DeferredOut {
 };
 
 fragment DeferredOut deferred_fs_main(FragT input [[stage_in]],
-							  constant Scene& scene [[buffer(0)]],
+							  constant SceneCB& scene [[buffer(0)]],
 							  texture2d<float> color [[texture(0)]],
 							  texture2d<float> normal [[texture(1)]],
 							  texture2d<float> material [[texture(2)]],

@@ -153,7 +153,7 @@ void Scene::Render() {
 		auto mvp = camera_.vp * m;
 		for (const auto& submesh : mesh.submeshes) {
 			ShaderId shader = SelectModoShader(submesh.uvCount, submesh.textureMask);
-			ShaderStructures::ModoDrawCmd cmd{ {m, mvp}, submesh, submesh.material, mesh.vb, mesh.ib, shader };
+			ShaderStructures::ModoDrawCmd cmd{ {mvp, m}, submesh, submesh.material, mesh.vb, mesh.ib, shader };
 			renderer_->Submit(cmd);
 		}
 	}

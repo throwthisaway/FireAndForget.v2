@@ -1,6 +1,6 @@
 #include "Common.h.metal"
 #include "VertexTypes.h.metal"
-#include "../cpp/ShaderStructs.h"
+#include "ShaderStructs.h"
 
 // TODO:: declare sampler and texture
 struct uObject {
@@ -27,12 +27,12 @@ vertex FSIn tex_vs_main(const device VertexPNT* input [[buffer(0)]],
 fragment FragOut tex_fs_main(FSIn input [[stage_in]],
 							texture2d<float> diffuseTexture [[texture(0)]],
 							sampler smp [[sampler(0)]],
-							constant GPUMaterial& material [[buffer(0)]]) {
+							constant Material& material [[buffer(0)]]) {
 	float4 diffuseColor = diffuseTexture.sample(smp, input.uv0);
 	FragOut output;
 	output.albedo = diffuseColor;
 	output.normal = Encode(input.n);
-	output.material = float4(material.specular_power, 0.f, 1.f);
+	output.material = float4(material.metallic_roughness, 0.f, 1.f);
 	output.debug = input.pos;
 	return output;
 }

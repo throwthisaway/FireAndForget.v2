@@ -1,6 +1,6 @@
 #include "Common.h.metal"
 #include "VertexTypes.h.metal"
-#include "../cpp/ShaderStructs.h"
+#include "ShaderStructs.h"
 
 // TODO:: declare sampler and texture
 struct uObject {
