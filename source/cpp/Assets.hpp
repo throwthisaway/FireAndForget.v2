@@ -15,6 +15,7 @@
 #include "../Renderer.h"
 #endif
 #include "ModoMesh.h"
+#include "ModoMeshLoader.h"
 
 namespace assets {
 	struct Assets {
@@ -60,9 +61,19 @@ namespace assets {
 #endif
 		}loadContext;
 		struct ModoLoadContext {
+#if defined(PLATFORM_WIN)
+			concurrency::concurrent_unordered_map<std::wstring, TextureIndex> imageMap;
+			concurrency::concurrent_vector<Img::ImgData> images;
+			concurrency::concurrent_vector<ModoMesh> meshes;
+			concurrency::concurrent_vector<ModoMeshLoader::Result> createModoModelResults;
+			concurrency::concurrent_vector<Concurrency::task<void>> imageLoadTasks;
+			Concurrency::task<void> LoadModoMesh(Renderer* renderer, const wchar_t* fname);
+			Concurrency::task<void> LoadImage(const wchar_t* fname, size_t id);
+#elif defined(PLATFORM_MAC_OS)
 			std::vector<std::string> images;
 			std::unordered_map<std::string, size_t> imageMap;
 			std::vector<ModoMesh> meshes;
+#endif
 		}loadContextModo;
 #if defined(PLATFORM_WIN)
 #elif defined(PLATFORM_MAC_OS)

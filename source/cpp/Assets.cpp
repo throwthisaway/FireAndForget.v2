@@ -173,6 +173,28 @@ namespace assets {
 			images[id] = std::move(DecodeImageFromData(data, type));
 		});
 	}
+	Concurrency::task<void> Assets::ModoLoadContext::LoadImage(const wchar_t* fname, size_t id) {
+		return DX::ReadDataAsync(fname).then([type = GetImageFileType(fname, wcslen(fname)), this, id](std::vector<byte>& data) {
+			images[id] = std::move(DecodeImageFromData(data, type));
+		});
+	}
+	Concurrency::task<void> Assets::ModoLoadContext::LoadModoMesh(Renderer* renderer, const wchar_t* fname) {
+		return DX::ReadDataAsync(fname).then([this, fname](std::vector<byte>& data) {
+			auto res = ModoMeshLoader::Load(data);
+			for (auto& s : res.submeshes)
+				for (auto& tex : s.textures) {
+					auto& path = res.images[tex.id];
+					auto wpath = s2ws(path);
+					auto result = imageMap.insert(make_pair(wpath, (TextureIndex)images.size()));
+					if (result.second) {
+						tex.id = (uint32_t)images.size();
+						images.push_back({});
+						imageLoadTasks.push_back(LoadImage(wpath.c_str(), result.first->second));
+					} else tex.id = (uint32_t)result.first->second;
+				}
+			createModoModelResults.push_back(res);
+		});
+	}
 #elif defined(PLATFORM_MAC_OS)
 	void Assets::LoadMesh(Renderer* renderer, const wchar_t* fname, size_t id) {
 		auto data = ::LoadFromBundle(fname);
@@ -221,10 +243,13 @@ namespace assets {
 			loadContext.LoadMesh(L"BEETHOVE_object.mesh", BEETHOVEN),
 			loadContext.LoadMesh(L"sphere.mesh", SPHERE),
 			loadContext.LoadMesh(L"textured_unit_cube.mesh", UNITCUBE),
+			loadContextModo.LoadModoMesh(renderer, L"test_torus.mesh"),
+			loadContextModo.LoadModoMesh(renderer, L"checkerboard_modo.mesh"),
 		};
 		
 		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {
-			return Concurrency::when_all(std::begin(loadContext.imageLoadTasks), std::end(loadContext.imageLoadTasks)).then([this]() {
+			return (Concurrency::when_all(std::begin(loadContext.imageLoadTasks), std::end(loadContext.imageLoadTasks)) && 
+				Concurrency::when_all(std::begin(loadContextModo.imageLoadTasks), std::end(loadContextModo.imageLoadTasks))).then([this]() {
 				return status = Status::kLoaded;
 			}); });
 #elif defined(PLATFORM_MAC_OS)
@@ -287,8 +312,30 @@ namespace assets {
 				models[id].ib = renderer->CreateBuffer(res.ib.data(), res.ib.size());
 			}
 			ImagesToTextures(renderer);
-			renderer->EndUploadResources();
 			loadContext = LoadContext();
+
+			for (auto& res : loadContextModo.createModoModelResults) {
+				for (auto& s : res.submeshes)
+				loadContextModo.meshes.push_back({ renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
+					renderer->CreateBuffer(res.indices.data(), res.indices.size()),
+					std::move(res.submeshes) });
+			}
+			auto offset = textures.size();
+			for (auto& img : loadContextModo.images) {
+				textures.push_back(renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf));
+			}
+
+			// replace image ids with texture ids
+			for (auto& mesh : loadContextModo.meshes)
+				for (auto& s : mesh.submeshes)
+					for (auto& texture : s.textures) {
+						 // texture.image was replaced with an index into the context's images array
+						 texture.id = (uint32_t)textures[offset + texture.id];
+					}
+			for (auto& mesh : loadContextModo.meshes)
+				meshes.emplace_back(std::move(mesh));
+			loadContextModo = ModoLoadContext();
+			renderer->EndUploadResources();
 			status = Status::kReady;
 		}
 #endif
