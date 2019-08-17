@@ -66,7 +66,7 @@ namespace assets {
 			concurrency::concurrent_unordered_map<std::wstring, TextureIndex> imageMap;
 			concurrency::concurrent_vector<Img::ImgData> images;
 			concurrency::concurrent_vector<ModoMesh> meshes;
-			concurrency::concurrent_vector<ModoMeshLoader::Result> createModoModelResults;
+			concurrency::concurrent_vector<ModoMeshLoader::Result> createModelResults;
 			concurrency::concurrent_vector<Concurrency::task<void>> imageLoadTasks;
 			Concurrency::task<void> LoadMesh(const wchar_t* fname, size_t id = INVALID);
 			Concurrency::task<void> LoadImage(const wchar_t* fname, size_t id);

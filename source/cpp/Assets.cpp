@@ -182,7 +182,9 @@ namespace assets {
 		return DX::ReadDataAsync(fname).then([this, fname, id](std::vector<byte>& data) {
 			auto res = ModoMeshLoader::Load(data);
 			for (auto& s : res.submeshes)
-				for (auto& tex : s.textures) {
+				for (int i = 0; i < _countof(s.textures); ++i) {
+					auto& tex = s.textures[i];
+					if (!(s.textureMask & (1 << i)))  continue;
 					auto& path = res.images[tex.id];
 					auto wpath = s2ws(path);
 					auto result = imageMap.insert(make_pair(wpath, (TextureIndex)images.size()));
@@ -192,8 +194,8 @@ namespace assets {
 						imageLoadTasks.push_back(LoadImage(wpath.c_str(), result.first->second));
 					} else tex.id = (uint32_t)result.first->second;
 				}
-			if (id == INVALID) createModoModelResults.push_back(res);
-			else createModoModelResults[id] = res;
+			if (id == INVALID) createModelResults.push_back(res);
+			else createModelResults[id] = res;
 		});
 	}
 #elif defined(PLATFORM_MAC_OS)
@@ -240,7 +242,7 @@ namespace assets {
 		loadContext.images.resize(STATIC_IMAGE_COUNT);
 		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"random.png", RANDOM));
 		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"Alexs_Apt_2k.hdr", ENVIRONMENT_MAP));
-		loadContextModo.meshes.resize(STATIC_MODEL_COUNT);
+		loadContextModo.createModelResults.resize(STATIC_MODEL_COUNT);
 		loadContext.createModelResults.resize(STATIC_MODEL_COUNT);
 		std::initializer_list<Concurrency::task<void>> loadMeshTasks{
 			loadContext.LoadMesh(L"light.mesh", LIGHT),
@@ -337,7 +339,7 @@ namespace assets {
 			ImagesToTextures(renderer);
 			loadContext = LoadContext();
 
-			for (auto& res : loadContextModo.createModoModelResults) {
+			for (auto& res : loadContextModo.createModelResults) {
 				for (auto& s : res.submeshes)
 				loadContextModo.meshes.push_back({ renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
 					renderer->CreateBuffer(res.indices.data(), res.indices.size()),
