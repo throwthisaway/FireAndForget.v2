@@ -204,11 +204,13 @@ namespace assets {
 		models[id].vb = renderer->CreateBuffer(res.vb.data(), res.vb.size());
 		models[id].ib = renderer->CreateBuffer(res.ib.data(), res.ib.size());
 	}
-	void Assets::LoadModoMesh(Renderer* renderer, const wchar_t* fname) {
+	void Assets::LoadModoMesh(Renderer* renderer, const wchar_t* fname, size_t id) {
 		auto data = ::LoadFromBundle(fname);
 		auto res = ModoMeshLoader::Load(data);
 		for (auto& s : res.submeshes)
-			for (auto& tex : s.textures) {
+			for (int i = 0; i < sizeof(s.textures)/sizeof(s.textures[0]); ++i) {
+				auto& tex = s.textures[i];
+				if (!(s.textureMask & (1 << i)))  continue;
 				auto& str = res.images[tex.id];
 				auto result = loadContextModo.imageMap.insert(make_pair(str, loadContextModo.images.size()));
 				if (result.second) {
@@ -218,9 +220,11 @@ namespace assets {
 					tex.id = (uint32_t)result.first->second;
 				}
 			}
-		loadContextModo.meshes.push_back({ renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
+		ModoMesh mesh = { renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
 			renderer->CreateBuffer(res.indices.data(), res.indices.size()),
-			std::move(res.submeshes) });
+			std::move(res.submeshes) };
+		if (id == INVALID) loadContextModo.meshes.push_back(mesh);
+		else loadContextModo.meshes[id] = mesh;
 	}
 	Img::ImgData Assets::LoadImage(const wchar_t* fname) {
 		std::vector<uint8_t> data = ::LoadFromBundle(fname);
@@ -232,11 +236,11 @@ namespace assets {
 		status = Status::kInitialized;
 		models.resize(STATIC_MODEL_COUNT);
 		textures.resize(STATIC_IMAGE_COUNT);
-		meshes.resize(STATIC_MODEL_COUNT);
 #ifdef PLATFORM_WIN
 		loadContext.images.resize(STATIC_IMAGE_COUNT);
 		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"random.png", RANDOM));
 		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"Alexs_Apt_2k.hdr", ENVIRONMENT_MAP));
+		loadContextModo.meshes.resize(STATIC_MODEL_COUNT);
 		loadContext.createModelResults.resize(STATIC_MODEL_COUNT);
 		std::initializer_list<Concurrency::task<void>> loadMeshTasks{
 			loadContext.LoadMesh(L"light.mesh", LIGHT),
@@ -276,6 +280,13 @@ namespace assets {
 		ImagesToTextures(renderer);
 		renderer->EndUploadResources();
 		loadContext = LoadContext{};
+		loadContextModo.meshes.resize(STATIC_MODEL_COUNT);
+		LoadModoMesh(renderer, L"light_modo.mesh", LIGHT);
+		LoadModoMesh(renderer, L"box_modo.mesh", PLACEHOLDER);
+		LoadModoMesh(renderer, L"checkerboard_modo.mesh", CHECKERBOARD);
+		LoadModoMesh(renderer, L"BEETHOVE_object_modo.mesh", BEETHOVEN);
+		LoadModoMesh(renderer, L"sphere_modo.mesh", SPHERE);
+		LoadModoMesh(renderer, L"textured_unit_cube_modo.mesh", UNITCUBE);
 		LoadModoMesh(renderer, L"test_torus.mesh");
 		LoadModoMesh(renderer, L"checkerboard_modo.mesh");
 
@@ -289,7 +300,7 @@ namespace assets {
 		// replace image ids with texture ids
 		for (auto& mesh : loadContextModo.meshes)
 			for (auto& s : mesh.submeshes)
-				for (int i = 0; i < _countof(s.textures); ++i) {
+				for (int i = 0; i < sizeof(s.textures)/sizeof(s.textures[0]); ++i) {
 					auto& texture = s.textures[i];
 					if (s.textureMask & (1 << i)) {
 						// texture.image was replaced with an index into the context's images array

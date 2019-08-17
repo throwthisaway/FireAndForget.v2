@@ -79,7 +79,7 @@ namespace assets {
 #if defined(PLATFORM_WIN)
 #elif defined(PLATFORM_MAC_OS)
 		void LoadMesh(Renderer* renderer, const wchar_t* fname, size_t id);
-		void LoadModoMesh(Renderer* renderer, const wchar_t* fname);
+		void LoadModoMesh(Renderer* renderer, const wchar_t* fname, size_t id = INVALID);
 		static Img::ImgData LoadImage(const wchar_t* fname);
 #endif
 		void ImagesToTextures(Renderer*);
