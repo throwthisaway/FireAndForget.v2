@@ -810,12 +810,20 @@ bool Renderer::Render() {
 
 	// TODO:: fixed size array
 	std::vector<ID3D12CommandList*> ppCommandLists;
-	for (auto& commandList : commandLists_) {
-		commandList->Close();
+	for (auto& commandList : commandLists_)
 		ppCommandLists.push_back(commandList.Get());
-	}
-	deferredCommandList_->Close();
 	ppCommandLists.push_back(deferredCommandList_.Get());
+
+		// Indicate that the render target will now be used to present when the command list is done executing.
+	CD3DX12_RESOURCE_BARRIER presentResourceBarrier[] =
+		{ CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT),
+		 CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE) };
+		
+	((ID3D12GraphicsCommandList*)ppCommandLists.back())->ResourceBarrier(_countof(presentResourceBarrier), presentResourceBarrier);
+
+	for (auto* commandList : ppCommandLists)
+		((ID3D12GraphicsCommandList*)commandList)->Close();
+
 	// Execute the command list.
 	m_deviceResources->GetCommandQueue()->ExecuteCommandLists((UINT)ppCommandLists.size(), &ppCommandLists.front());
 	return true;
@@ -1219,13 +1227,6 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 
 		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
 		commandList->DrawInstanced(4, 1, 0, 0);
-
-		// Indicate that the render target will now be used to present when the command list is done executing.
-		CD3DX12_RESOURCE_BARRIER presentResourceBarrier[] =
-		{ CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT),
-		 CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE) };
-		
-		commandList->ResourceBarrier(_countof(presentResourceBarrier), presentResourceBarrier);
 	}
 	PIXEndEvent(commandList);
 }

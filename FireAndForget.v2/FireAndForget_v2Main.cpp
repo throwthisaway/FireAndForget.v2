@@ -94,6 +94,7 @@ void FireAndForget_v2Main::PointerMoved(float x, float y, bool left, bool middle
 	const size_t Ctrl = 1, Alt = 2, Shift = 4;
 	if (left) {
 		if (modifiers & Alt) scene_.input.TranslateY(y);
+		else if (modifiers & Shift) scene_.input.TranslateXZ(x, y);
 		else scene_.input.Rotate(x, y);
 	}
 	else if (right) scene_.input.TranslateXZ(x, y);

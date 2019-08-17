@@ -264,7 +264,7 @@ void App::OnPointerPressed(Windows::UI::Core::CoreWindow ^sender, Windows::UI::C
 	m_main->PointerPressed(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
 	unsigned int pointerId = args->CurrentPoint->PointerId;
 	Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
-	m_gestureRecognizer->ProcessDownEvent(pointerPoint);
+	if (m_gestureRecognizer->IsActive) m_gestureRecognizer->ProcessDownEvent(pointerPoint);
 }
 
 void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
@@ -273,7 +273,7 @@ void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::
 	m_main->PointerReleased(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
 	unsigned int pointerId = args->CurrentPoint->PointerId;
 	Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
-	m_gestureRecognizer->ProcessUpEvent(pointerPoint);
+	if (m_gestureRecognizer->IsActive) m_gestureRecognizer->ProcessUpEvent(pointerPoint);
 }
 
 void App::OnKeyUp(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args)

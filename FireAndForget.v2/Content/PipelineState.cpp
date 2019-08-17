@@ -60,12 +60,19 @@ PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
 				state.RTVFormats[i] = deferredRTFmts[i];
 			state.DSVFormat = deviceResources->GetDepthBufferFormat();
 			state.SampleDesc.Count = 1;
-			deferred = state;
+			geometry = state;
 		}
 		{
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			D3D12_BLEND_DESC desc = {};
+			desc.RenderTarget[0].BlendEnable = TRUE;
+			desc.RenderTarget[0].BlendOp = desc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+			desc.RenderTarget[0].SrcBlend = desc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+			desc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_COLOR;
+			desc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+			desc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+			state.BlendState = desc;
 			state.DepthStencilState = {};
 			state.SampleMask = UINT_MAX;
 			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -73,7 +80,7 @@ PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
 			state.RTVFormats[0] = deviceResources->GetBackBufferFormat();
 			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
 			state.SampleDesc.Count = 1;
-			post = state;
+			lighting = state;
 		}
 
 		{
@@ -81,6 +88,7 @@ PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+			state.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL; // less AND equal bc. of bg. shader xyww trick, depth write/test should jut be turned off instead
 			state.SampleMask = UINT_MAX;
 			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			state.NumRenderTargets = 1;
@@ -215,11 +223,11 @@ void PipelineStates::CreateDeviceDependentResources() {
 		rootSignatures_[ROOT_VS_1CB_PS_1TX_1CB] = rootSignature;
 	}
 
-	shaderTasks.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", { pnLayout, _countof(pnLayout) }, deferred, State::RenderPass::Geometry));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_1CB, L"TexVS.cso", L"TexPS.cso", { pntLayout, _countof(pntLayout) }, deferred, State::RenderPass::Geometry));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", { pnLayout, _countof(pnLayout) }, deferred, State::RenderPass::Geometry));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Deferred, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPS.cso", { fsQuadLayout, _countof(fsQuadLayout) }, post, State::RenderPass::Lighting));
-	shaderTasks.push_back(CreateShader(ShaderStructures::DeferredPBR, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPBRPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, post, State::RenderPass::Lighting));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", { pnLayout, _countof(pnLayout) }, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_1CB, L"TexVS.cso", L"TexPS.cso", { pntLayout, _countof(pntLayout) }, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", { pnLayout, _countof(pnLayout) }, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Deferred, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPS.cso", { fsQuadLayout, _countof(fsQuadLayout) }, lighting, State::RenderPass::Lighting));
+	shaderTasks.push_back(CreateShader(ShaderStructures::DeferredPBR, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPBRPS.cso", {fsQuadLayout, _countof(fsQuadLayout) }, lighting, State::RenderPass::Lighting));
 
 	shaderTasks.push_back(CreateShader(ShaderStructures::CubeEnvMap, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvMapPS.cso", {pnLayout, _countof(pnLayout) }, pre, State::RenderPass::Pre));
 	shaderTasks.push_back(CreateShader(ShaderStructures::Bg, ROOT_UNKNOWN, L"BgVS.cso", L"BgPS.cso", {pnLayout, _countof(pnLayout) }, forward, State::RenderPass::Forward));
@@ -235,8 +243,8 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsOddXSRGB, ROOT_UNKNOWN, L"GenMipsOddXSRGB.cso", State::RenderPass::Pre));
 	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsOddYSRGB, ROOT_UNKNOWN, L"GenMipsOddYSRGB.cso", State::RenderPass::Pre));
 	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsOddXOddYSRGB, ROOT_UNKNOWN, L"GenMipsOddXOddYSRGB.cso", State::RenderPass::Pre));
-	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDN, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNPS.cso", { pntLayout, _countof(pntLayout) }, deferred, State::RenderPass::Geometry));
-	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDNMR, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNMRPS.cso", { pntLayout, _countof(pntLayout) }, deferred, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDN, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNPS.cso", { pntLayout, _countof(pntLayout) }, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDNMR, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNMRPS.cso", { pntLayout, _countof(pntLayout) }, geometry, State::RenderPass::Geometry));
 	completionTask_ = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }
 

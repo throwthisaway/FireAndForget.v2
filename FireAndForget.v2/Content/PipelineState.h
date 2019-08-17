@@ -9,7 +9,7 @@ namespace DX {
 
 class PipelineStates {
 	const DX::DeviceResources* deviceResources_;
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC pre, rg16, depth, forward, deferred, post;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC pre, rg16, depth, forward, geometry, lighting;
 	std::vector<Concurrency::task<void>> shaderTasks;
 public:
 	static constexpr DXGI_FORMAT deferredRTFmts[] = {

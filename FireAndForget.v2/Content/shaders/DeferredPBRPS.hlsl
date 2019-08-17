@@ -126,5 +126,4 @@ float4 main(PS_T input) : SV_TARGET{
 	color = color / (color + 1.f);
 	color = pow(color, 1.f/2.2f);
 	return float4(color, albedo.a);
-	//return float4(albedo.rgb, 1.f);
 }
