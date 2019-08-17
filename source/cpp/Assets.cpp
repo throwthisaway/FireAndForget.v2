@@ -178,8 +178,8 @@ namespace assets {
 			images[id] = std::move(DecodeImageFromData(data, type));
 		});
 	}
-	Concurrency::task<void> Assets::ModoLoadContext::LoadModoMesh(Renderer* renderer, const wchar_t* fname) {
-		return DX::ReadDataAsync(fname).then([this, fname](std::vector<byte>& data) {
+	Concurrency::task<void> Assets::ModoLoadContext::LoadMesh(const wchar_t* fname, size_t id) {
+		return DX::ReadDataAsync(fname).then([this, fname, id](std::vector<byte>& data) {
 			auto res = ModoMeshLoader::Load(data);
 			for (auto& s : res.submeshes)
 				for (auto& tex : s.textures) {
@@ -192,7 +192,8 @@ namespace assets {
 						imageLoadTasks.push_back(LoadImage(wpath.c_str(), result.first->second));
 					} else tex.id = (uint32_t)result.first->second;
 				}
-			createModoModelResults.push_back(res);
+			if (id == INVALID) createModoModelResults.push_back(res);
+			else createModoModelResults[id] = res;
 		});
 	}
 #elif defined(PLATFORM_MAC_OS)
@@ -231,6 +232,7 @@ namespace assets {
 		status = Status::kInitialized;
 		models.resize(STATIC_MODEL_COUNT);
 		textures.resize(STATIC_IMAGE_COUNT);
+		meshes.resize(STATIC_MODEL_COUNT);
 #ifdef PLATFORM_WIN
 		loadContext.images.resize(STATIC_IMAGE_COUNT);
 		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"random.png", RANDOM));
@@ -243,8 +245,15 @@ namespace assets {
 			loadContext.LoadMesh(L"BEETHOVE_object.mesh", BEETHOVEN),
 			loadContext.LoadMesh(L"sphere.mesh", SPHERE),
 			loadContext.LoadMesh(L"textured_unit_cube.mesh", UNITCUBE),
-			loadContextModo.LoadModoMesh(renderer, L"test_torus.mesh"),
-			loadContextModo.LoadModoMesh(renderer, L"checkerboard_modo.mesh"),
+
+			loadContextModo.LoadMesh(L"light_modo.mesh", LIGHT),
+			loadContextModo.LoadMesh(L"box_modo.mesh", PLACEHOLDER),
+			loadContextModo.LoadMesh(L"checkerboard_modo.mesh", CHECKERBOARD),
+			loadContextModo.LoadMesh(L"BEETHOVE_object_modo.mesh", BEETHOVEN),
+			loadContextModo.LoadMesh(L"sphere_modo.mesh", SPHERE),
+			loadContextModo.LoadMesh(L"textured_unit_cube_modo.mesh", UNITCUBE),
+			loadContextModo.LoadMesh(L"test_torus.mesh"),
+			loadContextModo.LoadMesh(L"checkerboard_modo.mesh"),
 		};
 		
 		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {
@@ -280,9 +289,12 @@ namespace assets {
 		// replace image ids with texture ids
 		for (auto& mesh : loadContextModo.meshes)
 			for (auto& s : mesh.submeshes)
-				for (auto& texture : s.textures) {
-					 // texture.image was replaced with an index into the context's images array
-					 texture.id = (uint32_t)offset + texture.id;
+				for (int i = 0; i < _countof(s.textures); ++i) {
+					auto& texture = s.textures[i];
+					if (s.textureMask & (1 << i)) {
+						// texture.image was replaced with an index into the context's images array
+						texture.id = (uint32_t)textures[offset + texture.id];
+					} else texture.id = InvalidTexture;
 				}
 		meshes = std::move(loadContextModo.meshes);
 		loadContextModo = ModoLoadContext{};
@@ -328,9 +340,12 @@ namespace assets {
 			// replace image ids with texture ids
 			for (auto& mesh : loadContextModo.meshes)
 				for (auto& s : mesh.submeshes)
-					for (auto& texture : s.textures) {
-						 // texture.image was replaced with an index into the context's images array
-						 texture.id = (uint32_t)textures[offset + texture.id];
+					for (int i = 0; i < _countof(s.textures); ++i) {
+						auto& texture = s.textures[i];
+						if (s.textureMask & (1 << i)) {
+							// texture.image was replaced with an index into the context's images array
+							texture.id = (uint32_t)textures[offset + texture.id];
+						} else texture.id = InvalidTexture;
 					}
 			for (auto& mesh : loadContextModo.meshes)
 				meshes.emplace_back(std::move(mesh));

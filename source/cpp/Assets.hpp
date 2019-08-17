@@ -22,6 +22,7 @@ namespace assets {
 		~Assets();
 		void Init(Renderer* renderer);
 		void Update(Renderer* renderer);
+		static constexpr size_t INVALID = -1;
 		static constexpr size_t LIGHT = 0;
 		static constexpr size_t PLACEHOLDER = 1;
 		static constexpr size_t CHECKERBOARD = 2;
@@ -67,7 +68,7 @@ namespace assets {
 			concurrency::concurrent_vector<ModoMesh> meshes;
 			concurrency::concurrent_vector<ModoMeshLoader::Result> createModoModelResults;
 			concurrency::concurrent_vector<Concurrency::task<void>> imageLoadTasks;
-			Concurrency::task<void> LoadModoMesh(Renderer* renderer, const wchar_t* fname);
+			Concurrency::task<void> LoadMesh(const wchar_t* fname, size_t id = INVALID);
 			Concurrency::task<void> LoadImage(const wchar_t* fname, size_t id);
 #elif defined(PLATFORM_MAC_OS)
 			std::vector<std::string> images;
