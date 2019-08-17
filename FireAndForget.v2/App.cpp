@@ -254,17 +254,18 @@ void App::OnPointerMoved(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Cor
 	}
 	unsigned int pointerId = args->CurrentPoint->PointerId;
 	Windows::Foundation::Collections::IVector<Windows::UI::Input::PointerPoint^>^ pointerPoints = Windows::UI::Input::PointerPoint::GetIntermediatePoints(pointerId);
-	m_gestureRecognizer->ProcessMoveEvents(pointerPoints);
+	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessMoveEvents(pointerPoints);
 
 }
 
 void App::OnPointerPressed(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
 {
+	sender->SetPointerCapture();
 	pointerdown++;
 	m_main->PointerPressed(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
 	unsigned int pointerId = args->CurrentPoint->PointerId;
 	Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
-	if (m_gestureRecognizer->IsActive) m_gestureRecognizer->ProcessDownEvent(pointerPoint);
+	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessDownEvent(pointerPoint);
 }
 
 void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
@@ -273,7 +274,8 @@ void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::
 	m_main->PointerReleased(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
 	unsigned int pointerId = args->CurrentPoint->PointerId;
 	Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
-	if (m_gestureRecognizer->IsActive) m_gestureRecognizer->ProcessUpEvent(pointerPoint);
+	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessUpEvent(pointerPoint);
+	sender->ReleasePointerCapture();
 }
 
 void App::OnKeyUp(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args)
