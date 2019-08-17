@@ -26,6 +26,6 @@ float3 Input::TranslateXZ(float x, float y) {
 float3 Input::TranslateY(float y) {
 	float dx = 0.f, dy = y_ - y, dz = 0.f;
 	y_ = y;
-		drot = {};
+	drot = {};
 	return dpos = float3{ dx, dy, dz } * pixelToTrRatio;
 }

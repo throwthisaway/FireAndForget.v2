@@ -69,8 +69,7 @@ PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
 			desc.RenderTarget[0].BlendEnable = TRUE;
 			desc.RenderTarget[0].BlendOp = desc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 			desc.RenderTarget[0].SrcBlend = desc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-			desc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_COLOR;
-			desc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+			desc.RenderTarget[0].DestBlend = desc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
 			desc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 			state.BlendState = desc;
 			state.DepthStencilState = {};

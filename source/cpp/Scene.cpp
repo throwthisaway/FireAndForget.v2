@@ -161,8 +161,9 @@ void Scene::Render() {
 	renderer_->Render();
 }
 void Scene::UpdateCameraTransform() {
-	camera_.Translate(input.dpos);
+	
 	camera_.Rotate(input.drot);
+	camera_.Translate(input.dpos);
 }
 
 void Scene::UpdateSceneTransform() {

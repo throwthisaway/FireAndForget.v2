@@ -9,6 +9,7 @@
 #include "..\..\source\cpp\ShaderStructures.h"
 #include <glm/gtc/matrix_transform.hpp>
 // TODO::
+// - deferredPBR blends beige color as bg instead of transparent black
 // - irradiance is flipped
 // - requesting new ppol in cbframealloc causes "CPU descriptor handle expected, but specified handle refers to a GPU descriptor handle." during CreateCBV
 // - all embedded rootsignatures are read from the ps source
