@@ -269,6 +269,9 @@
       <Filter>Content\shaders</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="..\source\assets\BEETHOVE_object_modo.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">

@@ -303,6 +303,9 @@
     <None Include="..\source\assets\BEETHOVE_object.mesh">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="..\source\assets\BEETHOVE_object_modo.mesh">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="..\source\assets\box.mesh">
       <DeploymentContent>true</DeploymentContent>
     </None>
