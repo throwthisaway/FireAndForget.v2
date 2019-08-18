@@ -15,11 +15,11 @@ SamplerState smp : register(s0);
 
 [RootSignature(CubeEnvPrefilterRS)]
 float4 main(PS_P input) : SV_TARGET {
-	const float3 n = normalize(input.p); // TODO:: why negate?
+	const float3 n = normalize(input.p);
 	const float3 r = n;
 	const float3 v = r;
 
-	const float3 up = (abs(n.z) < .999f) ? float3(0.f, 0.f, 1.f) : float3(1.f, 0.f, 0.f);
+	const float3 up = (abs(n.z) < .999f) ? float3(0.f, 0.f, 1.f) : float3(0.f, 1.f, 0.f);
 	const float3 tangent = normalize(cross(up, n));
 	const float3 bitangent = cross(n, tangent);
 	const float3x3 sphericalToTangent = float3x3(tangent, bitangent, n);

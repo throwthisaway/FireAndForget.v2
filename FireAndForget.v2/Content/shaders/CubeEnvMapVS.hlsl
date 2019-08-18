@@ -10,7 +10,7 @@ cbuffer cb : register(b0) {
 PS_P main(VertexPN input) {
 	PS_P output;
 	float4 pos = float4(input.pos, 1.f);
-	output.pos = mul(pos, mvp);
+	output.pos = mul(mvp, pos);
 	output.p = float3(input.pos);
 	return output; 
 }

@@ -42,9 +42,11 @@ void Scene::PrepareScene() {
 	objects_.push_back({ {}, {}, assets::Assets::PLACEHOLDER });
 	objects_.push_back({ {}, {}, assets::Assets::CHECKERBOARD });
 	objects_.push_back({ { 0.f, .5f, 0.f }, {}, assets::Assets::BEETHOVEN });
-	for (int i = 0; i < assets_.meshes.size(); ++i) {
+	float y = -.5f;
+	for (int i = assets::Assets::STATIC_MODEL_COUNT; i < assets_.meshes.size(); ++i) {
 //		auto& mesh = assets_.meshes[i];
-		modoObjects_.push_back({{ 0.f, -.5f * i, -5.f * (i+1)}, {}, (index_t)i});
+		modoObjects_.push_back({{ 0.f, y, 0.f}, {}, (index_t)i});
+		y += 1.f;
 	}
 	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
 	const float incX = 2.4f, incY = 2.9f;
@@ -79,16 +81,15 @@ void Scene::PrepareScene() {
 	Dim dim = renderer_->GetDimensions(deferredCmd_.random);
 	deferredCmd_.ao.random_size.x = (float)dim.w;
 	deferredCmd_.ao.random_size.y = (float)dim.h;
-	const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
-	auto& l = mesh.layers.front();
+	const auto& mesh = assets_.meshes[assets::Assets::UNITCUBE];
 	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
 	const uint64_t cubeEnvMapDim = 512;
-	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, l.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  "CubeEnvMap");
+	cubeEnv_ = renderer_->GenCubeMap(envMap, mesh.vb, mesh.ib, mesh.submeshes.front(), cubeEnvMapDim, ShaderStructures::CubeEnvMap, true,  "CubeEnvMap");
 	//cubeEnv_ = renderer_->GenTestCubeMap();
 	const uint64_t irradianceDim = 32;
-	deferredCmd_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, "Irradiance");
+	deferredCmd_.irradiance = renderer_->GenCubeMap(cubeEnv_, mesh.vb, mesh.ib, mesh.submeshes.front(), irradianceDim, ShaderStructures::Irradiance, false, "Irradiance");
 	const uint64_t preFilterEnvDim = 128;
-	deferredCmd_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, l.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, "PrefilterEnv");
+	deferredCmd_.prefilteredEnvMap = renderer_->GenPrefilteredEnvCubeMap(cubeEnv_, mesh.vb, mesh.ib, mesh.submeshes.front(), preFilterEnvDim, ShaderStructures::PrefilterEnv, "PrefilterEnv");
 	const uint64_t brdfLUTDim = 512;
 	deferredCmd_.BRDFLUT = renderer_->GenBRDFLUT(brdfLUTDim, ShaderStructures::BRDFLUT, "BRDFLUT");
 	renderer_->EndPrePass();
@@ -123,14 +124,13 @@ void Scene::Render() {
 	// bg
 	renderer_->StartForwardPass();
 	if (cubeEnv_ != InvalidTexture) {
-		const auto& mesh = assets_.models[assets::Assets::UNITCUBE];
-		auto& l = mesh.layers.front();
-		ShaderStructures::BgCmd cmd{ camera_.vp, l.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, /*deferredBuffers_.prefilteredEnvMap*/cubeEnv_};
+		const auto& mesh = assets_.meshes[assets::Assets::UNITCUBE];
+		ShaderStructures::BgCmd cmd{ camera_.vp, mesh.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, /*deferredCmd_.irradiance*/cubeEnv_};
 		renderer_->Submit(cmd);
 	}
 
 	renderer_->StartGeometryPass();
-	for (const auto& o : objects_) {
+	/*for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
 		const auto& mesh = assets_.models[o.mesh];
 		for (const auto& l : mesh.layers) {
@@ -144,7 +144,7 @@ void Scene::Render() {
 				renderer_->Submit(cmd);
 			}
 		}
-	}
+	}*/
 
 	for (const auto& o : modoObjects_) {
 		const auto& mesh = assets_.meshes[o.mesh];
@@ -181,7 +181,7 @@ void Scene::Update(double frame, double total) {
 	}
 	camera_.Update();
 	// need to determine it from view because of ScreenSpaceRotator...
-	deferredCmd_.scene.eyePos = camera_.pos;
+	deferredCmd_.scene.eyePos = camera_.eyePos;
 	// TODO:: WTF?
 	deferredCmd_.scene.ip = glm::inverse(camera_.proj);
 	deferredCmd_.scene.ivp = camera_.ivp;

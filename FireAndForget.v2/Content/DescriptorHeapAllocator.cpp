@@ -68,7 +68,7 @@ CBAlloc::~CBAlloc() {
 	for (auto& buffer : buffers_) buffer->Unmap(0, nullptr);
 }
 ShaderResourceIndex CBAlloc::Push(uint32_t size, uint16_t count) {
-	size = AlignTo<uint32_t,256>(size);
+	size = AlignTo<256>(size);
 	if (maxSize_ - currentOffset_ < size * count ) {
 		if (maxCount_ && maxCount_ <= currentBufferIndex_) return InvalidShaderResource;
 		++currentBufferIndex_;  currentOffset_ = 0;

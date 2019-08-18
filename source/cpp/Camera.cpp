@@ -20,13 +20,13 @@ void Camera::Rotate(const float3& d) {
 }
 
 void Camera::Update() {
-	view = glm::lookAtLH(pos, at, glm::vec3{0.f, 1.f, 0.f});
+	view = glm::lookAtLH(pos, at, float3{0.f, 1.f, 0.f});
 	// premultiply with rotation to rotate
 	auto mat = RotationMatrix(rot.x, rot.y, rot.z);
 	auto pos = view[3];
-	view = glm::mat4(glm::mat3(mat) * glm::mat3(view));
+	view = float4x4(float3x3(mat) * float3x3(view));
 	view[3] = pos;
-	
+	eyePos = glm::inverse(view) * float4(this->pos, 1.f);
 	vp = proj*view;
 	ivp = glm::inverse(vp);
 }

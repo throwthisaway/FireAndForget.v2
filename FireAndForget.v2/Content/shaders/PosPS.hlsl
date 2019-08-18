@@ -11,8 +11,9 @@ struct PSIn {
 MRTOut main(PSIn input) {
 	MRTOut output;
 	output.albedo = float4(mat.diffuse, 1.f);
-	output.normal = Encode(normalize(input.n));
+	float3 n = normalize(input.n);
+	output.normal = Encode(n);
 	output.material = float4(mat.metallic_roughness, 0.f, 1.f);
-	output.debug = input.worldPos;
+	output.debug = float4(n, 1.f);
 	return output;
 }

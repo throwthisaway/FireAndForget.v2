@@ -60,11 +60,11 @@ float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, float4x4 ivp, Te
 [RootSignature(DeferredRS)]
 float4 main(PS_T input) : SV_TARGET{
 	float4 albedo = texAlbedo.Sample(smp, input.uv);
-	float3 n = Decode(texNormal.Sample(smp, input.uv).xy);
+	float4 debug = texDebug.Sample(smp, input.uv);
+	float3 n = debug.rgb;// TODO:: nans Decode(texNormal.Sample(smp, input.uv).xy);
 	float4 material = texMaterial.Sample(smp, input.uv);
 	float depth = texDepth.Sample(smp, input.uv).r;
 	// TODO:: better one with linear depth and without mat mult: https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
-	float4 debug = texDebug.Sample(smp, input.uv);
 	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth);
 	float3 v = normalize(scene.eyePos - worldPos);
 
@@ -114,7 +114,7 @@ float4 main(PS_T input) : SV_TARGET{
 	/*in the PBR fragment shader in line R = reflect(-V,N) - flip the sign of V.
 	 Also I noticed author of this amazing article did't multiply reflected vector by inverse ModelView matrix. While it look fine in this example in a place where view matrix is rotated(with env cubemap) you'll really notice how it's going off.*/
 	const float max_ref_lod = 4.f;	// TODO:: pass it as constant buffer
-	float3 prefilerColor = texPrefilteredEnv.SampleLevel(smp, r, roughness * max_ref_lod).rgb;
+	float3 prefilerColor = texPrefilteredEnv.SampleLevel(linearSmp, r, roughness * max_ref_lod).rgb;
 
 	float2 envBRDF = texBRDFLUT.Sample(linearClampSmp, float2(ndotv, roughness)).rg;
 	float3 specular = prefilerColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnel Shlick
@@ -126,4 +126,5 @@ float4 main(PS_T input) : SV_TARGET{
 	color = color / (color + 1.f);
 	color = pow(color, 1.f/2.2f);
 	return float4(color, albedo.a);
+	//return float4(debug.rgb, albedo.a);
 }

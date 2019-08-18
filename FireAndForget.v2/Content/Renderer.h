@@ -43,8 +43,8 @@ public:
 
 	void BeginRender();
 	void BeginPrePass();
-	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, LPCSTR label = nullptr);
-	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, LPCSTR label = nullptr);
+	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const ModoMeshLoader::Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, LPCSTR label = nullptr);
+	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const ModoMeshLoader::Submesh& submesh, uint32_t dim, ShaderId shader, LPCSTR label = nullptr);
 	TextureIndex GenBRDFLUT(uint32_t dim, ShaderId shader, LPCSTR label = nullptr);
 	void EndPrePass();
 	void StartForwardPass();

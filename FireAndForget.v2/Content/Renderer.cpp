@@ -252,15 +252,41 @@ void Renderer::BeginPrePass() {
 	prePass_.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, true);
 	prePass_.rtv.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultDescFrameAllocCount, false);
 }
-TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, LPCSTR label) {
+namespace {
+	struct CubeViewResult {
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		D3D12_GPU_VIRTUAL_ADDRESS gpuAddress;
+	};
+	CubeViewResult GenCubeViews(DescriptorFrameAlloc::Entry& entry, DescriptorFrameAlloc& descAlloc, CBFrameAlloc& cbAlloc) {
+		CubeViewResult result;
+		constexpr int faceCount = 6;
+		const auto descSize = descAlloc.GetDescriptorSize();
+		// cube view matrices for cube env. map generation
+		const glm::vec3 at[] = {/*+x*/{1.f, 0.f, 0.f},/*-x*/{-1.f, 0.f, 0.f},/*+y*/{0.f, 1.f, 0.f},/*-y*/{0.f, -1.f, 0.f},/*+z*/{0.f, 0.f, 1.f},/*-z*/{0.f, 0.f, -1.f} },
+			up[] = { {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, 1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f} };
+		const int inc = AlignTo<256, int>(sizeof(glm::mat4x4)), vsSize = inc * faceCount;
+		auto cb = cbAlloc.Alloc(vsSize);
+		uint8_t* p = cb.cpuAddress;
+		result.cpuHandle = entry.cpuHandle;
+		result.gpuAddress = cb.gpuAddress;
+		for (int i = 0; i < faceCount; ++i, p += inc) {
+			glm::mat4x4 v = glm::lookAtLH({ 0.f, 0.f, 0.f }, at[i], up[i]);
+			memcpy(p, &v, sizeof(v));
+			descAlloc.CreateCBV(result.cpuHandle, result.gpuAddress, inc);
+			result.cpuHandle.Offset(descSize); result.gpuAddress += inc;
+		}
+		return result;
+	}
+}
+TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const ModoMeshLoader::Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, LPCSTR label) {
 	assert(vb != InvalidBuffer);
 	assert(ib != InvalidBuffer);
 	auto device = m_deviceResources->GetD3DDevice();
 	DXGI_FORMAT fmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	const int count = 6;
+	const int faceCount = 6;
 	ComPtr<ID3D12Resource> resource;
 	{
-		CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(fmt, dim, dim, count, (mip) ? UINT16(NumMips(dim, dim)) : 1);
+		CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(fmt, dim, dim, faceCount, (mip) ? UINT16(NumMips(dim, dim)) : 1);
 		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		if (mip) desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
@@ -281,10 +307,10 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle;
 	const auto rtvDescSize = prePass_.rtv.desc.GetDescriptorSize();
 	{
-		auto entry = prePass_.rtv.desc.Push(count);
+		auto entry = prePass_.rtv.desc.Push(faceCount);
 		rtvHandle = entry.cpuHandle;
 		auto handle = rtvHandle;
-		for (int i = 0; i < count; ++i) {
+		for (int i = 0; i < faceCount; ++i) {
 			D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 			desc.Format = fmt;
 			desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
@@ -302,51 +328,37 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
 	const auto descSize = prePass_.desc.GetDescriptorSize();
-	CD3DX12_GPU_DESCRIPTOR_HANDLE cbvGPUHandle, srvGPUHandle;
-	auto entry = prePass_.desc.Push(count + 1);
-	cbvGPUHandle = entry.gpuHandle;	// for vs cbv binding
-	srvGPUHandle = entry.gpuHandle; srvGPUHandle.Offset(count * descSize); // for ps srv binding
-	// cube view matrices for cube env. map generation
-	const glm::vec3 at[] = {/*+x*/{1.f, 0.f, 0.f},/*-x*/{-1.f, 0.f, 0.f},/*+y*/{0.f, 1.f, 0.f},/*-y*/{0.f, -1.f, 0.f},/*+z*/{0.f, 0.f, 1.f},/*-z*/{0.f, 0.f, -1.f} },
-		up[] = { {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, 1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f} };
-	const int inc = AlignTo<int, 256>(sizeof(glm::mat4x4)), size = inc * count;
-	auto cb = prePass_.cb.Alloc(size);
-	uint8_t* p = cb.cpuAddress;
-	auto handle = entry.cpuHandle;
-	auto gpuAddress = cb.gpuAddress;
-	for (int i = 0; i < count; ++i, p += inc) {
-		glm::mat4x4 v = glm::lookAtLH({ 0.f, 0.f, 0.f }, at[i], up[i]);
-		memcpy(p, &v, sizeof(v));
-		prePass_.desc.CreateCBV(handle, gpuAddress, inc);
-		handle.Offset(descSize); gpuAddress += inc;
-	}
+	auto entry = prePass_.desc.Push(faceCount + 1);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE vsGPUHandle = entry.gpuHandle;
+	CubeViewResult result = GenCubeViews(entry, prePass_.desc, prePass_.cb);
 
+	CD3DX12_GPU_DESCRIPTOR_HANDLE psGPUHandle = entry.gpuHandle; psGPUHandle.Offset(faceCount * descSize); // for ps srv binding
 	if (buffers_[tex].resource->GetDesc().DepthOrArraySize > 1)
-		prePass_.desc.CreateCubeSRV(handle, buffers_[tex].resource.Get());
+		prePass_.desc.CreateCubeSRV(result.cpuHandle, buffers_[tex].resource.Get());
 	else
-		prePass_.desc.CreateSRV(handle, buffers_[tex].resource.Get());
+		prePass_.desc.CreateSRV(result.cpuHandle, buffers_[tex].resource.Get());
 
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews = { buffers_[vb].bufferLocation + submesh.vbByteOffset,
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews = { buffers_[vb].bufferLocation + submesh.vertexByteOffset,
 			(UINT)buffers_[vb].size, submesh.stride } ;
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferViews);
 	D3D12_INDEX_BUFFER_VIEW	indexBufferView = {
-			buffers_[ib].bufferLocation + submesh.ibByteOffset,
+			buffers_[ib].bufferLocation + submesh.indexByteOffset,
 			(UINT)buffers_[ib].size,
 			DXGI_FORMAT_R16_UINT };
 	commandList->IASetIndexBuffer(&indexBufferView);
-	commandList->SetGraphicsRootDescriptorTable(1, srvGPUHandle);
-	for (int i = 0; i < count; ++i) {
-		commandList->SetGraphicsRootDescriptorTable(0, cbvGPUHandle);
-		cbvGPUHandle.Offset(descSize);
+	commandList->SetGraphicsRootDescriptorTable(1, psGPUHandle);
+	for (int i = 0; i < faceCount; ++i) {
+		commandList->SetGraphicsRootDescriptorTable(0, vsGPUHandle);
+		vsGPUHandle.Offset(descSize);
 		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 		rtvHandle.Offset(rtvDescSize);
 		commandList->DrawIndexedInstanced(submesh.count, 1, 0, 0, 0);
 	}
 	if (mip) {
-		GenMips(resource, fmt, dim, dim, count);
+		GenMips(resource, fmt, dim, dim, faceCount);
 	} else {
 		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		commandList->ResourceBarrier(1, &barrier);
@@ -394,7 +406,7 @@ void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FOR
 			auto entry = prePass_.desc.Push(int(DescEntries::kCount));
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(entry.cpuHandle);
 			auto descSize = prePass_.desc.GetDescriptorSize();
-			prePass_.desc.CreateCBV(handle, cb.gpuAddress, AlignTo<uint32_t, 256>(sizeof(cbuffer)));
+			prePass_.desc.CreateCBV(handle, cb.gpuAddress, AlignTo<256, uint32_t>(sizeof(cbuffer)));
 			handle.Offset(descSize);
 			if (arraySize)
 				prePass_.desc.CreateSRV(handle, resource.Get(), arrayIndex);
@@ -422,7 +434,7 @@ void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FOR
 			gpuHandle.Offset(descSize);
 			commandList->SetComputeRootDescriptorTable(2, gpuHandle);
 			//auto d = AlignTo<int, kNumThreads>(w) / kNumThreads;
-			commandList->Dispatch(AlignTo<int, kNumThreads>(w) / kNumThreads, AlignTo<int, kNumThreads>(h) / kNumThreads, 1);
+			commandList->Dispatch(AlignTo<kNumThreads>(w) / kNumThreads, AlignTo<kNumThreads>(h) / kNumThreads, 1);
 			// TODO::???
 			/*if (DstWidth == 0)
 				DstWidth = 1;
@@ -446,13 +458,14 @@ void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FOR
 	// TODO:: 	???		Context.InsertUAVBarrier(*this);
 	PIXEndEvent(commandList);
 }
-TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, LPCSTR label) {
+
+TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const ModoMeshLoader::Submesh& submesh, uint32_t dim, ShaderId shader, LPCSTR label) {
 	assert(vb != InvalidBuffer);
 	assert(ib != InvalidBuffer);
 	auto device = m_deviceResources->GetD3DDevice();
 	DXGI_FORMAT fmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	const int psBindingCount = 3;
-	const int faceCount = 6/*face count*/, mipLevelCount = 5, count = faceCount + (mipLevelCount * psBindingCount);
+	const int faceCount = 6, mipLevelCount = 5, count = faceCount + (mipLevelCount * psBindingCount);
 	ComPtr<ID3D12Resource> resource;
 	{
 		CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(fmt, dim, dim, faceCount, mipLevelCount);
@@ -482,32 +495,19 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 	const auto descSize = prePass_.desc.GetDescriptorSize();
 	auto entry = prePass_.desc.Push(count);
 	CD3DX12_GPU_DESCRIPTOR_HANDLE vsGPUHandle = entry.gpuHandle;	// for vs cbv binding
-	// cube view matrices for cube env. map generation
-	const glm::vec3 at[] = {/*+x*/{1.f, 0.f, 0.f},/*-x*/{-1.f, 0.f, 0.f},/*+y*/{0.f, 1.f, 0.f},/*-y*/{0.f, -1.f, 0.f},/*+z*/{0.f, 0.f, 1.f},/*-z*/{0.f, 0.f, -1.f} },
-		up[] = { {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, 1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f} };
-	const int inc = AlignTo<int, 256>(sizeof(glm::mat4x4)), vsSize = inc * faceCount;
-	auto cb = prePass_.cb.Alloc(vsSize);
-	uint8_t* p = cb.cpuAddress;
-	auto handle = entry.cpuHandle;
-	auto gpuAddress = cb.gpuAddress;
-	for (int i = 0; i < faceCount; ++i, p += inc) {
-		glm::mat4x4 v = glm::lookAtLH({ 0.f, 0.f, 0.f }, at[i], up[i]);
-		memcpy(p, &v, sizeof(v));
-		prePass_.desc.CreateCBV(handle, gpuAddress, inc);
-		handle.Offset(descSize); gpuAddress += inc;
-	}
+	CubeViewResult result = GenCubeViews(entry, prePass_.desc, prePass_.cb);
 	
 	CD3DX12_GPU_DESCRIPTOR_HANDLE psGPUHandle = entry.gpuHandle; psGPUHandle.Offset(faceCount * descSize); // for ps bindings
-	handle = entry.cpuHandle; handle.Offset(faceCount * descSize);
+	auto handle = entry.cpuHandle; handle.Offset(faceCount * descSize);
 	// roughness
-	auto cb0 = prePass_.cb.Alloc(AlignTo<int, 256>(sizeof(float)) * mipLevelCount);
-	const int inc0 = AlignTo<int, 256>(sizeof(float));
+	auto cb0 = prePass_.cb.Alloc(AlignTo<256, int>(sizeof(float)) * mipLevelCount);
+	const int inc0 = AlignTo<256, int>(sizeof(float));
 	float* p0 = (float*)cb0.cpuAddress;
-	gpuAddress = cb0.gpuAddress;
+	auto gpuAddress = cb0.gpuAddress;
 
 	// resolution
 	auto cb1 = prePass_.cb.Alloc(sizeof(float));
-	const int inc1 = AlignTo<int, 256>(sizeof(float));
+	const int inc1 = AlignTo<256, int>(sizeof(float));
 	float* p1 = (float*)cb1.cpuAddress;
 	*p1 = (float)dim;
 
@@ -547,11 +547,11 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews = { buffers_[vb].bufferLocation + submesh.vbByteOffset,
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews = { buffers_[vb].bufferLocation + submesh.vertexByteOffset,
 			(UINT)buffers_[vb].size, submesh.stride } ;
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferViews);
 	D3D12_INDEX_BUFFER_VIEW	indexBufferView = {
-			buffers_[ib].bufferLocation + submesh.ibByteOffset,
+			buffers_[ib].bufferLocation + submesh.indexByteOffset,
 			(UINT)buffers_[ib].size,
 			DXGI_FORMAT_R16_UINT };
 	commandList->IASetIndexBuffer(&indexBufferView);
@@ -853,8 +853,8 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 	assert(cmd.vb != InvalidBuffer);
 	assert(cmd.ib != InvalidBuffer);
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
-		{ buffers_[cmd.vb].bufferLocation + cmd.submesh.vbByteOffset,
-		(UINT)buffers_[cmd.vb].size - +cmd.submesh.vbByteOffset,
+		{ buffers_[cmd.vb].bufferLocation + cmd.submesh.vertexByteOffset,
+		(UINT)buffers_[cmd.vb].size - +cmd.submesh.vertexByteOffset,
 		cmd.submesh.stride } };
 
 	commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
@@ -863,8 +863,8 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 		D3D12_INDEX_BUFFER_VIEW	indexBufferView;
 		{
 			const auto& buffer = buffers_[cmd.ib];
-			indexBufferView.BufferLocation = buffer.bufferLocation + cmd.submesh.ibByteOffset;
-			indexBufferView.SizeInBytes = (UINT)buffer.size - cmd.submesh.ibByteOffset;
+			indexBufferView.BufferLocation = buffer.bufferLocation + cmd.submesh.indexByteOffset;
+			indexBufferView.SizeInBytes = (UINT)buffer.size - cmd.submesh.indexByteOffset;
 			indexBufferView.Format = DXGI_FORMAT_R16_UINT;
 		}
 
@@ -872,7 +872,7 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 		commandList->DrawIndexedInstanced(cmd.submesh.count, 1, 0, 0, 0);
 	}
 	else {
-		commandList->DrawInstanced(cmd.submesh.count, 1, cmd.submesh.vbByteOffset, 0);
+		commandList->DrawInstanced(cmd.submesh.count, 1, cmd.submesh.vertexByteOffset, 0);
 	}
 	PIXEndEvent(commandList);
 }

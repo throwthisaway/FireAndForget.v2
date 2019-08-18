@@ -37,7 +37,7 @@ DescriptorFrameAlloc::Entry DescriptorFrameAlloc::Push(UINT count) {
 }
 
 void DescriptorFrameAlloc::CreateCBV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress, uint32_t size) {
-	assert(size == (AlignTo<decltype(size), 256>(size)));
+	assert(size == (AlignTo<256>(size)));
 	D3D12_CONSTANT_BUFFER_VIEW_DESC desc;
 	desc.BufferLocation = gpuAddress;
 	desc.SizeInBytes = size;

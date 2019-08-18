@@ -33,7 +33,7 @@ void CBFrameAlloc::Init(ID3D12Device* device, uint64_t bufferSize) {
 	Request();
 }
 CBFrameAlloc::Entry CBFrameAlloc::Alloc(unsigned int size) {
-	size = AlignTo<decltype(size), 256>(size);
+	size = AlignTo<256>(size);
 	if (offset_ + size >= max_) {
 		if (index_ < pool_.size()) Unmap(index_);
 		++index_;

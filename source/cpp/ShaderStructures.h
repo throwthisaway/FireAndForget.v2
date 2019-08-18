@@ -101,7 +101,7 @@ struct ModoDrawCmd {
 
 struct BgCmd {
 	const float4x4& vp;
-	const Submesh& submesh;
+	const ModoMeshLoader::Submesh& submesh;
 	BufferIndex vb, ib;
 	ShaderId shader;
 	TextureIndex cubeEnv;

@@ -252,14 +252,15 @@ namespace assets {
 			loadContext.LoadMesh(L"sphere.mesh", SPHERE),
 			loadContext.LoadMesh(L"textured_unit_cube.mesh", UNITCUBE),
 
-			loadContextModo.LoadMesh(L"light_modo.mesh", LIGHT),
-			loadContextModo.LoadMesh(L"box_modo.mesh", PLACEHOLDER),
-			loadContextModo.LoadMesh(L"checkerboard_modo.mesh", CHECKERBOARD),
-			loadContextModo.LoadMesh(L"BEETHOVE_object_modo.mesh", BEETHOVEN),
-			loadContextModo.LoadMesh(L"sphere_modo.mesh", SPHERE),
+			//loadContextModo.LoadMesh(L"light_modo.mesh", LIGHT),
+			//loadContextModo.LoadMesh(L"box_modo.mesh", PLACEHOLDER),
+			//loadContextModo.LoadMesh(L"checkerboard_modo.mesh", CHECKERBOARD),
+			//loadContextModo.LoadMesh(L"BEETHOVE_object_modo.mesh", BEETHOVEN),
+			//loadContextModo.LoadMesh(L"sphere_modo.mesh", SPHERE),
 			loadContextModo.LoadMesh(L"textured_unit_cube_modo.mesh", UNITCUBE),
-			loadContextModo.LoadMesh(L"test_torus.mesh"),
+			//loadContextModo.LoadMesh(L"test_torus.mesh"),
 			loadContextModo.LoadMesh(L"checkerboard_modo.mesh"),
+			loadContextModo.LoadMesh(L"sphere_modo.mesh"),
 		};
 		
 		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {
@@ -339,11 +340,13 @@ namespace assets {
 			ImagesToTextures(renderer);
 			loadContext = LoadContext();
 
-			for (auto& res : loadContextModo.createModelResults) {
+			loadContextModo.meshes.resize(loadContextModo.createModelResults.size());
+			for (int id = 0; id < (int)loadContextModo.createModelResults.size(); ++id) {
+				auto& res = loadContextModo.createModelResults[id];
 				for (auto& s : res.submeshes)
-				loadContextModo.meshes.push_back({ renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
+				loadContextModo.meshes[id] = { renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
 					renderer->CreateBuffer(res.indices.data(), res.indices.size()),
-					std::move(res.submeshes) });
+					std::move(res.submeshes) };
 			}
 			auto offset = textures.size();
 			for (auto& img : loadContextModo.images) {
@@ -453,7 +456,7 @@ namespace assets {
 					pn.Remap();
 					l.submeshes.back().count = (index_t)pn.indices.size();
 					auto vSize = pn.GetVerticesByteSize(), iSize = pn.GetIndicesByteSize();
-					vb.resize(vb.size() + AlignTo<decltype(vSize), 16>(vSize));
+					vb.resize(vb.size() + AlignTo<16>(vSize));
 					ib.resize(ib.size() + iSize);
 					memcpy(vb.data() + vOffset, pn.vertices.data(), vSize);
 					memcpy(ib.data() + iOffset, pn.indices.data(), iSize);
@@ -472,7 +475,7 @@ namespace assets {
 					pnt.Remap();
 					l.submeshes.back().count = (index_t)pnt.indices.size();
 					auto vSize = pnt.GetVerticesByteSize(), iSize = pnt.GetIndicesByteSize();
-					vb.resize(vb.size() + AlignTo<decltype(vSize), 16>(vSize));
+					vb.resize(vb.size() + AlignTo<16>(vSize));
 					ib.resize(ib.size() + iSize);
 					memcpy(vb.data() + vOffset, pnt.vertices.data(), vSize);
 					memcpy(ib.data() + iOffset, pnt.indices.data(), iSize);
