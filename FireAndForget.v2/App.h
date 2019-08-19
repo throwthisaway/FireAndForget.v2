@@ -36,6 +36,7 @@ namespace FireAndForget_v2
 		void OnDisplayContentsInvalidated(Windows::Graphics::Display::DisplayInformation^ sender, Platform::Object^ args);
 
 	private:
+		Windows::UI::Core::CoreWindow^ m_window;
 		// Private accessor for m_deviceResources, protects against device removed errors.
 		std::shared_ptr<DX::DeviceResources> GetDeviceResources();
 

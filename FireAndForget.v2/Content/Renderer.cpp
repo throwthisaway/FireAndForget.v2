@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Renderer.h"
+#include "Content/UI.h"
 #include "StringUtil.h"
 #include "..\Common\DirectXHelper.h"
 #include "SIMDTypeAliases.h"
@@ -50,7 +51,9 @@ Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) 
 	CreateWindowSizeDependentResources();
 }
 
-Renderer::~Renderer() {}
+Renderer::~Renderer() {
+	UI::Shutdown();
+}
 
 void Renderer::SaveState() {}
 void Renderer::BeginUploadResources() {
@@ -186,6 +189,7 @@ void Renderer::CreateDeviceDependentResources() {
 	graphicsDebugging = SUCCEEDED(hr);
 #endif
 	auto device = m_deviceResources->GetD3DDevice();
+	UI::Init(device, m_deviceResources->GetSwapChain());
 	for (int i = 0; i < _countof(frames_); ++i) {
 		frames_[i].cb.Init(device, defaultCBFrameAllocSize);
 		frames_[i].desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, true);
@@ -659,6 +663,7 @@ void Renderer::EndPrePass() {
 void Renderer::CreateWindowSizeDependentResources() {
 	auto device = m_deviceResources->GetD3DDevice();
 	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
+	UI::OnResize(viewport.Width, viewport.Height);
 	scissorRect_ = { 0, 0, static_cast<LONG>(viewport.Width), static_cast<LONG>(viewport.Height) };
 	rtv_.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultRTVDescCount, false);
 	rtv_.entry = rtv_.desc.Push(_countof(PipelineStates::deferredRTFmts));
@@ -716,8 +721,9 @@ void Renderer::CreateWindowSizeDependentResources() {
 	}
 }
 
-void Renderer::Update(DX::StepTimer const& timer) {
+void Renderer::Update(double frame, double total) {
 	if (loadingComplete_){
+		UI::Update(frame, total);
 	}
 }
 
@@ -815,6 +821,7 @@ bool Renderer::Render() {
 		ppCommandLists.push_back(commandList.Get());
 	ppCommandLists.push_back(deferredCommandList_.Get());
 
+	ppCommandLists.push_back(UI::Render(m_deviceResources->GetSwapChain()->GetCurrentBackBufferIndex()));
 		// Indicate that the render target will now be used to present when the command list is done executing.
 	CD3DX12_RESOURCE_BARRIER presentResourceBarrier[] =
 		{ CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT),

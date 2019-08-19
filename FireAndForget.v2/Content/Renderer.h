@@ -30,7 +30,7 @@ public:
 	~Renderer();
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
-	void Update(DX::StepTimer const& timer);
+	void Update(double frame, double total);
 	uint32_t GetCurrenFrameIndex() const;
 	bool Render();
 	void SaveState();

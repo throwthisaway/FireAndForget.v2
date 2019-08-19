@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Scene.hpp"
 #include "MatrixUtils.h"
+#include "Content\UI.h"
 
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
@@ -115,9 +116,6 @@ void Scene::Init(Renderer* renderer, int width, int height) {
 }
 
 void Scene::Render() {
-	if (state != State::Ready && assets_.status == assets::Assets::Status::kReady) {
-		state = State::Ready;
-	}
 	if (state != State::Ready) return;
 	renderer_->BeginRender();
 	PrepareScene();
@@ -175,7 +173,13 @@ void Scene::UpdateSceneTransform() {
 }
 void Scene::Update(double frame, double total) {
 	assets_.Update(renderer_);
+	if (state != State::Ready && assets_.status == assets::Assets::Status::kReady) {
+		state = State::Ready;
+		renderer_->Update(frame, total);
+		return;
+	}
 	if (state != State::Ready) return;
+	renderer_->Update(frame, total);
 	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
 	}

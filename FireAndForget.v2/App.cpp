@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "App.h"
+#include "Content/UI.h"
 
 #include <ppltasks.h>
 
@@ -57,6 +58,7 @@ void App::Initialize(CoreApplicationView^ applicationView)
 // Called when the CoreWindow object is created (or re-created).
 void App::SetWindow(CoreWindow^ window)
 {
+	m_window = window;
 	window->SizeChanged += 
 		ref new TypedEventHandler<CoreWindow^, WindowSizeChangedEventArgs^>(this, &App::OnWindowSizeChanged);
 
@@ -120,7 +122,7 @@ void App::Run()
 					m_main->Update();
 				}
 				PIXEndEvent(commandQueue);
-
+				UI::UpdateMouseCursor(m_window);
 				PIXBeginEvent(commandQueue, 0, L"Render");
 				{
 					if (m_main->Render())
@@ -252,6 +254,7 @@ void App::OnPointerMoved(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Cor
 	if (pointerdown == 1) {
 		m_main->PointerMoved(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, (size_t)args->KeyModifiers);
 	}
+	UI::UpdateMousePos(args->CurrentPoint->Position.X * 2 /*TODO*/, args->CurrentPoint->Position.Y * 2 /*TODO*/);
 	unsigned int pointerId = args->CurrentPoint->PointerId;
 	Windows::Foundation::Collections::IVector<Windows::UI::Input::PointerPoint^>^ pointerPoints = Windows::UI::Input::PointerPoint::GetIntermediatePoints(pointerId);
 	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessMoveEvents(pointerPoints);
@@ -263,6 +266,7 @@ void App::OnPointerPressed(Windows::UI::Core::CoreWindow ^sender, Windows::UI::C
 	sender->SetPointerCapture();
 	pointerdown++;
 	m_main->PointerPressed(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
+	UI::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed);
 	unsigned int pointerId = args->CurrentPoint->PointerId;
 	Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
 	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessDownEvent(pointerPoint);
@@ -272,6 +276,7 @@ void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::
 {
 	pointerdown--;
 	m_main->PointerReleased(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
+	UI::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed);
 	unsigned int pointerId = args->CurrentPoint->PointerId;
 	Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
 	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessUpEvent(pointerPoint);
@@ -280,11 +285,13 @@ void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::
 
 void App::OnKeyUp(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args)
 {
+	UI::UpdateKeyboard((int)args->VirtualKey, false);
 	m_main->KeyUp(args->VirtualKey);
 }
 
 void App::OnKeyDown(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args)
 {
+	UI::UpdateKeyboard((int)args->VirtualKey, true);
 	m_main->KeyDown(args->VirtualKey);
 }
 

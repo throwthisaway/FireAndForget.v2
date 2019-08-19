@@ -23,7 +23,6 @@ FireAndForget_v2Main::FireAndForget_v2Main()
 // Creates and initializes the renderers.
 void FireAndForget_v2Main::CreateRenderers(const std::shared_ptr<DX::DeviceResources>& deviceResources)
 {
-	// TODO: Replace this with your app's content initialization.
 	m_sceneRenderer = std::unique_ptr<Renderer>(new Renderer(deviceResources));
 	scene_.Init(m_sceneRenderer.get(), (int)deviceResources->GetOutputSize().Width, (int)deviceResources->GetOutputSize().Height);
 	OnWindowSizeChanged();
@@ -49,7 +48,6 @@ bool FireAndForget_v2Main::Render()
 	{
 		return false;
 	}
-
 	scene_.Render();
 	return true;
 }

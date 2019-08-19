@@ -111,9 +111,9 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\..\3rdparty\imgui;$(ProjectDir)..\..\..\3rdparty\imgui\examples;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -129,9 +129,9 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\..\3rdparty\imgui;$(ProjectDir)..\..\..\3rdparty\imgui\examples;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -147,9 +147,9 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\..\3rdparty\imgui;$(ProjectDir)..\..\..\3rdparty\imgui\examples;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -165,9 +165,9 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\..\3rdparty\imgui;$(ProjectDir)..\..\..\3rdparty\imgui\examples;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -183,9 +183,9 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\..\3rdparty\imgui;$(ProjectDir)..\..\..\3rdparty\imgui\examples;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -201,9 +201,9 @@
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\..\3rdparty\imgui;$(ProjectDir)..\..\..\3rdparty\imgui\examples;$(ProjectDir)..\..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -228,6 +228,14 @@
     <Image Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\3rdparty\imgui\examples\imgui_impl_dx11.h" />
+    <ClInclude Include="..\..\..\3rdparty\imgui\examples\imgui_impl_dx12.h" />
+    <ClInclude Include="..\..\..\3rdparty\imgui\imconfig.h" />
+    <ClInclude Include="..\..\..\3rdparty\imgui\imgui.h" />
+    <ClInclude Include="..\..\..\3rdparty\imgui\imgui_internal.h" />
+    <ClInclude Include="..\..\..\3rdparty\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\..\..\3rdparty\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\..\..\3rdparty\imgui\imstb_truetype.h" />
     <ClInclude Include="..\..\Shared\Platform.h" />
     <ClInclude Include="..\..\Shared\ShaderStructs.h" />
     <ClInclude Include="..\..\Shared\SIMDTypeAliases.h" />
@@ -257,12 +265,61 @@
     <ClInclude Include="Content\Renderer.h" />
     <ClInclude Include="Content\shaders\Common.hlsli" />
     <ClInclude Include="Content\shaders\Phong.hlsli" />
+    <ClInclude Include="Content\UI.h" />
     <ClInclude Include="FireAndForget_v2Main.h" />
     <ClInclude Include="Common\DirectXHelper.h" />
     <ClInclude Include="Common\StepTimer.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\3rdparty\imgui\examples\imgui_impl_dx11.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\3rdparty\imgui\examples\imgui_impl_dx12.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\3rdparty\imgui\imgui.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\3rdparty\imgui\imgui_demo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\3rdparty\imgui\imgui_draw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\3rdparty\imgui\imgui_widgets.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\source\cpp\Assets.cpp" />
     <ClCompile Include="..\source\cpp\Camera.cpp" />
     <ClCompile Include="..\source\cpp\input\Input.cpp" />
@@ -276,6 +333,7 @@
     <ClCompile Include="Content\D3DHelpers.cpp" />
     <ClCompile Include="Content\DescriptorHeapAllocator.cpp" />
     <ClCompile Include="Content\DescriptorFrameAlloc.cpp" />
+    <ClCompile Include="Content\UI.cpp" />
     <ClCompile Include="Content\PipelineState.cpp" />
     <ClCompile Include="Content\Renderer.cpp" />
     <ClCompile Include="FireAndForget_v2Main.cpp" />
