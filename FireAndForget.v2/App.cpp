@@ -92,7 +92,7 @@ void App::SetWindow(CoreWindow^ window)
 	window->KeyUp += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Core::CoreWindow ^, Windows::UI::Core::KeyEventArgs ^>(this, &App::OnKeyUp);
 	window->KeyDown += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Core::CoreWindow ^, Windows::UI::Core::KeyEventArgs ^>(this, &App::OnKeyDown);
 	window->CharacterReceived += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Core::CoreWindow^, Windows::UI::Core::CharacterReceivedEventArgs^>(this, &FireAndForget_v2::App::OnCharacterReceived);
-
+	window->PointerWheelChanged += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Core::CoreWindow^, Windows::UI::Core::PointerEventArgs^>(this, &FireAndForget_v2::App::OnPointerWheelChanged);
 }
 
 // Initializes scene resources, or loads a previously saved app state.
@@ -253,6 +253,7 @@ std::shared_ptr<DX::DeviceResources> App::GetDeviceResources()
 
 void App::OnPointerMoved(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
 {
+	UI::UpdateKeyboardModifiers(args->KeyModifiers == VirtualKeyModifiers::Control, args->KeyModifiers == VirtualKeyModifiers::Menu, args->KeyModifiers == VirtualKeyModifiers::Shift);
 	float x = DX::ConvertDipsToPixels(args->CurrentPoint->Position.X, GetDeviceResources()->GetDpi());
 	float y = DX::ConvertDipsToPixels(args->CurrentPoint->Position.Y, GetDeviceResources()->GetDpi());
 	if (!UI::UpdateMousePos((int)x, (int)y)) {
@@ -265,9 +266,12 @@ void App::OnPointerMoved(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Cor
 	}
 }
 
-void App::OnPointerPressed(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
+void App::OnPointerPressed(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::PointerEventArgs^ args)
 {
 	sender->SetPointerCapture();
+	UI::UpdateKeyboardModifiers((args->KeyModifiers & VirtualKeyModifiers::Control) == VirtualKeyModifiers::Control,
+		(args->KeyModifiers & VirtualKeyModifiers::Menu) == VirtualKeyModifiers::Menu,
+		(args->KeyModifiers & VirtualKeyModifiers::Shift) == VirtualKeyModifiers::Shift);
 	if (!UI::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed)) {
 		pointerdown++;
 		m_main->PointerPressed(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
@@ -376,4 +380,10 @@ void App::Holding(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Wind
 void FireAndForget_v2::App::OnCharacterReceived(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::CharacterReceivedEventArgs^ args)
 {
 	UI::UpdateKeyboardInput(args->KeyCode);
+}
+
+
+void FireAndForget_v2::App::OnPointerWheelChanged(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::PointerEventArgs^ args)
+{
+	UI::UpdateMouseWheel(args->CurrentPoint->Properties->MouseWheelDelta, args->CurrentPoint->Properties->IsHorizontalMouseWheel);
 }

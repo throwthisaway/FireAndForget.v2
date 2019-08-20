@@ -24,6 +24,7 @@ namespace UI {
 		ImGuiMouseCursor g_LastMouseCursor = ImGuiMouseCursor_Arrow;
 		bool show_demo_window = true;
 		bool show_another_window = false;
+		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	}
 	void CreateRTVs(ID3D12Device* device, IDXGISwapChain* swapchain) {
 		for (UINT i = 0; i < NUM_BACK_BUFFERS; ++i) {
@@ -142,15 +143,12 @@ namespace UI {
 	void Update(double frame, double total) {
 		ImGuiIO& io = ImGui::GetIO();
 		io.DeltaTime = frame / 1000.;
-		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-		// Start the Dear ImGui frame
 		ImGui_ImplDX12_NewFrame();
-		// TODO:: ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
 		//// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		//if (show_demo_window)
-		//	ImGui::ShowDemoWindow(&show_demo_window);
+		if (show_demo_window)
+			ImGui::ShowDemoWindow(&show_demo_window);
 
 		//// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
 		//{
@@ -208,10 +206,13 @@ namespace UI {
 		io.MouseDown[2] = m;
 		return io.WantCaptureMouse;
 	}
-	bool UpdateMouseWheel() {
-		// TODO::         io.MouseWheel += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
-		// TODO::		 io.MouseWheelH += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
-		return false;
+	bool UpdateMouseWheel(int delta, bool horizontal) {
+		if (!ImGui::GetCurrentContext()) return false;
+		ImGuiIO& io = ImGui::GetIO();
+		delta /= WHEEL_DELTA;
+		if (horizontal) io.MouseWheelH += delta;
+		else io.MouseWheel += (float)delta;
+		return true;
 	}
 	bool UpdateKeyboard(int key, bool down) {
 		if (!ImGui::GetCurrentContext()) return false;

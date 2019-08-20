@@ -2,18 +2,22 @@
 #include "Scene.hpp"
 #include "MatrixUtils.h"
 #include "Content\UI.h"
+#include "imgui.h"
 
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
 }
 
 namespace {
-	const float defaultLightRange = 25.f;
+	constexpr float defaultLightRange = 25.f;
+	float3 CalcAtt(float range) {
+		return float3(1.f, 1.f / range, 1.f / (range * range));
+	}
 	const PointLight defaultPointLight = { {300.f, 300.f, 300.f}, /*{.4f, .4f, .4f}*//*{23.47f, 21.31f, 20.79f}*//* diffuse */
 		{.0f, .0f, .0f}, /* ambient */
 		{.8f, .8f, .8f},/* specular highlight */
 		{ 4.f, 4.f, -10.f}, /* position */
-		{ 1.f, 2.f / defaultLightRange, 1.f / (defaultLightRange * defaultLightRange), defaultLightRange }, /* attenuation and range */};
+		{CalcAtt(defaultLightRange), defaultLightRange }, /* attenuation and range */};
 	ShaderId SelectModoShader(uint32_t uvCount, uint32_t textureMask) {
 		switch(uvCount) {
 			case 0:
@@ -36,9 +40,9 @@ namespace {
 void Scene::PrepareScene() {
 	if (prepared_) return;
 	prepared_ = true;
-	objects_.push_back({ lights_[0].pointLight.pos, {}, assets::Assets::LIGHT });
+	objects_.push_back({ deferredCmd_.scene.light[0].pos, {}, assets::Assets::LIGHT });
 	lights_[0].placeholder = index_t(objects_.size() - 1);
-	objects_.push_back({ lights_[1].pointLight.pos, {}, assets::Assets::LIGHT });
+	objects_.push_back({ deferredCmd_.scene.light[1].pos, {}, assets::Assets::LIGHT });
 	lights_[1].placeholder = index_t(objects_.size() - 1);
 	objects_.push_back({ {}, {}, assets::Assets::PLACEHOLDER });
 	objects_.push_back({ {}, {}, assets::Assets::CHECKERBOARD });
@@ -74,9 +78,10 @@ void Scene::PrepareScene() {
 	deferredCmd_.ao.scale = 1.f;
 	deferredCmd_.ao.intensity = 1.f;
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
-		deferredCmd_.scene.light[i] = lights_[i].pointLight;
+		deferredCmd_.scene.light[i] = defaultPointLight;
 		//FromVec3(camera_.view * glm::vec4(ToVec3(lights_[i].pointLight.pos), 1.f), shaderStructures.cScene.scene.light[i].pos);
 	}
+	deferredCmd_.scene.light[0].pos.x = deferredCmd_.scene.light[0].pos.y = -4.f;
 	renderer_->BeginPrePass();
 	deferredCmd_.random = assets_.textures[assets::Assets::RANDOM];
 	Dim dim = renderer_->GetDimensions(deferredCmd_.random);
@@ -104,10 +109,6 @@ void Scene::Init(Renderer* renderer, int width, int height) {
 	viewport_.width = width; viewport_.height = height;
 	camera_.Perspective(width, height);
 
-	for (int i = 0; i < MAX_LIGHTS; ++i) {
-		lights_[i].pointLight = defaultPointLight;
-	}
-	lights_[0].pointLight.pos[0] = lights_[0].pointLight.pos[1]= -4.f;
 //	shaderStructures.cScene.scene.light[1].diffuse[0] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[1] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[2] = 150.0f;
@@ -146,7 +147,7 @@ void Scene::Render() {
 
 	for (const auto& o : modoObjects_) {
 		const auto& mesh = assets_.meshes[o.mesh];
-		auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
+		auto m = glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
 		//m[3] += float4(l.pivot, 0.f);
 		auto mvp = camera_.vp * m;
 		for (const auto& submesh : mesh.submeshes) {
@@ -163,13 +164,63 @@ void Scene::UpdateCameraTransform() {
 	camera_.Rotate(input.drot);
 	camera_.Translate(input.dpos);
 }
-
+void Scene::ObjectsWindow() {
+	ImGui::SetNextWindowPos(ImVec2(20, 300), ImGuiCond_FirstUseEver);
+	ImGui::Begin("Objects Window");
+	int id = 0;
+	for (auto& o : modoObjects_) {
+		ImGui::Text("%f %f %f | %f %f %f", o.pos.x, o.pos.y, o.pos.z, o.rot.x, o.rot.y, o.rot.z);
+		auto idMetallic = std::string("Metallic###Metallic") + std::to_string(++id);
+		ImGui::SliderFloat(idMetallic.c_str(), &assets_.meshes[o.mesh].submeshes[0].material.metallic_roughness.x, 0.f, 1.f);
+		auto idRoughness = std::string("Roughness###Roughness1") + std::to_string(++id);
+		ImGui::SliderFloat(idRoughness.c_str(), &assets_.meshes[o.mesh].submeshes[0].material.metallic_roughness.y, 0.f, 1.f);
+		ImGui::Separator();
+	}
+	ImGui::End();
+}
+void Scene::SceneWindow() {
+	ImGui::SetNextWindowPos(ImVec2(20, 550), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(500, 650), ImGuiCond_FirstUseEver);
+	ImGui::Begin("Scene Window");
+	if (ImGui::CollapsingHeader("Camera", &ui.cameraOpen)) {
+		ImGui::DragFloat3("Pos", (float*)& camera_.pos, 0.f, 100.f);
+		ImGui::DragFloat3("Rot", (float*)& camera_.rot, -glm::pi<float>(), glm::pi<float>());
+		ImGui::DragFloat3("EyePos", (float*)& camera_.eyePos, 0.f, 100.f);
+	}
+	if (ImGui::CollapsingHeader("AO", &ui.aoOpen)) {
+		ImGui::SliderFloat("Intensity", &deferredCmd_.ao.intensity, 0.f, 1.f);
+		ImGui::SliderFloat("Radius", &deferredCmd_.ao.rad, 0.f, .1f);
+		ImGui::SliderFloat("Scale", &deferredCmd_.ao.scale, 0.f, 2.f);
+		ImGui::SliderFloat("Bias", &deferredCmd_.ao.bias, 0.f, 1.f);
+	}
+	if (ImGui::CollapsingHeader("Lights", &ui.lightOpen)) {
+		for (int i = 0; i < MAX_LIGHTS; ++i) {
+			std::string id("Diffuse###Diffuse" + std::to_string(i));
+			ImGui::ColorEdit3(id.c_str(), (float*)&deferredCmd_.scene.light[i].diffuse);
+			id = "Specular###Specular" + std::to_string(i);
+			ImGui::ColorEdit3(id.c_str(), (float*)&deferredCmd_.scene.light[i].specular);
+			id = "Ambient###Ambient" + std::to_string(i);
+			ImGui::ColorEdit3(id.c_str(), (float*)&deferredCmd_.scene.light[i].ambient);
+			id = "Range###Range" + std::to_string(i);
+			ImGui::SliderFloat(id.c_str(), &deferredCmd_.scene.light[i].att_range.w, 1.f, 500.f);
+			deferredCmd_.scene.light[i].att_range = float4(CalcAtt(deferredCmd_.scene.light[i].att_range.w), deferredCmd_.scene.light[i].att_range.w);
+			ImGui::Text("Attenuation: %f %f %f", deferredCmd_.scene.light[i].att_range.x, deferredCmd_.scene.light[i].att_range.y, deferredCmd_.scene.light[i].att_range.z);
+			id = "Pos###Pos" + std::to_string(i);
+			ImGui::DragFloat3(id.c_str(), (float*)& deferredCmd_.scene.light[i].pos, -100.f, 100.f);
+			ImGui::Separator();
+		}
+	}
+	ImGui::End();
+}
 void Scene::UpdateSceneTransform() {
 	transform.pos += input.dpos;
 	auto rot = glm::inverse(glm::mat3(camera_.view)) * input.drot;
-	// wrong: transform.rot += rot;
-	// TODO:: transform is not well maintained...
-	m = ScreenSpaceRotator(m, Transform{ transform.pos, transform.center, rot });
+	m = ScreenSpaceRotator({}, Transform{ transform.pos, transform.center, rot });
+	auto irotm = glm::transpose(float3x3(m));
+	for (auto& o : modoObjects_) {
+		o.pos += input.dpos;
+		o.rot = irotm * o.rot;
+	}
 }
 void Scene::Update(double frame, double total) {
 	assets_.Update(renderer_);
@@ -180,6 +231,8 @@ void Scene::Update(double frame, double total) {
 	}
 	if (state != State::Ready) return;
 	renderer_->Update(frame, total);
+	ObjectsWindow();
+	SceneWindow();
 	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
 	}
@@ -195,6 +248,6 @@ void Scene::Update(double frame, double total) {
 		o.Update(frame, total);
 	}
 	// TODO:: update light pos here if neccessay
-	objects_[lights_[0].placeholder].pos = lights_[0].pointLight.pos;
-	objects_[lights_[1].placeholder].pos = lights_[1].pointLight.pos;
+	for (int i = 0; i < MAX_LIGHTS; ++i)
+		objects_[lights_[i].placeholder].pos = deferredCmd_.scene.light[i].pos;
 }

@@ -36,6 +36,11 @@ struct Scene {
 	enum class State{Start, AssetsLoading, Ready};
 	State state = State::Start;
 private:
+	void ObjectsWindow();
+	void SceneWindow();
+	struct {
+		bool cameraOpen = true, aoOpen = true, lightOpen = true;
+	} ui;
 	glm::mat4 m;	// for scene transform
 	Transform transform;
 	struct {
@@ -43,17 +48,13 @@ private:
 	}viewport_;
 	Camera camera_;
 	struct Light {
-		PointLight pointLight;
+		//PointLight pointLight;
 		index_t placeholder;
 	}lights_[MAX_LIGHTS];
 	Renderer* renderer_;
 	assets::Assets assets_;
 	std::vector<Object> objects_;
 	std::vector<Object> modoObjects_;
-	struct {
-		SceneCB scene;
-		AO AO;
-	}shaderStructures;
 	TextureIndex cubeEnv_ = InvalidTexture;
 	ShaderStructures::DeferredCmd deferredCmd_;
 	bool prepared_ = false;

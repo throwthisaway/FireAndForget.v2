@@ -9,7 +9,7 @@ namespace UI {
 
 	bool UpdateMousePos(int x, int y);
 	bool UpdateMouseButton(bool l, bool r, bool m);
-	bool UpdateMouseWheel();
+	bool UpdateMouseWheel(int delta, bool horizontal);
 	bool UpdateKeyboard(int key, bool down);
 	bool UpdateKeyboardInput(int key);
 	void UpdateKeyboardModifiers(bool ctrl, bool alt, bool shift);
