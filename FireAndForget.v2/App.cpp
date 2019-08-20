@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "App.h"
 #include "Content/UI.h"
-
 #include <ppltasks.h>
 
 using namespace FireAndForget_v2;
@@ -122,7 +121,7 @@ void App::Run()
 					m_main->Update();
 				}
 				PIXEndEvent(commandQueue);
-				UI::UpdateMouseCursor(m_window);
+				UI::UpdateMouseCursor(m_window.Get());
 				PIXBeginEvent(commandQueue, 0, L"Render");
 				{
 					if (m_main->Render())
@@ -184,6 +183,8 @@ void App::OnResuming(Platform::Object^ sender, Platform::Object^ args)
 
 void App::OnWindowSizeChanged(CoreWindow^ sender, WindowSizeChangedEventArgs^ args)
 {
+	GetDeviceResources()->WaitForGpu();
+	UI::BeforeResize();
 	GetDeviceResources()->SetLogicalSize(Size(sender->Bounds.Width, sender->Bounds.Height));
 	m_main->OnWindowSizeChanged();
 }
@@ -254,7 +255,9 @@ void App::OnPointerMoved(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Cor
 	if (pointerdown == 1) {
 		m_main->PointerMoved(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, (size_t)args->KeyModifiers);
 	}
-	UI::UpdateMousePos(args->CurrentPoint->Position.X * 2 /*TODO*/, args->CurrentPoint->Position.Y * 2 /*TODO*/);
+	float x = DX::ConvertDipsToPixels(args->CurrentPoint->Position.X, GetDeviceResources()->GetDpi());
+	float y = DX::ConvertDipsToPixels(args->CurrentPoint->Position.Y, GetDeviceResources()->GetDpi());
+	UI::UpdateMousePos((int)x, (int)y);
 	unsigned int pointerId = args->CurrentPoint->PointerId;
 	Windows::Foundation::Collections::IVector<Windows::UI::Input::PointerPoint^>^ pointerPoints = Windows::UI::Input::PointerPoint::GetIntermediatePoints(pointerId);
 	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessMoveEvents(pointerPoints);

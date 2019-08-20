@@ -23,6 +23,13 @@ namespace UI {
 		static D3D12_CPU_DESCRIPTOR_HANDLE  g_mainRenderTargetDescriptor[NUM_BACK_BUFFERS] = {};
 		ImGuiMouseCursor g_LastMouseCursor = ImGuiMouseCursor_Arrow;
 	}
+	void CreateRTVs(ID3D12Device* device, IDXGISwapChain* swapchain) {
+		for (UINT i = 0; i < NUM_BACK_BUFFERS; ++i) {
+			ComPtr<ID3D12Resource> pBackBuffer;
+			swapchain->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
+			device->CreateRenderTargetView(pBackBuffer.Get(), NULL, g_mainRenderTargetDescriptor[i]);
+		}
+	}
 	bool Init(ID3D12Device* device,	IDXGISwapChain* swapchain) {
 		{
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
@@ -41,12 +48,7 @@ namespace UI {
 				rtvHandle.ptr += rtvDescriptorSize;
 			}
 
-			for (UINT i = 0; i < NUM_BACK_BUFFERS; i++)
-			{
-				ID3D12Resource* pBackBuffer = NULL;
-				swapchain->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
-				device->CreateRenderTargetView(pBackBuffer, NULL, g_mainRenderTargetDescriptor[i]);
-			}
+			CreateRTVs(device, swapchain);
 		}
 
 		{
@@ -115,9 +117,13 @@ namespace UI {
 		io.Fonts->AddFontDefault();
 		return true;
 	}
-	void OnResize(int width, int height) {
-		//ImGui_ImplDX12_InvalidateDeviceObjects();
-		//ImGui_ImplDX12_CreateDeviceObjects();
+	void BeforeResize() {
+		ImGui_ImplDX12_InvalidateDeviceObjects();
+	}
+	void OnResize(ID3D12Device* device, IDXGISwapChain* swapchain, int width, int height) {
+		//if (!ImGui::GetCurrentContext()) return;
+		CreateRTVs(device, swapchain);
+		ImGui_ImplDX12_CreateDeviceObjects();
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize.x = width; io.DisplaySize.y = height;
 	}
@@ -188,10 +194,12 @@ namespace UI {
 		return g_pd3dCommandList;
 	}
 	void UpdateMousePos(int x, int y) {
+		if (!ImGui::GetCurrentContext()) return;
 		ImGuiIO& io = ImGui::GetIO();
 		io.MousePos = ImVec2((float)x, (float)y);
 	}
 	void UpdateMouseButton(bool l, bool r, bool m) {
+		if (!ImGui::GetCurrentContext()) return;
 		ImGuiIO& io = ImGui::GetIO();
 		int button = 0;
 		io.MouseDown[0] = l;
@@ -203,14 +211,17 @@ namespace UI {
 		// TODO::		 io.MouseWheelH += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
 	}
 	void UpdateKeyboard(int key, bool down) {
+		if (!ImGui::GetCurrentContext()) return;
 		ImGuiIO& io = ImGui::GetIO();
 		io.KeysDown[key] = down;
 	}
 	void UpdateKeyboardInput(int key) {
+		if (!ImGui::GetCurrentContext()) return;
 		ImGuiIO& io = ImGui::GetIO();
 		io.AddInputCharacter(key);
 	}
 	void UpdateKeyboardModifiers(bool ctrl, bool alt, bool shift) {
+		if (!ImGui::GetCurrentContext()) return;
 		ImGuiIO& io = ImGui::GetIO();
 		io.KeyCtrl = ctrl;
 		io.KeyShift = shift;
@@ -218,6 +229,7 @@ namespace UI {
 		io.KeySuper = false;
 	}
 	bool UpdateMouseCursor(Windows::UI::Core::CoreWindow^ window) {
+		if (!ImGui::GetCurrentContext()) return false;
 		ImGuiIO& io = ImGui::GetIO();
 		// Update OS mouse cursor with the cursor requested by imgui
 		//ImGuiMouseCursor mouse_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();

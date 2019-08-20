@@ -663,7 +663,7 @@ void Renderer::EndPrePass() {
 void Renderer::CreateWindowSizeDependentResources() {
 	auto device = m_deviceResources->GetD3DDevice();
 	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
-	UI::OnResize(viewport.Width, viewport.Height);
+	UI::OnResize(device, m_deviceResources->GetSwapChain(), viewport.Width, viewport.Height);
 	scissorRect_ = { 0, 0, static_cast<LONG>(viewport.Width), static_cast<LONG>(viewport.Height) };
 	rtv_.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultRTVDescCount, false);
 	rtv_.entry = rtv_.desc.Push(_countof(PipelineStates::deferredRTFmts));
@@ -822,7 +822,7 @@ bool Renderer::Render() {
 	ppCommandLists.push_back(deferredCommandList_.Get());
 
 	ppCommandLists.push_back(UI::Render(m_deviceResources->GetSwapChain()->GetCurrentBackBufferIndex()));
-		// Indicate that the render target will now be used to present when the command list is done executing.
+	// Indicate that the render target will now be used to present when the command list is done executing.
 	CD3DX12_RESOURCE_BARRIER presentResourceBarrier[] =
 		{ CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT),
 		 CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE) };

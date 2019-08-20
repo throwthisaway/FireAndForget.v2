@@ -55,7 +55,6 @@ bool FireAndForget_v2Main::Render()
 // Updates application state when the window's size changes (e.g. device orientation change)
 void FireAndForget_v2Main::OnWindowSizeChanged()
 {
-	// TODO: Replace this with the size-dependent initialization of your app's content.
 	m_sceneRenderer->CreateWindowSizeDependentResources();
 }
 

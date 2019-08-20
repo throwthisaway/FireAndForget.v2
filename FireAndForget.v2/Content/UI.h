@@ -2,7 +2,8 @@
 namespace UI {
 	bool Init(ID3D12Device* device, IDXGISwapChain* swapchain);
 	void Update(double frame, double total);
-	void OnResize(int width, int height);
+	void BeforeResize();
+	void OnResize(ID3D12Device* device, IDXGISwapChain* swapchain, int width, int height);
 	ID3D12GraphicsCommandList* Render(int index);
 	void Shutdown();
 
