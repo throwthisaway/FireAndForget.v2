@@ -7,11 +7,11 @@ namespace UI {
 	ID3D12GraphicsCommandList* Render(int index);
 	void Shutdown();
 
-	void UpdateMousePos(int x, int y);
-	void UpdateMouseButton(bool l, bool r, bool m);
-	void UpdateMouseWheel();
-	void UpdateKeyboard(int key, bool down);
-	void UpdateKeyboardInput(int key);
+	bool UpdateMousePos(int x, int y);
+	bool UpdateMouseButton(bool l, bool r, bool m);
+	bool UpdateMouseWheel();
+	bool UpdateKeyboard(int key, bool down);
+	bool UpdateKeyboardInput(int key);
 	void UpdateKeyboardModifiers(bool ctrl, bool alt, bool shift);
 	bool UpdateMouseCursor(Windows::UI::Core::CoreWindow^ window);
 }

@@ -22,6 +22,8 @@ namespace UI {
 		static ID3D12GraphicsCommandList* g_pd3dCommandList = NULL;
 		static D3D12_CPU_DESCRIPTOR_HANDLE  g_mainRenderTargetDescriptor[NUM_BACK_BUFFERS] = {};
 		ImGuiMouseCursor g_LastMouseCursor = ImGuiMouseCursor_Arrow;
+		bool show_demo_window = true;
+		bool show_another_window = false;
 	}
 	void CreateRTVs(ID3D12Device* device, IDXGISwapChain* swapchain) {
 		for (UINT i = 0; i < NUM_BACK_BUFFERS; ++i) {
@@ -140,50 +142,48 @@ namespace UI {
 	void Update(double frame, double total) {
 		ImGuiIO& io = ImGui::GetIO();
 		io.DeltaTime = frame / 1000.;
-		bool show_demo_window = true;
-		bool show_another_window = false;
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 		// Start the Dear ImGui frame
 		ImGui_ImplDX12_NewFrame();
 		// TODO:: ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		if (show_demo_window)
-			ImGui::ShowDemoWindow(&show_demo_window);
+		//// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+		//if (show_demo_window)
+		//	ImGui::ShowDemoWindow(&show_demo_window);
 
-		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-		{
-			static float f = 0.0f;
-			static int counter = 0;
+		//// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+		//{
+		//	static float f = 0.0f;
+		//	static int counter = 0;
 
-			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+		//	ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-			ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-			ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-			ImGui::Checkbox("Another Window", &show_another_window);
+		//	ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+		//	ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+		//	ImGui::Checkbox("Another Window", &show_another_window);
 
-			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-			ImGui::ColorEdit3("clear color", (float*)& clear_color); // Edit 3 floats representing a color
+		//	ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+		//	ImGui::ColorEdit3("clear color", (float*)& clear_color); // Edit 3 floats representing a color
 
-			if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-				counter++;
-			ImGui::SameLine();
-			ImGui::Text("counter = %d", counter);
+		//	if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+		//		counter++;
+		//	ImGui::SameLine();
+		//	ImGui::Text("counter = %d", counter);
 
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::End();
-		}
+		//	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		//	ImGui::End();
+		//}
 
-		// 3. Show another simple window.
-		if (show_another_window)
-		{
-			ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-			ImGui::Text("Hello from another window!");
-			if (ImGui::Button("Close Me"))
-				show_another_window = false;
-			ImGui::End();
-		}
+		//// 3. Show another simple window.
+		//if (show_another_window)
+		//{
+		//	ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+		//	ImGui::Text("Hello from another window!");
+		//	if (ImGui::Button("Close Me"))
+		//		show_another_window = false;
+		//	ImGui::End();
+		//}
 	}
 	ID3D12GraphicsCommandList* Render(int index) {
 		g_pd3dCommandList->Reset(g_pCommandAllocators[index], NULL);
@@ -193,32 +193,37 @@ namespace UI {
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), g_pd3dCommandList);
 		return g_pd3dCommandList;
 	}
-	void UpdateMousePos(int x, int y) {
-		if (!ImGui::GetCurrentContext()) return;
+	bool UpdateMousePos(int x, int y) {
+		if (!ImGui::GetCurrentContext()) return false;
 		ImGuiIO& io = ImGui::GetIO();
 		io.MousePos = ImVec2((float)x, (float)y);
+		return io.WantCaptureMouse;
 	}
-	void UpdateMouseButton(bool l, bool r, bool m) {
-		if (!ImGui::GetCurrentContext()) return;
+	bool UpdateMouseButton(bool l, bool r, bool m) {
+		if (!ImGui::GetCurrentContext()) return false;
 		ImGuiIO& io = ImGui::GetIO();
 		int button = 0;
 		io.MouseDown[0] = l;
 		io.MouseDown[1] = r;
 		io.MouseDown[2] = m;
+		return io.WantCaptureMouse;
 	}
-	void UpdateMouseWheel() {
+	bool UpdateMouseWheel() {
 		// TODO::         io.MouseWheel += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
 		// TODO::		 io.MouseWheelH += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
+		return false;
 	}
-	void UpdateKeyboard(int key, bool down) {
-		if (!ImGui::GetCurrentContext()) return;
+	bool UpdateKeyboard(int key, bool down) {
+		if (!ImGui::GetCurrentContext()) return false;
 		ImGuiIO& io = ImGui::GetIO();
 		io.KeysDown[key] = down;
+		return io.WantCaptureKeyboard;
 	}
-	void UpdateKeyboardInput(int key) {
-		if (!ImGui::GetCurrentContext()) return;
+	bool UpdateKeyboardInput(int key) {
+		if (!ImGui::GetCurrentContext()) return false;
 		ImGuiIO& io = ImGui::GetIO();
 		io.AddInputCharacter(key);
+		return io.WantCaptureKeyboard;
 	}
 	void UpdateKeyboardModifiers(bool ctrl, bool alt, bool shift) {
 		if (!ImGui::GetCurrentContext()) return;
@@ -259,8 +264,7 @@ namespace UI {
 			}
 			window->PointerCursor = ref new Windows::UI::Core::CoreCursor(cursor, 0);
 		}
-    return true;
-
+		return true;
 	}
 	//	namespace {
 	//		ComPtr<ID3D11Device> g_pd3dDevice;

@@ -91,6 +91,7 @@ void App::SetWindow(CoreWindow^ window)
 	window->PointerReleased += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Core::CoreWindow ^, Windows::UI::Core::PointerEventArgs ^>(this, &App::OnPointerReleased);
 	window->KeyUp += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Core::CoreWindow ^, Windows::UI::Core::KeyEventArgs ^>(this, &App::OnKeyUp);
 	window->KeyDown += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Core::CoreWindow ^, Windows::UI::Core::KeyEventArgs ^>(this, &App::OnKeyDown);
+	window->CharacterReceived += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Core::CoreWindow^, Windows::UI::Core::CharacterReceivedEventArgs^>(this, &FireAndForget_v2::App::OnCharacterReceived);
 
 }
 
@@ -252,50 +253,55 @@ std::shared_ptr<DX::DeviceResources> App::GetDeviceResources()
 
 void App::OnPointerMoved(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
 {
-	if (pointerdown == 1) {
-		m_main->PointerMoved(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, (size_t)args->KeyModifiers);
-	}
 	float x = DX::ConvertDipsToPixels(args->CurrentPoint->Position.X, GetDeviceResources()->GetDpi());
 	float y = DX::ConvertDipsToPixels(args->CurrentPoint->Position.Y, GetDeviceResources()->GetDpi());
-	UI::UpdateMousePos((int)x, (int)y);
-	unsigned int pointerId = args->CurrentPoint->PointerId;
-	Windows::Foundation::Collections::IVector<Windows::UI::Input::PointerPoint^>^ pointerPoints = Windows::UI::Input::PointerPoint::GetIntermediatePoints(pointerId);
-	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessMoveEvents(pointerPoints);
-
+	if (!UI::UpdateMousePos((int)x, (int)y)) {
+		if (pointerdown == 1) {
+			m_main->PointerMoved(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, (size_t)args->KeyModifiers);
+		}
+		unsigned int pointerId = args->CurrentPoint->PointerId;
+		Windows::Foundation::Collections::IVector<Windows::UI::Input::PointerPoint^>^ pointerPoints = Windows::UI::Input::PointerPoint::GetIntermediatePoints(pointerId);
+		/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessMoveEvents(pointerPoints);
+	}
 }
 
 void App::OnPointerPressed(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
 {
 	sender->SetPointerCapture();
-	pointerdown++;
-	m_main->PointerPressed(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
-	UI::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed);
-	unsigned int pointerId = args->CurrentPoint->PointerId;
-	Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
-	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessDownEvent(pointerPoint);
+	if (!UI::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed)) {
+		pointerdown++;
+		m_main->PointerPressed(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
+		unsigned int pointerId = args->CurrentPoint->PointerId;
+		Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
+		/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessDownEvent(pointerPoint);
+	}
 }
 
 void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
 {
-	pointerdown--;
-	m_main->PointerReleased(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
-	UI::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed);
-	unsigned int pointerId = args->CurrentPoint->PointerId;
-	Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
-	/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessUpEvent(pointerPoint);
-	sender->ReleasePointerCapture();
+	if (!UI::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed)) {
+		pointerdown--;
+		// TODO:: UI::UpdateKeyboardModifiers();
+		m_main->PointerReleased(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
+		unsigned int pointerId = args->CurrentPoint->PointerId;
+		Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
+		/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessUpEvent(pointerPoint);
+		sender->ReleasePointerCapture();
+	}
 }
 
 void App::OnKeyUp(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args)
 {
-	UI::UpdateKeyboard((int)args->VirtualKey, false);
-	m_main->KeyUp(args->VirtualKey);
+	if (!UI::UpdateKeyboard((int)args->VirtualKey, false)) {
+		m_main->KeyUp(args->VirtualKey);
+	}
 }
 
 void App::OnKeyDown(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args)
 {
-	UI::UpdateKeyboard((int)args->VirtualKey, true);
-	m_main->KeyDown(args->VirtualKey);
+	if (!UI::UpdateKeyboard((int)args->VirtualKey, true)) {
+		m_main->KeyDown(args->VirtualKey);
+	}
 }
 
 void App::ManipulationCompleted(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Windows::UI::Input::ManipulationCompletedEventArgs^ args) {
@@ -364,4 +370,10 @@ void App::Holding(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Wind
 		break;
 	}
 	//textBoxGesture.Text = "Holding state = " + holdingState;
+}
+
+
+void FireAndForget_v2::App::OnCharacterReceived(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::CharacterReceivedEventArgs^ args)
+{
+	UI::UpdateKeyboardInput(args->KeyCode);
 }

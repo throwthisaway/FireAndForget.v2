@@ -59,6 +59,7 @@ namespace FireAndForget_v2
 		void ManipulationUpdated(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Windows::UI::Input::ManipulationUpdatedEventArgs^ args);
 		void Holding(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Windows::UI::Input::HoldingEventArgs^ args);
 
+		void OnCharacterReceived(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::CharacterReceivedEventArgs^ args);
 	};
 }
 
