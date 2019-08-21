@@ -290,8 +290,8 @@ void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::
 		unsigned int pointerId = args->CurrentPoint->PointerId;
 		Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
 		/*if (m_gestureRecognizer->IsActive)*/ m_gestureRecognizer->ProcessUpEvent(pointerPoint);
-		sender->ReleasePointerCapture();
 	}
+	sender->ReleasePointerCapture();
 }
 
 void App::OnKeyUp(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args)

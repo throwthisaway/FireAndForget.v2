@@ -68,8 +68,8 @@ float4 main(PS_T input) : SV_TARGET{
 	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth);
 	float3 v = normalize(scene.eyePos - worldPos);
 
-	float roughness = material.r;
-	float metallic = material.g;
+	float metallic = material.r;
+	float roughness = material.g;
 	float3 f0 = float3(.04f, .04f, .04f);
 	f0 = lerp(f0, albedo.rgb, metallic);
 	float r1 = roughness + 1.f;

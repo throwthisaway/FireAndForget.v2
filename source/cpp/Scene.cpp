@@ -170,10 +170,12 @@ void Scene::ObjectsWindow() {
 	int id = 0;
 	for (auto& o : modoObjects_) {
 		ImGui::Text("%f %f %f | %f %f %f", o.pos.x, o.pos.y, o.pos.z, o.rot.x, o.rot.y, o.rot.z);
+		std::string idDiffuse("Diffuse###MaterialDiffuse" + std::to_string(++id));
+		ImGui::ColorEdit3(idDiffuse.c_str(), (float*)&assets_.meshes[o.mesh].submeshes[0].material.diffuse);
 		auto idMetallic = std::string("Metallic###Metallic") + std::to_string(++id);
 		ImGui::SliderFloat(idMetallic.c_str(), &assets_.meshes[o.mesh].submeshes[0].material.metallic_roughness.x, 0.f, 1.f);
 		auto idRoughness = std::string("Roughness###Roughness1") + std::to_string(++id);
-		ImGui::SliderFloat(idRoughness.c_str(), &assets_.meshes[o.mesh].submeshes[0].material.metallic_roughness.y, 0.f, 1.f);
+		ImGui::SliderFloat(idRoughness.c_str(), &assets_.meshes[o.mesh].submeshes[0].material.metallic_roughness.y, 0.05f, 1.f);
 		ImGui::Separator();
 	}
 	ImGui::End();
@@ -183,8 +185,8 @@ void Scene::SceneWindow() {
 	ImGui::SetNextWindowSize(ImVec2(500, 650), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Scene Window");
 	if (ImGui::CollapsingHeader("Camera", &ui.cameraOpen)) {
-		ImGui::DragFloat3("Pos", (float*)& camera_.pos, 0.f, 100.f);
-		ImGui::DragFloat3("Rot", (float*)& camera_.rot, -glm::pi<float>(), glm::pi<float>());
+		ImGui::DragFloat3("Pos###PosCamera", (float*)& camera_.pos, 0.f, 100.f);
+		ImGui::DragFloat3("Rot###RotCamera", (float*)& camera_.rot, -glm::pi<float>(), glm::pi<float>());
 		ImGui::DragFloat3("EyePos", (float*)& camera_.eyePos, 0.f, 100.f);
 	}
 	if (ImGui::CollapsingHeader("AO", &ui.aoOpen)) {
@@ -195,17 +197,17 @@ void Scene::SceneWindow() {
 	}
 	if (ImGui::CollapsingHeader("Lights", &ui.lightOpen)) {
 		for (int i = 0; i < MAX_LIGHTS; ++i) {
-			std::string id("Diffuse###Diffuse" + std::to_string(i));
-			ImGui::ColorEdit3(id.c_str(), (float*)&deferredCmd_.scene.light[i].diffuse);
-			id = "Specular###Specular" + std::to_string(i);
+			std::string id("Diffuse###LightDiffuse" + std::to_string(i));
+			ImGui::DragFloat3(id.c_str(), (float*)&deferredCmd_.scene.light[i].diffuse, 0.f, 1000.f);
+			id = "Specular###LightSpecular" + std::to_string(i);
 			ImGui::ColorEdit3(id.c_str(), (float*)&deferredCmd_.scene.light[i].specular);
-			id = "Ambient###Ambient" + std::to_string(i);
+			id = "Ambient###LightAmbient" + std::to_string(i);
 			ImGui::ColorEdit3(id.c_str(), (float*)&deferredCmd_.scene.light[i].ambient);
-			id = "Range###Range" + std::to_string(i);
+			id = "Range###LightRange" + std::to_string(i);
 			ImGui::SliderFloat(id.c_str(), &deferredCmd_.scene.light[i].att_range.w, 1.f, 500.f);
 			deferredCmd_.scene.light[i].att_range = float4(CalcAtt(deferredCmd_.scene.light[i].att_range.w), deferredCmd_.scene.light[i].att_range.w);
 			ImGui::Text("Attenuation: %f %f %f", deferredCmd_.scene.light[i].att_range.x, deferredCmd_.scene.light[i].att_range.y, deferredCmd_.scene.light[i].att_range.z);
-			id = "Pos###Pos" + std::to_string(i);
+			id = "Pos###LightPos" + std::to_string(i);
 			ImGui::DragFloat3(id.c_str(), (float*)& deferredCmd_.scene.light[i].pos, -100.f, 100.f);
 			ImGui::Separator();
 		}
