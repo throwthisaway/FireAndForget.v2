@@ -18,9 +18,9 @@ SamplerState smp : register(s0) {
 MRTOut main(PS_TN_TNB input) {
 	MRTOut output;
 	output.albedo = tDiffuse.Sample(smp, input.uv);
-	/*float3 n = (tNormal.Sample(smp, input.uv).rgb * 2.f) - 1.f;
-	output.normal = Encode(mul(input.tnb, n));*/
-	float3 n = normalize(input.n);
+	float3 n = normalize(tNormal.Sample(smp, input.uv).rgb * 2.f - 1.f);
+	//output.normal = Encode(normalize(mul(input.tnb, n)));
+	n = normalize(mul(input.tnb, n));
 	output.normal = Encode(n);
 	float metallic = tMetallic.Sample(smp, input.uv).r;
 	float roughness = tRoughness.Sample(smp, input.uv).r;

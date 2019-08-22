@@ -10,8 +10,10 @@ PS_TN_TNB main(VertexPNT input, uint id : SV_VertexID) {
 	output.pos = mul(obj.mvp, pos);
 	float3 n = normalize(mul(obj.m, input.n));
 	float3 p1 = normalize(input.pos[id + 1] - input.pos);
-	float3 t = normalize(mul(n, p1)), b = normalize(cross(n, t));
-	output.tnb = float3x3(t, n, b);
+	float3 up = float3(0.f, 1.f, 0.f);
+	if (n.y > .999f) up = float3(0.f, 0.f, 1.f);
+	float3 t = normalize(cross(n, up)), b = normalize(cross(t, n));
+	output.tnb = float3x3(t, b, n);
 	output.n = n;
 	output.uv = input.uv;
 	return output;

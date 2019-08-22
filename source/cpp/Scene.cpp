@@ -184,6 +184,7 @@ void Scene::SceneWindow() {
 	ImGui::SetNextWindowPos(ImVec2(20, 550), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(500, 650), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Scene Window");
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	if (ImGui::CollapsingHeader("Camera", &ui.cameraOpen)) {
 		ImGui::DragFloat3("Pos###PosCamera", (float*)& camera_.pos, 0.f, 100.f);
 		ImGui::DragFloat3("Rot###RotCamera", (float*)& camera_.rot, -glm::pi<float>(), glm::pi<float>());

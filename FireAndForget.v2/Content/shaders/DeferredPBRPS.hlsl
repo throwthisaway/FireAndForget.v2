@@ -126,5 +126,7 @@ float4 main(PS_T input) : SV_TARGET{
 	color = color / (color + 1.f);
 	color = pow(color, 1.f/2.2f);
 	return float4(color, albedo.a);
-	//return float4(debug.rgb, albedo.a);
+	/*float3 l = normalize(scene.light[0].pos - worldPos);
+	float d = max(0.f, dot(debug.rgb, l));
+	return float4(d, d, d, albedo.a);*/
 }

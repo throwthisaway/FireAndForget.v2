@@ -1000,7 +1000,7 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 	auto id = cmd.shader;
 	auto& state = pipelineStates_.states_[id];
 	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
-	PIXBeginEvent(commandList, 0, L"SubmitDrawCmd"); 
+	PIXBeginEvent(commandList, 0, L"SubmitModoDrawCmd"); 
 	{
 		DescriptorFrameAlloc::Entry entry;
 		UINT index = 0;
