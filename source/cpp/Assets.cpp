@@ -111,15 +111,16 @@ namespace {
 //	}
 }
 namespace {
-	enum class ImageFileType { kUnknown, kTGA, kPNG, kHDR };
+	enum class ImageFileType { kUnknown, kTGA, kPNG, kHDR, kJPG };
 	bool EndsWith(const wchar_t* str1, size_t length1, const wchar_t* str2, size_t length2) {
 		assert(length1 > length2);
 		return !istrcmp(str1, length1 - length2, str2);
 	}
 	ImageFileType GetImageFileType(const wchar_t* fname, size_t length) {
 		if (EndsWith(fname, length, L"tga", 3)) return ImageFileType::kTGA;
-		if (EndsWith(fname, length, L"png", 3)) return ImageFileType::kPNG;
-		if (EndsWith(fname, length, L"hdr", 3)) return ImageFileType::kHDR;
+		else if (EndsWith(fname, length, L"png", 3)) return ImageFileType::kPNG;
+		else if (EndsWith(fname, length, L"hdr", 3)) return ImageFileType::kHDR;
+		else if (EndsWith(fname, length, L"jpg", 3)) return ImageFileType::kJPG;
 		assert(false && "invalid image file format");
 		return ImageFileType::kUnknown;
 	}
@@ -151,7 +152,8 @@ namespace {
 	}
 	Img::ImgData DecodeImageFromData(const std::vector<uint8_t>& data, ImageFileType type) {
 		switch (type) {
-			case ImageFileType::kTGA: return DecodeTGA(data);
+			case ImageFileType::kTGA: /*return DecodeTGA(data);*/
+			case ImageFileType::kJPG:
 			case ImageFileType::kPNG: return StbDecodeImageFromData(data, Img::PixelFormat::RGBA8);
 			case ImageFileType::kHDR: return StbDecodeImageFromData(data, Img::PixelFormat::RGBAF32);
 			case ImageFileType::kUnknown: assert(false);
@@ -261,6 +263,7 @@ namespace assets {
 			//loadContextModo.LoadMesh(L"test_torus.mesh"),
 			loadContextModo.LoadMesh(L"checkerboard_modo.mesh"),
 			loadContextModo.LoadMesh(L"sphere_modo.mesh"),
+			loadContextModo.LoadMesh(L"modo_ball_test.mesh"),
 		};
 		
 		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {

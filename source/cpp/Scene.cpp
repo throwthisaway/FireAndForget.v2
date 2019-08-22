@@ -181,8 +181,8 @@ void Scene::ObjectsWindow() {
 	ImGui::End();
 }
 void Scene::SceneWindow() {
-	ImGui::SetNextWindowPos(ImVec2(20, 550), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(500, 650), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(20, 600), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(500, 600), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Scene Window");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	if (ImGui::CollapsingHeader("Camera", &ui.cameraOpen)) {

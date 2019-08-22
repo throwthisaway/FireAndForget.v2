@@ -212,6 +212,7 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Image Include="..\source\assets\14031-normal.jpg" />
     <Image Include="..\source\assets\7582-normal.png" />
     <Image Include="..\source\assets\checkerboard.tga" />
     <Image Include="..\source\assets\random.png" />
@@ -381,6 +382,11 @@
     </None>
     <None Include="..\source\assets\light_modo.mesh">
       <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\source\assets\modo_ball_test.mesh">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </None>
     <None Include="..\source\assets\sphere.mesh">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>

@@ -323,6 +323,9 @@
     <None Include="..\source\assets\BEETHOVE_object_modo.mesh">
       <Filter>Assets</Filter>
     </None>
+    <None Include="..\source\assets\modo_ball_test.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">
@@ -344,6 +347,9 @@
       <Filter>Assets</Filter>
     </Image>
     <Image Include="..\source\assets\rusted metal roughness.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\14031-normal.jpg">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>
