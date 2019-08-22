@@ -16,6 +16,8 @@ namespace ModoMeshLoader {
 	using index_t = uint16_t;	// Index buffer element type
 	inline const int kVertPerPoly = 3;
 	enum class TextureTypes{kAlbedo, kNormal, kMetallic, kRoughness, kCount};
+	enum class VertexFields{kPos, kNormal, kTangent, UV0, UV1, UV2, UV3};
+	const uint8_t VertexComponentCount[] = { 3, 3, 3, 2, 2, 2, 2 };
 	struct Texture {
 		unsigned id, uv;
 	};
@@ -35,7 +37,7 @@ namespace ModoMeshLoader {
 
 	struct Result {
 		std::vector<std::string> images;
-		std::vector<Submesh> submeshes;
+		std::vector<Submesh> submeshes ;
 		std::vector<uint8_t> vertices, indices;
 	};
 	Result Load(const std::vector<uint8_t>& data);

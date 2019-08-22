@@ -17,9 +17,9 @@ struct PS_TN {
 	float3 n : NORMAL0;
 };
 
-struct PS_TN_TNB {
+struct PS_TN_TBN {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD0;
 	float3 n : NORMAL0;
-	float3x3 tnb : TNB0;
+	float3x3 tbn : TBN0;
 };
