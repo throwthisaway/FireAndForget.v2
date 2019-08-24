@@ -237,9 +237,9 @@
     <ClInclude Include="..\..\..\3rdparty\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\..\..\3rdparty\imgui\imstb_textedit.h" />
     <ClInclude Include="..\..\..\3rdparty\imgui\imstb_truetype.h" />
-    <ClInclude Include="..\..\Shared\Platform.h" />
-    <ClInclude Include="..\..\Shared\ShaderStructs.h" />
-    <ClInclude Include="..\..\Shared\SIMDTypeAliases.h" />
+    <ClInclude Include="..\Shared\Platform.h" />
+    <ClInclude Include="..\Shared\ShaderStructs.h" />
+    <ClInclude Include="..\Shared\SIMDTypeAliases.h" />
     <ClInclude Include="..\source\cpp\Assets.hpp" />
     <ClInclude Include="..\source\cpp\Camera.hpp" />
     <ClInclude Include="..\source\cpp\DeferredBindings.h" />

@@ -59,6 +59,9 @@
     <Filter Include="imgui">
       <UniqueIdentifier>{03f23f82-fc44-49b3-9d14-e069fd1a6a55}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shared">
+      <UniqueIdentifier>{7eee71f0-e498-492a-a809-0cf7a799da3c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
@@ -192,13 +195,9 @@
     <ClInclude Include="..\source\cpp\DeferredBindings.h">
       <Filter>cpp</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Shared\Platform.h" />
-    <ClInclude Include="..\..\Shared\SIMDTypeAliases.h" />
-    <ClInclude Include="..\..\Shared\ShaderStructs.h" />
     <ClInclude Include="..\source\cpp\ModoMesh.h">
       <Filter>cpp</Filter>
     </ClInclude>
-    <ClInclude Include="..\source\cpp\VertexTypes.h" />
     <ClInclude Include="..\..\..\3rdparty\imgui\imconfig.h">
       <Filter>imgui</Filter>
     </ClInclude>
@@ -225,6 +224,18 @@
     </ClInclude>
     <ClInclude Include="Content\UI.h">
       <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="..\source\cpp\VertexTypes.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\Platform.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\ShaderStructs.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\SIMDTypeAliases.h">
+      <Filter>Shared</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
