@@ -15,12 +15,12 @@ SamplerState smp : register(s0) {
 };
 
 [RootSignature(ModoDNMRRS)]
-MRTOut main(PS_TN_TBN input) {
+MRTOut main(PS_UVNT input) {
 	MRTOut output;
 	output.albedo = tDiffuse.Sample(smp, input.uv);
 	float3 n = normalize(tNormal.Sample(smp, input.uv).rgb * 2.f - 1.f);
 	//output.normal = Encode(normalize(mul(input.tbn, n)));
-	n = normalize(mul(input.tbn, n));
+	//n = normalize(mul(input.tbn, n));
 	output.normal = Encode(n);
 	float metallic = tMetallic.Sample(smp, input.uv).r;
 	float roughness = tRoughness.Sample(smp, input.uv).r;

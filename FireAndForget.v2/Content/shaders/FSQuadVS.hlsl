@@ -1,8 +1,7 @@
-#include "VertexTypes.hlsli"
-#include "PSInput.hlsli"
+#include "ShaderInput.hlsli"
 
-PS_T main(VertexFSQuad input) {
-	PS_T res;
+PS_UV main(VS_P2UV input) {
+	PS_UV res;
 	res.pos = float4(input.pos, 0.f, 1.f);
 	res.uv = input.uv;
 	return res;

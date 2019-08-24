@@ -1,4 +1,4 @@
-#include "PSInput.hlsli"
+#include "ShaderInput.hlsli"
 #include "Hammersley.hlsli"
 #include "ImportanceSampleGGX.hlsli"
 #include "BRDFLUTRS.hlsli"
@@ -44,6 +44,6 @@ float2 IntegrateBRDF(float ndotv, float roughness) {
 	return res / sampleCount;
 }
 [RootSignature(BRDFLUTRS)]
-float2 main(PS_T input) : SV_TARGET {
+float2 main(PS_UV input) : SV_TARGET {
 	return IntegrateBRDF(input.uv.x, input.uv.y);
 }

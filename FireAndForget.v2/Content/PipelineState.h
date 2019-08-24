@@ -31,6 +31,7 @@ public:
 		size_t rootSignatureIndex,
 		const wchar_t* vs, 
 		const wchar_t* ps, 
+		const wchar_t* gs,
 		const D3D12_INPUT_LAYOUT_DESC il,
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
 		State::RenderPass pass);

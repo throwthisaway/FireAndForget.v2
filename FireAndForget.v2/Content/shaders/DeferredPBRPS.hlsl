@@ -1,5 +1,5 @@
 #include "ShaderStructs.h"
-#include "PSInput.hlsli"
+#include "ShaderInput.hlsli"
 #include "PI.hlsli"
 #include "PBR.hlsli"
 #include "Common.hlsli"
@@ -58,7 +58,7 @@ float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, float4x4 ivp, Te
 }
 
 [RootSignature(DeferredRS)]
-float4 main(PS_T input) : SV_TARGET{
+float4 main(PS_UV input) : SV_TARGET{
 	float4 albedo = texAlbedo.Sample(smp, input.uv);
 	float4 debug = texDebug.Sample(smp, input.uv);
 	float3 n = debug.rgb;// TODO:: nans Decode(texNormal.Sample(smp, input.uv).xy);

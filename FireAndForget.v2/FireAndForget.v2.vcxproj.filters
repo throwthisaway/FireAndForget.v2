@@ -258,12 +258,6 @@
     <None Include="..\source\assets\sphere.mesh">
       <Filter>Assets</Filter>
     </None>
-    <None Include="Content\shaders\VertexTypes.hlsli">
-      <Filter>Content\shaders</Filter>
-    </None>
-    <None Include="Content\shaders\PSInput.hlsli">
-      <Filter>Content\shaders</Filter>
-    </None>
     <None Include="Content\shaders\CubeEnvMapRS.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
@@ -336,6 +330,9 @@
     </None>
     <None Include="..\source\assets\modo_ball_test.mesh">
       <Filter>Assets</Filter>
+    </None>
+    <None Include="Content\shaders\ShaderInput.hlsli">
+      <Filter>Content\shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -447,6 +444,9 @@
       <Filter>Content\shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\shaders\ModoDNMRPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\TangentGS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
   </ItemGroup>

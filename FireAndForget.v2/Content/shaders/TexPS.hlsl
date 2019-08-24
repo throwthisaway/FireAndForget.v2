@@ -1,5 +1,5 @@
 #include "Common.hlsli"
-#include "PSInput.hlsli"
+#include "ShaderInput.hlsli"
 #include "ShaderStructs.h"
 
 Texture2D<float4> tColor : register(t0);
@@ -11,7 +11,7 @@ SamplerState smp : register(s0) {
 	AddressV = Wrap;
 };
 
-MRTOut main(PS_TN input) {
+MRTOut main(PS_UVN input) {
 	float4 diffuseColor = tColor.Sample(smp, input.uv);
 	MRTOut output;
 	output.albedo = diffuseColor;

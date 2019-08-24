@@ -1,5 +1,4 @@
-#include "VertexTypes.hlsli"
-#include "PSInput.hlsli"
+#include "ShaderInput.hlsli"
 #include "BgRS.hlsli"
 
 cbuffer cb : register(b0) {
@@ -7,7 +6,7 @@ cbuffer cb : register(b0) {
 };
 
 [RootSignature(BgRS)]
-PS_P main(VertexPN input) {
+PS_P main(VS_PN input) {
 	PS_P output;
 	float4 pos = mul(vp, float4(input.pos, 0.f/*ignore translation*/));
 	output.pos = pos.xyww;	// render at depth 1.
