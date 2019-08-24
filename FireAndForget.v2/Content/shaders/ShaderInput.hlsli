@@ -35,7 +35,12 @@ struct PS_UVN {
 	float3 n : NORMAL0;
 };
 
-typedef struct PS_UVN GS_UVN;
+struct GS_PUVN {
+	float4 pos : SV_POSITION;
+	float4 p : POSITION0;
+	float2 uv : TEXCOORD0;
+	float3 n : NORMAL0;
+};
 
 struct PS_UVNT {
 	float4 pos : SV_POSITION;
