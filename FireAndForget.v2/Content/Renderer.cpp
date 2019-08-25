@@ -681,7 +681,7 @@ void Renderer::CreateWindowSizeDependentResources() {
 			&defaultHeapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,// StartRenderPass sets up the proper state D3D12_RESOURCE_STATE_RENDER_TARGET,
+			rtt_[j].state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,// StartRenderPass sets up the proper state D3D12_RESOURCE_STATE_RENDER_TARGET,
 			&clearValue,
 			IID_PPV_ARGS(&resource)));
 		rtt_[j].res = resource;
@@ -707,7 +707,7 @@ void Renderer::CreateWindowSizeDependentResources() {
 		&defaultHeapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&desc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		halfResDepth_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		nullptr,
 		IID_PPV_ARGS(&halfResDepth_.res)));
 	NAME_D3D12_OBJECT(halfResDepth_.res);
