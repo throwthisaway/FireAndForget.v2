@@ -121,9 +121,6 @@
     <ClCompile Include="..\..\..\3rdparty\imgui\examples\imgui_impl_dx12.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\3rdparty\imgui\examples\imgui_impl_dx11.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
     <ClCompile Include="Content\UI.cpp">
       <Filter>Content</Filter>
     </ClCompile>
@@ -217,9 +214,6 @@
       <Filter>imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\3rdparty\imgui\examples\imgui_impl_dx12.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\3rdparty\imgui\examples\imgui_impl_dx11.h">
       <Filter>imgui</Filter>
     </ClInclude>
     <ClInclude Include="Content\UI.h">

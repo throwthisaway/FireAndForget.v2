@@ -184,6 +184,7 @@ namespace UI {
 		//}
 	}
 	ID3D12GraphicsCommandList* Render(int index) {
+		g_pCommandAllocators[index]->Reset();
 		g_pd3dCommandList->Reset(g_pCommandAllocators[index], NULL);
         g_pd3dCommandList->OMSetRenderTargets(1, &g_mainRenderTargetDescriptor[index], FALSE, NULL);
         g_pd3dCommandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
