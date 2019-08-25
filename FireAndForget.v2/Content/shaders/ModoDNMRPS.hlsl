@@ -1,5 +1,5 @@
 #include "Common.hlsli"
-#include "PSInput.hlsli"
+#include "ShaderInput.hlsli"
 #include "ShaderStructs.h"
 #include "ModoDNMRRS.hlsli"
 

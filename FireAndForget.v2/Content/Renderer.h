@@ -93,8 +93,11 @@ private:
 		DescriptorFrameAlloc desc;
 		DescriptorFrameAlloc::Entry entry, halfResDepthEntry;
 	}rtv_;
-	Microsoft::WRL::ComPtr<ID3D12Resource> rtt_[_countof(PipelineStates::deferredRTFmts)];
-	Microsoft::WRL::ComPtr<ID3D12Resource> halfResDepth_;
+
+	struct RT {
+		Microsoft::WRL::ComPtr<ID3D12Resource> res;
+		D3D12_RESOURCE_STATES state;
+	}ao_, halfResDepth_, rtt_[_countof(PipelineStates::deferredRTFmts)];
 	// for per frame dynamic data
 	struct {
 		CBFrameAlloc cb;

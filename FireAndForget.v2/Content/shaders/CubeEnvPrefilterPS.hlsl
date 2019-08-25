@@ -1,4 +1,4 @@
-#include "PSInput.hlsli"
+#include "ShaderInput.hlsli"
 #include "Hammersley.hlsli"
 #include "ImportanceSampleGGX.hlsli"
 #include "PBR.hlsli"

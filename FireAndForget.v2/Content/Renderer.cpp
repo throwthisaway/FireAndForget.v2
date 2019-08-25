@@ -684,7 +684,7 @@ void Renderer::CreateWindowSizeDependentResources() {
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,// StartRenderPass sets up the proper state D3D12_RESOURCE_STATE_RENDER_TARGET,
 			&clearValue,
 			IID_PPV_ARGS(&resource)));
-		rtt_[j] = resource;
+		rtt_[j].res = resource;
 		WCHAR name[25];
 		if (swprintf_s(name, L"renderTarget[%u]", j) > 0) DX::SetName(resource.Get(), name);
 
@@ -692,7 +692,7 @@ void Renderer::CreateWindowSizeDependentResources() {
 			D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 			desc.Format = PipelineStates::deferredRTFmts[j];
 			desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-			device->CreateRenderTargetView(rtt_[j].Get(), &desc, handle);
+			device->CreateRenderTargetView(rtt_[j].res.Get(), &desc, handle);
 			handle.Offset(rtv_.desc.GetDescriptorSize());
 		}
 	}
@@ -709,14 +709,14 @@ void Renderer::CreateWindowSizeDependentResources() {
 		&desc,
 		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		nullptr,
-		IID_PPV_ARGS(&halfResDepth_)));
-	NAME_D3D12_OBJECT(halfResDepth_);
+		IID_PPV_ARGS(&halfResDepth_.res)));
+	NAME_D3D12_OBJECT(halfResDepth_.res);
 	{
 		rtv_.halfResDepthEntry = rtv_.desc.Push(1);
 		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 		desc.Format = halfResDepthFmt;
 		desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-		device->CreateRenderTargetView(halfResDepth_.Get(), &desc, handle);
+		device->CreateRenderTargetView(halfResDepth_.res.Get(), &desc, handle);
 		handle.Offset(rtv_.desc.GetDescriptorSize());
 	}
 }
@@ -794,7 +794,7 @@ void Renderer::StartGeometryPass() {
 			first = false;
 			CD3DX12_RESOURCE_BARRIER barriers[_countof(PipelineStates::deferredRTFmts)];
 			for (int i = 0; i < _countof(barriers); ++i) {
-				barriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[i].Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+				barriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[i].res.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 			}
 			commandList->ResourceBarrier(_countof(barriers), barriers);
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(rtv_.entry.cpuHandle);
@@ -1113,7 +1113,7 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 }
 void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	PIXBeginEvent(commandList, 0, L"DownsampleDepth");
-	CD3DX12_RESOURCE_BARRIER barriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET),
+	CD3DX12_RESOURCE_BARRIER barriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.res.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET),
 		CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)};
 	commandList->ResourceBarrier(_countof(barriers), barriers);
 	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
@@ -1164,9 +1164,9 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	{
 		CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount + 1];
 		for (int i = 0; i < RenderTargetCount; ++i)
-			presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[i].res.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		DownsampleDepth(commandList);
-		presentResourceBarriers[RenderTargetCount] = CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		presentResourceBarriers[RenderTargetCount] = CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.res.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		// TODO:: done in startForwardPass presentResourceBarriers[RenderTargetCount + 1] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
@@ -1197,7 +1197,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 		}
 		// RTs
 		for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
-			frame_->desc.CreateSRV(entry.cpuHandle, rtt_[j].Get());
+			frame_->desc.CreateSRV(entry.cpuHandle, rtt_[j].res.Get());
 			entry.cpuHandle.Offset(descSize);
 		}
 		// Depth
@@ -1214,7 +1214,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.BRDFLUT].resource.Get());
 		entry.cpuHandle.Offset(descSize);
 		// Halfresdepth
-		frame_->desc.CreateSRV(entry.cpuHandle, halfResDepth_.Get());
+		frame_->desc.CreateSRV(entry.cpuHandle, halfResDepth_.res.Get());
 		entry.cpuHandle.Offset(descSize);
 		// Random
 		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());

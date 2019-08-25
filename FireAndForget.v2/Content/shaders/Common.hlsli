@@ -1,8 +1,12 @@
+static const float M_PI_F = 3.14159265f;
+
 struct MRTOut {
 	float4 albedo : SV_TARGET0;
 	float2 normal : SV_TARGET1;
 	float4 material : SV_TARGET2;
+#ifdef DEBUG_RT
 	float4 debug : SV_TARGET3;
+#endif
 };
 
 // as seen on https://aras-p.info/texts/CompactNormalStorage.html
@@ -25,4 +29,10 @@ float3 Decode(float2 v) {
 
 float LinearizeDepth(float depth, float n, float f) {
 	return (2.0 * n) / (f + n - depth * (f - n));
+}
+
+float3 GammaCorrection(float3 c) {
+	const float gamma = 2.2f, invExp = 1.f/gamma;
+	c = c / (c + (float3)1.f);
+	return pow(c, invExp);
 }

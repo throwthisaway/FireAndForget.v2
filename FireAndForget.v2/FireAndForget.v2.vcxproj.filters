@@ -261,9 +261,6 @@
     <None Include="Content\shaders\CubeEnvMapRS.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
-    <None Include="Content\shaders\PI.hlsli">
-      <Filter>Content\shaders</Filter>
-    </None>
     <None Include="Content\shaders\DownSampleRS.hlsli">
       <Filter>Content\shaders</Filter>
     </None>

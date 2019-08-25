@@ -16,7 +16,9 @@ public:
 		DXGI_FORMAT_R8G8B8A8_UNORM, // albedo
 		DXGI_FORMAT_R16G16_UNORM,	// compressed normals
 		DXGI_FORMAT_R8G8B8A8_UNORM, // material properties
+#ifdef DEBUG_RT
 		DXGI_FORMAT_R32G32B32A32_FLOAT, // debug
+#endif
 	};
 	PipelineStates(const DX::DeviceResources*);
 	~PipelineStates();
@@ -24,7 +26,7 @@ public:
 	struct State {
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
-		enum class RenderPass {Pre, Forward, Geometry, Lighting, Post} pass;
+		enum class RenderPass {Pre, Forward, Geometry, AO, Lighting, Post} pass;
 	};
 	std::vector<State> states_;
 	Concurrency::task<void> CreateShader(ShaderId id,

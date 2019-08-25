@@ -1,8 +1,7 @@
 #include "ShaderStructs.h"
 #include "ShaderInput.hlsli"
-#include "PI.hlsli"
-#include "PBR.hlsli"
 #include "Common.hlsli"
+#include "PBR.hlsli"
 #include "DeferredRS.hlsli"
 
 ConstantBuffer<SceneCB> scene: register(b0);
@@ -10,7 +9,9 @@ ConstantBuffer<AO> ao : register(b1);
 Texture2D<float4> texAlbedo : register(t0);
 Texture2D<float2> texNormal : register(t1);
 Texture2D<float4> texMaterial : register(t2);
+#ifdef DEBUG_RT
 Texture2D<float4> texDebug : register(t3);
+#endif
 Texture2D<float> texDepth : register(t4);
 TextureCube<float4> texIrradiance : register(t5);
 TextureCube<float4> texPrefilteredEnv : register(t6);
@@ -122,11 +123,8 @@ float4 main(PS_UV input) : SV_TARGET{
 	//
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
-	// gamma correction
-	color = color / (color + 1.f);
-	color = pow(color, 1.f/2.2f);
-	return float4(color, albedo.a);
-	//return float4(debug.rgb, albedo.a);
+	//return float4(GammaCorrection(color), albedo.a);
+	return float4(debug.rgb, albedo.a);
 	/*float3 l = normalize(scene.light[0].pos - worldPos);
 	float d = max(0.f, dot(debug.rgb, l));
 	return float4(d, d, d, albedo.a);*/

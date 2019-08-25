@@ -1,6 +1,6 @@
 #include "CubeEnvMapRS.hlsli"
-#include "PSInput.hlsli"
-#include "PI.hlsli"
+#include "ShaderInput.hlsli"
+#include "Common.hlsli"
 
 TextureCube<float4> envMap : register(t0);
 SamplerState smp : register( s0 );

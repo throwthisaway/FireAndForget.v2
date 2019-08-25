@@ -7,8 +7,7 @@
 float2 IntegrateBRDF(float ndotv, float roughness) {
 	const float3 v = float3(sqrt(1.f - ndotv * ndotv), 0.f, ndotv);
 	const float3 n = float3(0.f, 0.f, 1.f);
-
-	const float3 up = (abs(n.z) < .999f) ? float3(0.f, 0.f, 1.f) : float3(1.f, 0.f, 0.f);
+	const float3 up = float3(1.f, 0.f, 0.f);
 	const float3 tangent = normalize(cross(up, n));
 	const float3 bitangent = cross(n, tangent);
 	const float3x3 sphericalToTangent = float3x3(tangent, bitangent, n);

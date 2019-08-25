@@ -113,12 +113,13 @@
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\..\3rdparty\imgui;$(ProjectDir)..\..\..\3rdparty\imgui\examples;$(ProjectDir)..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS;DEBUG_RT</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <FxCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DEBUG_RT</PreprocessorDefinitions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -149,12 +150,13 @@
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\..\3rdparty\imgui;$(ProjectDir)..\..\..\3rdparty\imgui\examples;$(ProjectDir)..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS;DEBUG_RT</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <FxCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DEBUG_RT</PreprocessorDefinitions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -185,12 +187,13 @@
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\3rdparty\meshoptimizer\src\;$(ProjectDir)..\..\..\3rdparty\GSL\include;$(ProjectDir)..\..\..\3rdparty\stb;$(ProjectDir)..\..\..\3rdparty\glm;$(ProjectDir)..\..\..\3rdparty\imgui;$(ProjectDir)..\..\..\3rdparty\imgui\examples;$(ProjectDir)..\ModoMeshLoader;$(ProjectDir)..\..\MeshLoader;$(ProjectDir)..\Shared;$(ProjectDir);$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions);IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS;IMGUI_DISABLE_WIN32_FUNCTIONS;DEBUG_RT</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <FxCompile>
       <AdditionalIncludeDirectories>$(ProjectDir)..\Shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DEBUG_RT</PreprocessorDefinitions>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -421,7 +424,6 @@
     <None Include="Content\shaders\ModoDNMRRS.hlsli" />
     <None Include="Content\shaders\ModoDNRS.hlsli" />
     <None Include="Content\shaders\PBR.hlsli" />
-    <None Include="Content\shaders\PI.hlsli" />
     <None Include="Content\shaders\ShaderInput.hlsli" />
     <None Include="FireAndForget.v2_TemporaryKey.pfx" />
     <None Include="packages.config" />
