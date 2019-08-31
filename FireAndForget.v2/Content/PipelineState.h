@@ -8,7 +8,7 @@ namespace DX {
 }
 
 class PipelineStates {
-	const DX::DeviceResources* deviceResources_;
+	ID3D12Device* device;
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pre, rg16, depth, forward, geometry, lighting;
 	std::vector<Concurrency::task<void>> shaderTasks;
 public:
@@ -20,7 +20,7 @@ public:
 		DXGI_FORMAT_R32G32B32A32_FLOAT, // debug
 #endif
 	};
-	PipelineStates(const DX::DeviceResources*);
+	PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferFormat, DXGI_FORMAT depthbufferFormat);
 	~PipelineStates();
 	void CreateDeviceDependentResources();
 	struct State {

@@ -43,8 +43,9 @@ namespace {
         return res + 1;
     }
 };
-Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) :
-	pipelineStates_(deviceResources.get()),
+Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DXGI_FORMAT backbufferFormat) :
+	backbufferFormat_(backbufferFormat),
+	pipelineStates_(deviceResources->GetD3DDevice(), backbufferFormat, depthbufferFormat_),
 	m_deviceResources(deviceResources) {
 
 	CreateDeviceDependentResources();
@@ -190,6 +191,10 @@ void Renderer::CreateDeviceDependentResources() {
 #endif
 	auto device = m_deviceResources->GetD3DDevice();
 	UI::Init(device, m_deviceResources->GetSwapChain());
+
+	rtvDescAlloc_.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultRTVDescCount, false);
+	dsvDescAlloc_.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+
 	for (int i = 0; i < _countof(frames_); ++i) {
 		frames_[i].cb.Init(device, defaultCBFrameAllocSize);
 		frames_[i].desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, defaultDescFrameAllocCount, true);
@@ -662,16 +667,56 @@ void Renderer::EndPrePass() {
 }
 void Renderer::CreateWindowSizeDependentResources() {
 	auto device = m_deviceResources->GetD3DDevice();
-	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
-	UI::OnResize(device, m_deviceResources->GetSwapChain(), viewport.Width, viewport.Height);
-	scissorRect_ = { 0, 0, static_cast<LONG>(viewport.Width), static_cast<LONG>(viewport.Height) };
-	rtv_.desc.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultRTVDescCount, false);
-	rtv_.entry = rtv_.desc.Push(_countof(PipelineStates::deferredRTFmts));
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = rtv_.entry.cpuHandle;
+	auto size = m_deviceResources->GetOutputSize();
+	UI::OnResize(device, m_deviceResources->GetSwapChain(), size.Width, size.Height);
+	scissorRect_ = { 0, 0, lround(size.Width), lround(size.Height) };
+
+	// Create render target views of the swap chain back buffer.
+	{
+		renderTargets_.view = rtvDescAlloc_.Push(ShaderStructures::FrameCount);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle = renderTargets_.view.cpuHandle;
+		for (UINT n = 0; n < ShaderStructures::FrameCount; n++) {
+			DX::ThrowIfFailed(m_deviceResources->GetSwapChain()->GetBuffer(n, IID_PPV_ARGS(&renderTargets_.res[n])));
+			device->CreateRenderTargetView(renderTargets_.res[n].Get(), nullptr, handle);
+			handle.Offset(rtvDescAlloc_.GetDescriptorSize());
+			renderTargets_.state[n] = D3D12_RESOURCE_STATE_PRESENT;
+			WCHAR name[25];
+			if (swprintf_s(name, L"renderTargets[%u]", n) > 0) DX::SetName(renderTargets_.res[n].Get(), name);
+		}
+	}
+
+	// Create a depth stencil and view.
+	{
+		depthStencil_.view = dsvDescAlloc_.Push(1);
+		D3D12_HEAP_PROPERTIES depthHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		D3D12_RESOURCE_DESC depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(depthresourceFormat_, lround(size.Width), lround(size.Height), 1, 1);
+		depthResourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		CD3DX12_CLEAR_VALUE depthOptimizedClearValue(depthbufferFormat_, 1.0f, 0);
+		DX::ThrowIfFailed(device->CreateCommittedResource(
+			&depthHeapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&depthResourceDesc,
+			depthStencil_.state = D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			&depthOptimizedClearValue,
+			IID_PPV_ARGS(&depthStencil_.res)
+			));
+
+		NAME_D3D12_OBJECT(depthStencil_.res);
+
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+		dsvDesc.Format = depthbufferFormat_;
+		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+		device->CreateDepthStencilView(depthStencil_.res.Get(), &dsvDesc, depthStencil_.view.cpuHandle);
+	}
+
+	rtt_.view = rtvDescAlloc_.Push(_countof(PipelineStates::deferredRTFmts));
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = rtt_.view.cpuHandle;
 	D3D12_CLEAR_VALUE clearValue;
 	memcpy(clearValue.Color, Black, sizeof(clearValue.Color));
+	rtt_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
-		CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(PipelineStates::deferredRTFmts[j], (UINT)viewport.Width, (UINT)viewport.Height, 1, 1);
+		CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(PipelineStates::deferredRTFmts[j], lround(size.Width), lround(size.Height), 1, 1);
 		clearValue.Format = PipelineStates::deferredRTFmts[j];
 		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
@@ -681,10 +726,10 @@ void Renderer::CreateWindowSizeDependentResources() {
 			&defaultHeapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
-			rtt_[j].state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,// StartRenderPass sets up the proper state D3D12_RESOURCE_STATE_RENDER_TARGET,
+			rtt_.state,// StartRenderPass sets up the proper state D3D12_RESOURCE_STATE_RENDER_TARGET,
 			&clearValue,
 			IID_PPV_ARGS(&resource)));
-		rtt_[j].res = resource;
+		rtt_.res[j] = resource;
 		WCHAR name[25];
 		if (swprintf_s(name, L"renderTarget[%u]", j) > 0) DX::SetName(resource.Get(), name);
 
@@ -692,32 +737,32 @@ void Renderer::CreateWindowSizeDependentResources() {
 			D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 			desc.Format = PipelineStates::deferredRTFmts[j];
 			desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-			device->CreateRenderTargetView(rtt_[j].res.Get(), &desc, handle);
-			handle.Offset(rtv_.desc.GetDescriptorSize());
+			device->CreateRenderTargetView(rtt_.res[j].Get(), &desc, handle);
+			handle.Offset(rtvDescAlloc_.GetDescriptorSize());
 		}
 	}
 
 	// half-res depth
 	DXGI_FORMAT halfResDepthFmt = DXGI_FORMAT_R32_FLOAT;
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(halfResDepthFmt, ((UINT)viewport.Width) >> 1, ((UINT)viewport.Height) >> 1, 1, 1);
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(halfResDepthFmt, lround(size.Width) >> 1, lround(size.Height) >> 1, 1, 1);
 	desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 	CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
+	halfResDepth_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	DX::ThrowIfFailed(device->CreateCommittedResource(
 		&defaultHeapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&desc,
-		halfResDepth_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		halfResDepth_.state,
 		nullptr,
 		IID_PPV_ARGS(&halfResDepth_.res)));
 	NAME_D3D12_OBJECT(halfResDepth_.res);
 	{
-		rtv_.halfResDepthEntry = rtv_.desc.Push(1);
+		halfResDepth_.view = rtvDescAlloc_.Push(1);
 		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 		desc.Format = halfResDepthFmt;
 		desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-		device->CreateRenderTargetView(halfResDepth_.res.Get(), &desc, handle);
-		handle.Offset(rtv_.desc.GetDescriptorSize());
+		device->CreateRenderTargetView(halfResDepth_.res.Get(), &desc, halfResDepth_.view.cpuHandle);
 	}
 }
 
@@ -748,31 +793,27 @@ void Renderer::BeginRender() {
 	// Initialise depth
 	// TODO:: !!! this commandlist might not be used everytime
 	auto* commandList = commandLists_[0].Get();
-	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
-	commandList->RSSetViewports(1, &viewport);
+	commandList->RSSetViewports(1, &GetViewport());
 	commandList->RSSetScissorRects(1, &scissorRect_);
-	D3D12_CPU_DESCRIPTOR_HANDLE depthStencilView = m_deviceResources->GetDepthStencilView();
-	commandList->ClearDepthStencilView(depthStencilView, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	commandList->ClearDepthStencilView(depthStencil_.view.cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 void Renderer::StartForwardPass() {
 	if (!loadingComplete_) return;
-	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
 	bool first = true;
 	for (size_t i = 0; i < pipelineStates_.states_.size(); ++i) {
 		auto& state = pipelineStates_.states_[i];
 		if (state.pass != PipelineStates::State::RenderPass::Forward) continue;
 		auto* commandList = commandLists_[i].Get();
-		commandList->RSSetViewports(1, &viewport);
+		commandList->RSSetViewports(1, &GetViewport());
 		commandList->RSSetScissorRects(1, &scissorRect_);
 		if (first) {
 			first = false;
-			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 			commandList->ResourceBarrier(1, &barrier);
-			commandList->ClearRenderTargetView(m_deviceResources->GetRenderTargetView(), Black, 0, nullptr);
+			commandList->ClearRenderTargetView(GetRenderTargetView(), Black, 0, nullptr);
 		}
-		D3D12_CPU_DESCRIPTOR_HANDLE depthStencilView = m_deviceResources->GetDepthStencilView();
-		commandList->OMSetRenderTargets(1, &m_deviceResources->GetRenderTargetView(), false, &depthStencilView);
+		commandList->OMSetRenderTargets(1, &GetRenderTargetView(), false, &depthStencil_.view.cpuHandle);
 		commandList->SetPipelineState(state.pipelineState.Get());
 		commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	}
@@ -780,32 +821,29 @@ void Renderer::StartForwardPass() {
 
 void Renderer::StartGeometryPass() {
 	if (!loadingComplete_) return;
-	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
-
 	// assign pipelinestates with command lists
 	bool first = true;
 	for (size_t i = 0; i < pipelineStates_.states_.size(); ++i) {
 		auto& state = pipelineStates_.states_[i];
 		if (state.pass != PipelineStates::State::RenderPass::Geometry) continue;
 		auto* commandList = commandLists_[i].Get();
-		commandList->RSSetViewports(1, &viewport);
+		commandList->RSSetViewports(1, &GetViewport());
 		commandList->RSSetScissorRects(1, &scissorRect_);
 		if (first) {
 			first = false;
 			CD3DX12_RESOURCE_BARRIER barriers[_countof(PipelineStates::deferredRTFmts)];
 			for (int i = 0; i < _countof(barriers); ++i) {
-				barriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[i].res.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+				barriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_.res[i].Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 			}
 			commandList->ResourceBarrier(_countof(barriers), barriers);
-			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(rtv_.entry.cpuHandle);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(rtt_.view.cpuHandle);
 			// TODO:: should not clean downsampled depth RT
 			for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
 				commandList->ClearRenderTargetView(handle, Black, 0, nullptr);
-				handle.Offset(rtv_.desc.GetDescriptorSize());
+				handle.Offset(rtvDescAlloc_.GetDescriptorSize());
 			}
 		}
-		D3D12_CPU_DESCRIPTOR_HANDLE depthStencilView = m_deviceResources->GetDepthStencilView();
-		commandList->OMSetRenderTargets(_countof(PipelineStates::deferredRTFmts), &rtv_.entry.cpuHandle, true, &depthStencilView);
+		commandList->OMSetRenderTargets(_countof(PipelineStates::deferredRTFmts), &rtt_.view.cpuHandle, true, &depthStencil_.view.cpuHandle);
 		commandList->SetPipelineState(state.pipelineState.Get());
 		// Set the graphics root signature and descriptor heaps to be used by this frame.
 		commandList->SetGraphicsRootSignature(state.rootSignature.Get());
@@ -824,8 +862,8 @@ bool Renderer::Render() {
 	ppCommandLists.push_back(UI::Render(m_deviceResources->GetSwapChain()->GetCurrentBackBufferIndex()));
 	// Indicate that the render target will now be used to present when the command list is done executing.
 	CD3DX12_RESOURCE_BARRIER presentResourceBarrier[] =
-		{ CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT),
-		 CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE) };
+		{ CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT),
+		 CD3DX12_RESOURCE_BARRIER::Transition(depthStencil_.res.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE) };
 		
 	((ID3D12GraphicsCommandList*)ppCommandLists.back())->ResourceBarrier(_countof(presentResourceBarrier), presentResourceBarrier);
 
@@ -1114,11 +1152,11 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	PIXBeginEvent(commandList, 0, L"DownsampleDepth");
 	CD3DX12_RESOURCE_BARRIER barriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.res.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET),
-		CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetDepthStencil(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)};
+		CD3DX12_RESOURCE_BARRIER::Transition(depthStencil_.res.Get(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)};
 	commandList->ResourceBarrier(_countof(barriers), barriers);
-	D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
 	const float factor = .5f;
 	const float step = 2.f;
+	auto viewport = GetViewport();
 	viewport.Width *= factor; viewport.Height *= factor;
 	commandList->RSSetViewports(1, &viewport);
 	D3D12_RECT scissorRect = scissorRect_;
@@ -1127,7 +1165,7 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	auto& state = pipelineStates_.states_[Downsample];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
-	commandList->OMSetRenderTargets(1, &rtv_.halfResDepthEntry.cpuHandle, false, nullptr);
+	commandList->OMSetRenderTargets(1, &halfResDepth_.view.cpuHandle, false, nullptr);
 
 	// TODO:: why can't set this??? ==> DXGI_ANALYSIS screws up
 	auto cb = frame_->cb.Alloc(sizeof(float));
@@ -1138,7 +1176,7 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
 	const int descSize = frame_->desc.GetDescriptorSize();
 	entry.cpuHandle.Offset(descSize);
-	frame_->desc.CreateSRV(entry.cpuHandle, m_deviceResources->GetDepthStencil());
+	frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.res.Get());
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
@@ -1164,19 +1202,18 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	{
 		CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount + 1];
 		for (int i = 0; i < RenderTargetCount; ++i)
-			presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_[i].res.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_.res[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		DownsampleDepth(commandList);
 		presentResourceBarriers[RenderTargetCount] = CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.res.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		// TODO:: done in startForwardPass presentResourceBarriers[RenderTargetCount + 1] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-		D3D12_VIEWPORT viewport = m_deviceResources->GetScreenViewport();
-		commandList->RSSetViewports(1, &viewport);
+		commandList->RSSetViewports(1, &GetViewport());
 		commandList->RSSetScissorRects(1, &scissorRect_);
 		commandList->ResourceBarrier(_countof(presentResourceBarriers), presentResourceBarriers);
 		auto& state = pipelineStates_.states_[DeferredPBR];
 		commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 		commandList->SetPipelineState(state.pipelineState.Get());
-		D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_deviceResources->GetRenderTargetView();
+		D3D12_CPU_DESCRIPTOR_HANDLE rtv = GetRenderTargetView();
 		commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
 
 		const int descSize = frame_->desc.GetDescriptorSize();
@@ -1197,11 +1234,11 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 		}
 		// RTs
 		for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
-			frame_->desc.CreateSRV(entry.cpuHandle, rtt_[j].res.Get());
+			frame_->desc.CreateSRV(entry.cpuHandle, rtt_.res[j].Get());
 			entry.cpuHandle.Offset(descSize);
 		}
 		// Depth
-		frame_->desc.CreateSRV(entry.cpuHandle, m_deviceResources->GetDepthStencil());
+		frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.res.Get());
 		entry.cpuHandle.Offset(descSize);
 
 		// Irradiance

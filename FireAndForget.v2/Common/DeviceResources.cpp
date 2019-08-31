@@ -64,14 +64,14 @@ namespace ScreenRotation
 };
 
 // Constructor for DeviceResources.
-DX::DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthResourceFormat, DXGI_FORMAT depthBufferFormat) :
+DX::DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat/*, DXGI_FORMAT depthResourceFormat, DXGI_FORMAT depthBufferFormat*/) :
 	m_currentFrame(0),
-	m_screenViewport(),
-	m_rtvDescriptorSize(0),
+	//m_screenViewport(),
+	//m_rtvDescriptorSize(0),
 	m_fenceEvent(0),
 	m_backBufferFormat(backBufferFormat),
-	m_depthResourceFormat(depthResourceFormat),
-	m_depthBufferFormat(depthBufferFormat),
+	//m_depthResourceFormat(depthResourceFormat),
+	//m_depthBufferFormat(depthBufferFormat),
 	m_fenceValues{},
 	m_d3dRenderTargetSize(),
 	m_outputSize(),
@@ -141,22 +141,22 @@ void DX::DeviceResources::CreateDeviceResources()
 	DX::ThrowIfFailed(m_d3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
 	NAME_D3D12_OBJECT(m_commandQueue);
 
-	// Create descriptor heaps for render target views and depth stencil views.
-	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-	rtvHeapDesc.NumDescriptors = c_frameCount;
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	DX::ThrowIfFailed(m_d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
-	NAME_D3D12_OBJECT(m_rtvHeap);
+	//// Create descriptor heaps for render target views and depth stencil views.
+	//D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+	//rtvHeapDesc.NumDescriptors = c_frameCount;
+	//rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	//rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	//DX::ThrowIfFailed(m_d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
+	//NAME_D3D12_OBJECT(m_rtvHeap);
 
-	m_rtvDescriptorSize = m_d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	//m_rtvDescriptorSize = m_d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-	dsvHeapDesc.NumDescriptors = 1;
-	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	ThrowIfFailed(m_d3dDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvHeap)));
-	NAME_D3D12_OBJECT(m_dsvHeap);
+	//D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+	//dsvHeapDesc.NumDescriptors = 1;
+	//dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	//dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	//ThrowIfFailed(m_d3dDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvHeap)));
+	//NAME_D3D12_OBJECT(m_dsvHeap);
 
 	for (UINT n = 0; n < c_frameCount; n++)
 	{
@@ -185,7 +185,7 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
 	// Clear the previous window size specific content and update the tracked fence values.
 	for (UINT n = 0; n < c_frameCount; n++)
 	{
-		m_renderTargets[n] = nullptr;
+		//m_renderTargets[n] = nullptr;
 		m_fenceValues[n] = m_fenceValues[m_currentFrame];
 	}
 
@@ -194,14 +194,14 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
 	// The width and height of the swap chain must be based on the window's
 	// natively-oriented width and height. If the window is not in the native
 	// orientation, the dimensions must be reversed.
-	DXGI_MODE_ROTATION displayRotation = ComputeDisplayRotation();
+/*	DXGI_MODE_ROTATION displayRotation = ComputeDisplayRotation();
 
 	bool swapDimensions = displayRotation == DXGI_MODE_ROTATION_ROTATE90 || displayRotation == DXGI_MODE_ROTATION_ROTATE270;
 	m_d3dRenderTargetSize.Width = swapDimensions ? m_outputSize.Height : m_outputSize.Width;
-	m_d3dRenderTargetSize.Height = swapDimensions ? m_outputSize.Width : m_outputSize.Height;
+	m_d3dRenderTargetSize.Height = swapDimensions ? m_outputSize.Width : m_outputSize.Height;*/
 
-	UINT backBufferWidth = lround(m_d3dRenderTargetSize.Width);
-	UINT backBufferHeight = lround(m_d3dRenderTargetSize.Height);
+	UINT backBufferWidth = lround( m_outputSize.Width);
+	UINT backBufferHeight = lround( m_outputSize.Height);
 
 	if (m_swapChain != nullptr)
 	{
@@ -254,84 +254,84 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
 		DX::ThrowIfFailed(swapChain.As(&m_swapChain));
 	}
 
-	// Set the proper orientation for the swap chain, and generate
-	// 3D matrix transformations for rendering to the rotated swap chain.
-	// The 3D matrix is specified explicitly to avoid rounding errors.
+	//// Set the proper orientation for the swap chain, and generate
+	//// 3D matrix transformations for rendering to the rotated swap chain.
+	//// The 3D matrix is specified explicitly to avoid rounding errors.
 
-	switch (displayRotation)
-	{
-	case DXGI_MODE_ROTATION_IDENTITY:
-		m_orientationTransform3D = ScreenRotation::Rotation0;
-		break;
+	//switch (displayRotation)
+	//{
+	//case DXGI_MODE_ROTATION_IDENTITY:
+	//	m_orientationTransform3D = ScreenRotation::Rotation0;
+	//	break;
 
-	case DXGI_MODE_ROTATION_ROTATE90:
-		m_orientationTransform3D = ScreenRotation::Rotation270;
-		break;
+	//case DXGI_MODE_ROTATION_ROTATE90:
+	//	m_orientationTransform3D = ScreenRotation::Rotation270;
+	//	break;
 
-	case DXGI_MODE_ROTATION_ROTATE180:
-		m_orientationTransform3D = ScreenRotation::Rotation180;
-		break;
+	//case DXGI_MODE_ROTATION_ROTATE180:
+	//	m_orientationTransform3D = ScreenRotation::Rotation180;
+	//	break;
 
-	case DXGI_MODE_ROTATION_ROTATE270:
-		m_orientationTransform3D = ScreenRotation::Rotation90;
-		break;
+	//case DXGI_MODE_ROTATION_ROTATE270:
+	//	m_orientationTransform3D = ScreenRotation::Rotation90;
+	//	break;
 
-	default:
-		throw ref new FailureException();
-	}
+	//default:
+	//	throw ref new FailureException();
+	//}
 
-	DX::ThrowIfFailed(
-		m_swapChain->SetRotation(displayRotation)
-		);
+	//DX::ThrowIfFailed(
+	//	m_swapChain->SetRotation(displayRotation)
+	//	);
 
-	// Create render target views of the swap chain back buffer.
-	{
-		m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvDescriptor(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
-		for (UINT n = 0; n < c_frameCount; n++)
-		{
-			DX::ThrowIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
-			m_d3dDevice->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvDescriptor);
-			rtvDescriptor.Offset(m_rtvDescriptorSize);
+	//// Create render target views of the swap chain back buffer.
+	//{
+	//	m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
+	//	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvDescriptor(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
+	//	for (UINT n = 0; n < c_frameCount; n++)
+	//	{
+	//		DX::ThrowIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
+	//		m_d3dDevice->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvDescriptor);
+	//		rtvDescriptor.Offset(m_rtvDescriptorSize);
 
-			WCHAR name[25];
-			if (swprintf_s(name, L"m_renderTargets[%u]", n) > 0)
-			{
-				DX::SetName(m_renderTargets[n].Get(), name);
-			}
-		}
-	}
+	//		WCHAR name[25];
+	//		if (swprintf_s(name, L"m_renderTargets[%u]", n) > 0)
+	//		{
+	//			DX::SetName(m_renderTargets[n].Get(), name);
+	//		}
+	//	}
+	//}
 
-	// Create a depth stencil and view.
-	{
-		D3D12_HEAP_PROPERTIES depthHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	//// Create a depth stencil and view.
+	//{
+	//	D3D12_HEAP_PROPERTIES depthHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-		D3D12_RESOURCE_DESC depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(m_depthResourceFormat, backBufferWidth, backBufferHeight, 1, 1);
-		depthResourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	//	D3D12_RESOURCE_DESC depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(m_depthResourceFormat, backBufferWidth, backBufferHeight, 1, 1);
+	//	depthResourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-		CD3DX12_CLEAR_VALUE depthOptimizedClearValue(m_depthBufferFormat, 1.0f, 0);
+	//	CD3DX12_CLEAR_VALUE depthOptimizedClearValue(m_depthBufferFormat, 1.0f, 0);
 
-		ThrowIfFailed(m_d3dDevice->CreateCommittedResource(
-			&depthHeapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&depthResourceDesc,
-			D3D12_RESOURCE_STATE_DEPTH_WRITE,
-			&depthOptimizedClearValue,
-			IID_PPV_ARGS(&m_depthStencil)
-			));
+	//	ThrowIfFailed(m_d3dDevice->CreateCommittedResource(
+	//		&depthHeapProperties,
+	//		D3D12_HEAP_FLAG_NONE,
+	//		&depthResourceDesc,
+	//		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+	//		&depthOptimizedClearValue,
+	//		IID_PPV_ARGS(&m_depthStencil)
+	//		));
 
-		NAME_D3D12_OBJECT(m_depthStencil);
+	//	NAME_D3D12_OBJECT(m_depthStencil);
 
-		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-		dsvDesc.Format = m_depthBufferFormat;
-		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+	//	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	//	dsvDesc.Format = m_depthBufferFormat;
+	//	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	//	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 
-		m_d3dDevice->CreateDepthStencilView(m_depthStencil.Get(), &dsvDesc, m_dsvHeap->GetCPUDescriptorHandleForHeapStart());
-	}
+	//	m_d3dDevice->CreateDepthStencilView(m_depthStencil.Get(), &dsvDesc, m_dsvHeap->GetCPUDescriptorHandleForHeapStart());
+	//}
 
 	// Set the 3D rendering viewport to target the entire window.
-	m_screenViewport = { 0.0f, 0.0f, m_d3dRenderTargetSize.Width, m_d3dRenderTargetSize.Height, 0.0f, 1.0f };
+//	m_screenViewport = { 0.0f, 0.0f, m_d3dRenderTargetSize.Width, m_d3dRenderTargetSize.Height, 0.0f, 1.0f };
 }
 
 // Determine the dimensions of the render target and whether it will be scaled down.
@@ -510,60 +510,60 @@ void DX::DeviceResources::MoveToNextFrame()
 	m_fenceValues[m_currentFrame] = currentFenceValue + 1;
 }
 
-// This method determines the rotation between the display device's native Orientation and the
-// current display orientation.
-DXGI_MODE_ROTATION DX::DeviceResources::ComputeDisplayRotation()
-{
-	DXGI_MODE_ROTATION rotation = DXGI_MODE_ROTATION_UNSPECIFIED;
-
-	// Note: NativeOrientation can only be Landscape or Portrait even though
-	// the DisplayOrientations enum has other values.
-	switch (m_nativeOrientation)
-	{
-	case DisplayOrientations::Landscape:
-		switch (m_currentOrientation)
-		{
-		case DisplayOrientations::Landscape:
-			rotation = DXGI_MODE_ROTATION_IDENTITY;
-			break;
-
-		case DisplayOrientations::Portrait:
-			rotation = DXGI_MODE_ROTATION_ROTATE270;
-			break;
-
-		case DisplayOrientations::LandscapeFlipped:
-			rotation = DXGI_MODE_ROTATION_ROTATE180;
-			break;
-
-		case DisplayOrientations::PortraitFlipped:
-			rotation = DXGI_MODE_ROTATION_ROTATE90;
-			break;
-		}
-		break;
-
-	case DisplayOrientations::Portrait:
-		switch (m_currentOrientation)
-		{
-		case DisplayOrientations::Landscape:
-			rotation = DXGI_MODE_ROTATION_ROTATE90;
-			break;
-
-		case DisplayOrientations::Portrait:
-			rotation = DXGI_MODE_ROTATION_IDENTITY;
-			break;
-
-		case DisplayOrientations::LandscapeFlipped:
-			rotation = DXGI_MODE_ROTATION_ROTATE270;
-			break;
-
-		case DisplayOrientations::PortraitFlipped:
-			rotation = DXGI_MODE_ROTATION_ROTATE180;
-			break;
-		}
-		break;
-	}
-	return rotation;
-}
+//// This method determines the rotation between the display device's native Orientation and the
+//// current display orientation.
+//DXGI_MODE_ROTATION DX::DeviceResources::ComputeDisplayRotation()
+//{
+//	DXGI_MODE_ROTATION rotation = DXGI_MODE_ROTATION_UNSPECIFIED;
+//
+//	// Note: NativeOrientation can only be Landscape or Portrait even though
+//	// the DisplayOrientations enum has other values.
+//	switch (m_nativeOrientation)
+//	{
+//	case DisplayOrientations::Landscape:
+//		switch (m_currentOrientation)
+//		{
+//		case DisplayOrientations::Landscape:
+//			rotation = DXGI_MODE_ROTATION_IDENTITY;
+//			break;
+//
+//		case DisplayOrientations::Portrait:
+//			rotation = DXGI_MODE_ROTATION_ROTATE270;
+//			break;
+//
+//		case DisplayOrientations::LandscapeFlipped:
+//			rotation = DXGI_MODE_ROTATION_ROTATE180;
+//			break;
+//
+//		case DisplayOrientations::PortraitFlipped:
+//			rotation = DXGI_MODE_ROTATION_ROTATE90;
+//			break;
+//		}
+//		break;
+//
+//	case DisplayOrientations::Portrait:
+//		switch (m_currentOrientation)
+//		{
+//		case DisplayOrientations::Landscape:
+//			rotation = DXGI_MODE_ROTATION_ROTATE90;
+//			break;
+//
+//		case DisplayOrientations::Portrait:
+//			rotation = DXGI_MODE_ROTATION_IDENTITY;
+//			break;
+//
+//		case DisplayOrientations::LandscapeFlipped:
+//			rotation = DXGI_MODE_ROTATION_ROTATE270;
+//			break;
+//
+//		case DisplayOrientations::PortraitFlipped:
+//			rotation = DXGI_MODE_ROTATION_ROTATE180;
+//			break;
+//		}
+//		break;
+//	}
+//	return rotation;
+//}
 
 // This method acquires the first available hardware adapter that supports Direct3D 12.
 // If no such adapter can be found, *ppAdapter will be set to nullptr.

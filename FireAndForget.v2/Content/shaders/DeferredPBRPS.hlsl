@@ -123,7 +123,7 @@ float4 main(PS_UV input) : SV_TARGET{
 	//
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
-	//return float4(GammaCorrection(color), albedo.a);
+	return float4(GammaCorrection(color), albedo.a);
 	//return float4(debug.rgb, albedo.a);
 	/*float3 l = normalize(scene.light[0].pos - worldPos);
 	float d = max(0.f, dot(debug.rgb, l));

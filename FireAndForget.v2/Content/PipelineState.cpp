@@ -46,8 +46,8 @@ namespace {
 
 }
 
-PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
-	deviceResources_(deviceResources) {
+PipelineStates::PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferFormat, DXGI_FORMAT depthbufferFormat) :
+	device(device) {
 		{
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -58,7 +58,7 @@ PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
 			state.NumRenderTargets = _countof(deferredRTFmts);
 			for (UINT i = 0; i < state.NumRenderTargets; ++i)
 				state.RTVFormats[i] = deferredRTFmts[i];
-			state.DSVFormat = deviceResources->GetDepthBufferFormat();
+			state.DSVFormat = depthbufferFormat;
 			state.SampleDesc.Count = 1;
 			geometry = state;
 		}
@@ -76,7 +76,7 @@ PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
 			state.SampleMask = UINT_MAX;
 			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			state.NumRenderTargets = 1;
-			state.RTVFormats[0] = deviceResources->GetBackBufferFormat();
+			state.RTVFormats[0] = backbufferFormat;
 			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
 			state.SampleDesc.Count = 1;
 			lighting = state;
@@ -91,8 +91,8 @@ PipelineStates::PipelineStates(const DX::DeviceResources* deviceResources) :
 			state.SampleMask = UINT_MAX;
 			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			state.NumRenderTargets = 1;
-			state.RTVFormats[0] = deviceResources->GetBackBufferFormat();
-			state.DSVFormat = deviceResources->GetDepthBufferFormat();
+			state.RTVFormats[0] = backbufferFormat;
+			state.DSVFormat = depthbufferFormat;
 			state.SampleDesc.Count = 1;
 			forward = state;
 		}
@@ -147,7 +147,6 @@ void PipelineStates::CreateDeviceDependentResources() {
 
 	rootSignatures_.resize(ROOT_SIG_COUNT);
 	states_.resize(ShaderStructures::Count);
-	auto d3dDevice = deviceResources_->GetD3DDevice();
 	{
 		// ROOT_VS_1CB_PS_1CB
 		CD3DX12_ROOT_PARAMETER parameter[2];
@@ -173,7 +172,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3DBlob> pError;
 		DX::ThrowIfFailed(D3D12SerializeRootSignature(&descRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, pSignature.GetAddressOf(), pError.GetAddressOf()));
 		ComPtr<ID3D12RootSignature>	rootSignature;
-		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+		DX::ThrowIfFailed(device->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
 		rootSignatures_[ROOT_VS_1CB_PS_1CB] = rootSignature;
 	}
@@ -217,7 +216,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 		ComPtr<ID3DBlob> pError;
 		DX::ThrowIfFailed(D3D12SerializeRootSignature(&descRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, pSignature.GetAddressOf(), pError.GetAddressOf()));
 		ComPtr<ID3D12RootSignature>	rootSignature;
-		DX::ThrowIfFailed(d3dDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+		DX::ThrowIfFailed(device->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 		NAME_D3D12_OBJECT(rootSignature);
 		rootSignatures_[ROOT_VS_1CB_PS_1TX_1CB] = rootSignature;
 	}
@@ -285,7 +284,7 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderId id,
 			ComPtr<ID3DBlob> blob;
 			// rs from ps
 			::D3DGetBlobPart(res[1]->data(), res[1]->size(), D3D_BLOB_ROOT_SIGNATURE, 0, blob.GetAddressOf());
-			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+			DX::ThrowIfFailed(device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(rootSignature.GetAddressOf())));
 			state.pRootSignature = rootSignature.Get();
 			// TODO:: seems to be d3d somehow recognizes the same rootsignatures and returns an existing one instead of creating a new one
 			rootSignature->SetName(name.c_str());
@@ -300,7 +299,7 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderId id,
 			state.GS = CD3DX12_SHADER_BYTECODE(&res[2]->front(), res[2]->size());
 		}
 		ComPtr<ID3D12PipelineState> pipelineState;
-		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(&pipelineState)));
+		DX::ThrowIfFailed(device->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(pipelineState.GetAddressOf())));
 		pipelineState->SetName(name.c_str());
 		states_[id] = { rootSignature, pipelineState, pass};
 	});
@@ -323,7 +322,7 @@ Concurrency::task<void> PipelineStates::CreateComputeShader(ShaderId id,
 			ComPtr<ID3DBlob> blob;
 			// rs from ps
 			::D3DGetBlobPart(data.data(), data.size(), D3D_BLOB_ROOT_SIGNATURE, 0, blob.GetAddressOf());
-			DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+			DX::ThrowIfFailed(device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(rootSignature.GetAddressOf())));
 			desc.pRootSignature = rootSignature.Get();
 			rootSignature->SetName(name.c_str());
 			// don't store it in rootSignatures_ not thread safe
@@ -332,7 +331,7 @@ Concurrency::task<void> PipelineStates::CreateComputeShader(ShaderId id,
 			desc.pRootSignature = rootSignature.Get();
 		}
 		ComPtr<ID3D12PipelineState> pipelineState;
-		DX::ThrowIfFailed(deviceResources_->GetD3DDevice()->CreateComputePipelineState(&desc, IID_PPV_ARGS(&pipelineState)));
+		DX::ThrowIfFailed(device->CreateComputePipelineState(&desc, IID_PPV_ARGS(pipelineState.GetAddressOf())));
 		pipelineState->SetName(name.c_str());
 		states_[id] = { rootSignature, pipelineState, pass};
 	});

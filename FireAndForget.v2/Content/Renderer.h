@@ -24,9 +24,8 @@ struct Dim {
 };
 
 class Renderer {
-	PipelineStates pipelineStates_;
 public:
-	Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources);
+	Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DXGI_FORMAT backBufferFormat);
 	~Renderer();
 	void CreateDeviceDependentResources();
 	void CreateWindowSizeDependentResources();
@@ -58,6 +57,12 @@ public:
 private:
 	void DownsampleDepth(ID3D12GraphicsCommandList*);
 	void GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT fmt, int width, int height, uint32_t arraySize);
+		
+	DXGI_FORMAT backbufferFormat_, 
+		depthresourceFormat_ = DXGI_FORMAT_R32_TYPELESS, 
+		depthbufferFormat_ = DXGI_FORMAT_D32_FLOAT;
+	PipelineStates pipelineStates_;
+
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> cmdList;
@@ -89,15 +94,30 @@ private:
 	std::vector<Buffer> buffers_;
 
 	// render targets
+	DescriptorFrameAlloc rtvDescAlloc_, dsvDescAlloc_;
 	struct {
-		DescriptorFrameAlloc desc;
-		DescriptorFrameAlloc::Entry entry, halfResDepthEntry;
-	}rtv_;
-
-	struct RT {
 		Microsoft::WRL::ComPtr<ID3D12Resource> res;
 		D3D12_RESOURCE_STATES state;
-	}ao_, halfResDepth_, rtt_[_countof(PipelineStates::deferredRTFmts)];
+		DescriptorFrameAlloc::Entry view;
+	}ao_, halfResDepth_, depthStencil_;
+	struct {
+		Microsoft::WRL::ComPtr<ID3D12Resource> res[_countof(PipelineStates::deferredRTFmts)];
+		D3D12_RESOURCE_STATES state;
+		DescriptorFrameAlloc::Entry view;
+	}rtt_;
+	struct {
+		Microsoft::WRL::ComPtr<ID3D12Resource> res[ShaderStructures::FrameCount];
+		D3D12_RESOURCE_STATES state[ShaderStructures::FrameCount];
+		DescriptorFrameAlloc::Entry view;
+	}renderTargets_;
+	ID3D12Resource* GetRenderTarget() { return renderTargets_.res[GetCurrenFrameIndex()].Get(); }
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView() {
+		return CD3DX12_CPU_DESCRIPTOR_HANDLE(renderTargets_.view.cpuHandle, GetCurrenFrameIndex(), rtvDescAlloc_.GetDescriptorSize());
+	}
+	D3D12_VIEWPORT GetViewport() const {
+		auto size = m_deviceResources->GetOutputSize();
+		return { 0.0f, 0.0f, size.Width, size.Height, 0.0f, 1.0f };
+	}
 	// for per frame dynamic data
 	struct {
 		CBFrameAlloc cb;

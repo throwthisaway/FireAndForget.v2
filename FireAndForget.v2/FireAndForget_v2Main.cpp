@@ -23,7 +23,7 @@ FireAndForget_v2Main::FireAndForget_v2Main()
 // Creates and initializes the renderers.
 void FireAndForget_v2Main::CreateRenderers(const std::shared_ptr<DX::DeviceResources>& deviceResources)
 {
-	m_sceneRenderer = std::unique_ptr<Renderer>(new Renderer(deviceResources));
+	m_sceneRenderer = std::unique_ptr<Renderer>(new Renderer(deviceResources, deviceResources->GetBackBufferFormat()));
 	scene_.Init(m_sceneRenderer.get(), (int)deviceResources->GetOutputSize().Width, (int)deviceResources->GetOutputSize().Height);
 	OnWindowSizeChanged();
 }
