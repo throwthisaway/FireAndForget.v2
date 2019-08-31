@@ -42,7 +42,7 @@ namespace {
         _BitScanReverse((unsigned long*)&res, w | h);
         return res + 1;
     }
-};
+}
 Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DXGI_FORMAT backbufferFormat) :
 	backbufferFormat_(backbufferFormat),
 	pipelineStates_(deviceResources->GetD3DDevice(), backbufferFormat, depthbufferFormat_),
@@ -676,12 +676,12 @@ void Renderer::CreateWindowSizeDependentResources() {
 		renderTargets_.view = rtvDescAlloc_.Push(ShaderStructures::FrameCount);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE handle = renderTargets_.view.cpuHandle;
 		for (UINT n = 0; n < ShaderStructures::FrameCount; n++) {
-			DX::ThrowIfFailed(m_deviceResources->GetSwapChain()->GetBuffer(n, IID_PPV_ARGS(&renderTargets_.res[n])));
-			device->CreateRenderTargetView(renderTargets_.res[n].Get(), nullptr, handle);
+			DX::ThrowIfFailed(m_deviceResources->GetSwapChain()->GetBuffer(n, IID_PPV_ARGS(&renderTargets_.resource[n])));
+			device->CreateRenderTargetView(renderTargets_.resource[n].Get(), nullptr, handle);
 			handle.Offset(rtvDescAlloc_.GetDescriptorSize());
 			renderTargets_.state[n] = D3D12_RESOURCE_STATE_PRESENT;
 			WCHAR name[25];
-			if (swprintf_s(name, L"renderTargets[%u]", n) > 0) DX::SetName(renderTargets_.res[n].Get(), name);
+			if (swprintf_s(name, L"renderTargets[%u]", n) > 0) DX::SetName(renderTargets_.resource[n].Get(), name);
 		}
 	}
 
@@ -691,23 +691,24 @@ void Renderer::CreateWindowSizeDependentResources() {
 		D3D12_HEAP_PROPERTIES depthHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 		D3D12_RESOURCE_DESC depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(depthresourceFormat_, lround(size.Width), lround(size.Height), 1, 1);
 		depthResourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		depthStencil_.state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 		CD3DX12_CLEAR_VALUE depthOptimizedClearValue(depthbufferFormat_, 1.0f, 0);
 		DX::ThrowIfFailed(device->CreateCommittedResource(
 			&depthHeapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&depthResourceDesc,
-			depthStencil_.state = D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			depthStencil_.state,
 			&depthOptimizedClearValue,
-			IID_PPV_ARGS(&depthStencil_.res)
+			IID_PPV_ARGS(&depthStencil_.resource)
 			));
 
-		NAME_D3D12_OBJECT(depthStencil_.res);
+		NAME_D3D12_OBJECT(depthStencil_.resource);
 
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 		dsvDesc.Format = depthbufferFormat_;
 		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-		device->CreateDepthStencilView(depthStencil_.res.Get(), &dsvDesc, depthStencil_.view.cpuHandle);
+		device->CreateDepthStencilView(depthStencil_.resource.Get(), &dsvDesc, depthStencil_.view.cpuHandle);
 	}
 
 	rtt_.view = rtvDescAlloc_.Push(_countof(PipelineStates::deferredRTFmts));
@@ -755,14 +756,14 @@ void Renderer::CreateWindowSizeDependentResources() {
 		&desc,
 		halfResDepth_.state,
 		nullptr,
-		IID_PPV_ARGS(&halfResDepth_.res)));
-	NAME_D3D12_OBJECT(halfResDepth_.res);
+		IID_PPV_ARGS(&halfResDepth_.resource)));
+	NAME_D3D12_OBJECT(halfResDepth_.resource);
 	{
 		halfResDepth_.view = rtvDescAlloc_.Push(1);
 		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
 		desc.Format = halfResDepthFmt;
 		desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-		device->CreateRenderTargetView(halfResDepth_.res.Get(), &desc, halfResDepth_.view.cpuHandle);
+		device->CreateRenderTargetView(halfResDepth_.resource.Get(), &desc, halfResDepth_.view.cpuHandle);
 	}
 }
 
@@ -771,7 +772,6 @@ void Renderer::Update(double frame, double total) {
 		UI::Update(frame, total);
 	}
 }
-
 void Renderer::BeginRender() {
 	if (!loadingComplete_) return;
 
@@ -809,8 +809,15 @@ void Renderer::StartForwardPass() {
 		commandList->RSSetScissorRects(1, &scissorRect_);
 		if (first) {
 			first = false;
-			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			commandList->ResourceBarrier(1, &barrier);
+
+			auto afterState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			auto& beforeState = renderTargets_.state[GetCurrenFrameIndex()];
+			if (beforeState != afterState) {
+				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(), beforeState, afterState);
+				beforeState = afterState;
+				commandList->ResourceBarrier(1, &barrier);
+			}
+
 			commandList->ClearRenderTargetView(GetRenderTargetView(), Black, 0, nullptr);
 		}
 		commandList->OMSetRenderTargets(1, &GetRenderTargetView(), false, &depthStencil_.view.cpuHandle);
@@ -860,12 +867,10 @@ bool Renderer::Render() {
 	ppCommandLists.push_back(deferredCommandList_.Get());
 
 	ppCommandLists.push_back(UI::Render(m_deviceResources->GetSwapChain()->GetCurrentBackBufferIndex()));
-	// Indicate that the render target will now be used to present when the command list is done executing.
-	CD3DX12_RESOURCE_BARRIER presentResourceBarrier[] =
-		{ CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT),
-		 CD3DX12_RESOURCE_BARRIER::Transition(depthStencil_.res.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE) };
-		
-	((ID3D12GraphicsCommandList*)ppCommandLists.back())->ResourceBarrier(_countof(presentResourceBarrier), presentResourceBarrier);
+
+	auto commandList = (ID3D12GraphicsCommandList*)ppCommandLists.back();
+	renderTargets_.ResourceTransition(commandList, GetCurrenFrameIndex(), D3D12_RESOURCE_STATE_PRESENT);
+	depthStencil_.ResourceTransition(commandList,  D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
 	for (auto* commandList : ppCommandLists)
 		((ID3D12GraphicsCommandList*)commandList)->Close();
@@ -1151,9 +1156,10 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 }
 void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	PIXBeginEvent(commandList, 0, L"DownsampleDepth");
-	CD3DX12_RESOURCE_BARRIER barriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.res.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET),
-		CD3DX12_RESOURCE_BARRIER::Transition(depthStencil_.res.Get(), D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)};
-	commandList->ResourceBarrier(_countof(barriers), barriers);
+
+	halfResDepth_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	depthStencil_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
 	const float factor = .5f;
 	const float step = 2.f;
 	auto viewport = GetViewport();
@@ -1176,7 +1182,7 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
 	const int descSize = frame_->desc.GetDescriptorSize();
 	entry.cpuHandle.Offset(descSize);
-	frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.res.Get());
+	frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.resource.Get());
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
@@ -1200,11 +1206,11 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 
 	PIXBeginEvent(commandList, 0, L"DoLightingPass");
 	{
-		CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount + 1];
+		CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount];
 		for (int i = 0; i < RenderTargetCount; ++i)
 			presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_.res[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		DownsampleDepth(commandList);
-		presentResourceBarriers[RenderTargetCount] = CD3DX12_RESOURCE_BARRIER::Transition(halfResDepth_.res.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		halfResDepth_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		// TODO:: done in startForwardPass presentResourceBarriers[RenderTargetCount + 1] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 		commandList->RSSetViewports(1, &GetViewport());
@@ -1238,7 +1244,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 			entry.cpuHandle.Offset(descSize);
 		}
 		// Depth
-		frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.res.Get());
+		frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.resource.Get());
 		entry.cpuHandle.Offset(descSize);
 
 		// Irradiance
@@ -1251,7 +1257,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.BRDFLUT].resource.Get());
 		entry.cpuHandle.Offset(descSize);
 		// Halfresdepth
-		frame_->desc.CreateSRV(entry.cpuHandle, halfResDepth_.res.Get());
+		frame_->desc.CreateSRV(entry.cpuHandle, halfResDepth_.resource.Get());
 		entry.cpuHandle.Offset(descSize);
 		// Random
 		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());

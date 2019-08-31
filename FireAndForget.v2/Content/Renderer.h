@@ -96,9 +96,16 @@ private:
 	// render targets
 	DescriptorFrameAlloc rtvDescAlloc_, dsvDescAlloc_;
 	struct {
-		Microsoft::WRL::ComPtr<ID3D12Resource> res;
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 		D3D12_RESOURCE_STATES state;
 		DescriptorFrameAlloc::Entry view;
+		void ResourceTransition(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {
+			if (state != afterState) {
+				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), state, afterState);
+				state = afterState;
+				commandList->ResourceBarrier(1, &barrier);
+			}
+		}
 	}ao_, halfResDepth_, depthStencil_;
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12Resource> res[_countof(PipelineStates::deferredRTFmts)];
@@ -106,11 +113,18 @@ private:
 		DescriptorFrameAlloc::Entry view;
 	}rtt_;
 	struct {
-		Microsoft::WRL::ComPtr<ID3D12Resource> res[ShaderStructures::FrameCount];
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource[ShaderStructures::FrameCount];
 		D3D12_RESOURCE_STATES state[ShaderStructures::FrameCount];
 		DescriptorFrameAlloc::Entry view;
+		void ResourceTransition(ID3D12GraphicsCommandList* commandList, int index, D3D12_RESOURCE_STATES afterState) {
+			if (state[index] != afterState) {
+				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource[index].Get(), state[index], afterState);
+				state[index] = afterState;
+				commandList->ResourceBarrier(1, &barrier);
+			}
+		}
 	}renderTargets_;
-	ID3D12Resource* GetRenderTarget() { return renderTargets_.res[GetCurrenFrameIndex()].Get(); }
+	ID3D12Resource* GetRenderTarget() { return renderTargets_.resource[GetCurrenFrameIndex()].Get(); }
 	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView() {
 		return CD3DX12_CPU_DESCRIPTOR_HANDLE(renderTargets_.view.cpuHandle, GetCurrenFrameIndex(), rtvDescAlloc_.GetDescriptorSize());
 	}
