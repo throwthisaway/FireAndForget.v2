@@ -89,6 +89,19 @@ void DescriptorFrameAlloc::CreateArrayUAV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
 	uav.Texture2DArray.ArraySize = 1;//resource ? resource->GetDesc().DepthOrArraySize : 0;
 	device_->CreateUnorderedAccessView(resource, nullptr, &uav, cpuHandle);
 }
+void DescriptorFrameAlloc::CreateRTV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, DXGI_FORMAT format) {
+	D3D12_RENDER_TARGET_VIEW_DESC desc = {};
+	desc.Format = format;
+	desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	device_->CreateRenderTargetView(resource, &desc, cpuHandle);
+}
+void DescriptorFrameAlloc::CreateDSV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, DXGI_FORMAT format) {
+	D3D12_DEPTH_STENCIL_VIEW_DESC desc = {};
+	desc.Format = format;
+	desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	desc.Flags = D3D12_DSV_FLAG_NONE;
+	device_->CreateDepthStencilView(resource, &desc, cpuHandle);
+}
 void DescriptorFrameAlloc::Reset() {
 	index_ = 0;
 	offset_ = 0;

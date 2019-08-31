@@ -28,6 +28,8 @@ public:
 	void CreateCubeSRV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource);
 	void CreateUAV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, UINT mipSlice = 0);
 	void CreateArrayUAV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, UINT arrayIndex, UINT mipSlice = 0);
+	void CreateRTV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, DXGI_FORMAT format);
+	void CreateDSV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, DXGI_FORMAT format);
 	void Reset();
 
 };

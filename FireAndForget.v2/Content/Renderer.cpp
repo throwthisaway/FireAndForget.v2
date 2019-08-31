@@ -704,11 +704,7 @@ void Renderer::CreateWindowSizeDependentResources() {
 
 		NAME_D3D12_OBJECT(depthStencil_.resource);
 
-		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-		dsvDesc.Format = depthbufferFormat_;
-		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-		device->CreateDepthStencilView(depthStencil_.resource.Get(), &dsvDesc, depthStencil_.view.cpuHandle);
+		dsvDescAlloc_.CreateDSV(depthStencil_.view.cpuHandle, depthStencil_.resource.Get(), depthbufferFormat_);
 	}
 
 	rtt_.view = rtvDescAlloc_.Push(_countof(PipelineStates::deferredRTFmts));
@@ -734,13 +730,8 @@ void Renderer::CreateWindowSizeDependentResources() {
 		WCHAR name[25];
 		if (swprintf_s(name, L"renderTarget[%u]", j) > 0) DX::SetName(resource.Get(), name);
 
-		{
-			D3D12_RENDER_TARGET_VIEW_DESC desc = {};
-			desc.Format = PipelineStates::deferredRTFmts[j];
-			desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-			device->CreateRenderTargetView(rtt_.res[j].Get(), &desc, handle);
-			handle.Offset(rtvDescAlloc_.GetDescriptorSize());
-		}
+		rtvDescAlloc_.CreateRTV(handle, rtt_.res[j].Get(), PipelineStates::deferredRTFmts[j]);
+		handle.Offset(rtvDescAlloc_.GetDescriptorSize());
 	}
 
 	// half-res depth
@@ -758,13 +749,12 @@ void Renderer::CreateWindowSizeDependentResources() {
 		nullptr,
 		IID_PPV_ARGS(&halfResDepth_.resource)));
 	NAME_D3D12_OBJECT(halfResDepth_.resource);
-	{
-		halfResDepth_.view = rtvDescAlloc_.Push(1);
-		D3D12_RENDER_TARGET_VIEW_DESC desc = {};
-		desc.Format = halfResDepthFmt;
-		desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-		device->CreateRenderTargetView(halfResDepth_.resource.Get(), &desc, halfResDepth_.view.cpuHandle);
-	}
+
+	halfResDepth_.view = rtvDescAlloc_.Push(1);
+	rtvDescAlloc_.CreateRTV(halfResDepth_.view.cpuHandle, halfResDepth_.resource.Get(), halfResDepthFmt);
+	
+	// ao
+
 }
 
 void Renderer::Update(double frame, double total) {
