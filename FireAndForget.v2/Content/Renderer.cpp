@@ -754,9 +754,31 @@ void Renderer::CreateWindowSizeDependentResources() {
 	rtvDescAlloc_.CreateRTV(halfResDepth_.view.cpuHandle, halfResDepth_.resource.Get(), halfResDepthFmt);
 	
 	// ao
-
+	{
+		DXGI_FORMAT format = DXGI_FORMAT_R32_FLOAT;
+		ao_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		ao_.resource = CreateRenderTarget(format, lround(size.Width) >> 1, lround(size.Height) >> 1, ao_.state, L"aoRT");
+		ao_.view = rtvDescAlloc_.Push(1);
+		rtvDescAlloc_.CreateRTV(ao_.view.cpuHandle, ao_.resource.Get(), format);
+	}
 }
-
+Microsoft::WRL::ComPtr<ID3D12Resource> Renderer::CreateRenderTarget(DXGI_FORMAT format, UINT width, UINT height, D3D12_RESOURCE_STATES state, LPCWSTR label) {
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, 1);
+	desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	CD3DX12_HEAP_PROPERTIES defaultHeapProperties(D3D12_HEAP_TYPE_DEFAULT);
+	
+	auto device = m_deviceResources->GetD3DDevice();
+	DX::ThrowIfFailed(device->CreateCommittedResource(
+		&defaultHeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&desc,
+		ao_.state,
+		nullptr,
+		IID_PPV_ARGS(&resource)));
+	if (label) DX::SetName(resource.Get(), label);
+	return resource;
+}
 void Renderer::Update(double frame, double total) {
 	if (loadingComplete_){
 		UI::Update(frame, total);
