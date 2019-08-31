@@ -325,6 +325,9 @@
     <None Include="Content\shaders\ShaderInput.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
+    <None Include="..\source\assets\box_normal_map_test.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">
@@ -349,6 +352,9 @@
       <Filter>Assets</Filter>
     </Image>
     <Image Include="..\source\assets\14031-normal.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\TestNormalMap.png">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>

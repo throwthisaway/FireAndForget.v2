@@ -223,6 +223,7 @@
     <Image Include="..\source\assets\rusted metal metallic.png" />
     <Image Include="..\source\assets\rusted metal normal.png" />
     <Image Include="..\source\assets\rusted metal roughness.png" />
+    <Image Include="..\source\assets\TestNormalMap.png" />
     <Image Include="Assets\LockScreenLogo.scale-200.png" />
     <Image Include="Assets\SplashScreen.scale-200.png" />
     <Image Include="Assets\Square150x150Logo.scale-200.png" />
@@ -364,6 +365,11 @@
     </None>
     <None Include="..\source\assets\box_modo.mesh">
       <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\source\assets\box_normal_map_test.mesh">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </None>
     <None Include="..\source\assets\checkerboard.mesh">
       <DeploymentContent>true</DeploymentContent>

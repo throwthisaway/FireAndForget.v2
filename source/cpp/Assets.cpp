@@ -261,9 +261,10 @@ namespace assets {
 			//loadContextModo.LoadMesh(L"sphere_modo.mesh", SPHERE),
 			loadContextModo.LoadMesh(L"textured_unit_cube_modo.mesh", UNITCUBE),
 			//loadContextModo.LoadMesh(L"test_torus.mesh"),
-			loadContextModo.LoadMesh(L"checkerboard_modo.mesh"),
+			//loadContextModo.LoadMesh(L"checkerboard_modo.mesh"),
 			loadContextModo.LoadMesh(L"sphere_modo.mesh"),
-			loadContextModo.LoadMesh(L"modo_ball_test.mesh"),
+			//loadContextModo.LoadMesh(L"modo_ball_test.mesh"),
+			loadContextModo.LoadMesh(L"box_normal_map_test.mesh"),
 		};
 		
 		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {

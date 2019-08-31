@@ -2,7 +2,7 @@
 #include "ShaderStructs.h"
 
 ConstantBuffer<Object> obj : register(b0);
-#if 0
+#if 1
 GS_PUVN main(VS_PNUV input, uint id : SV_VertexID) {
 	GS_PUVN output;
 	float4 pos = float4(input.pos, 1.f);
