@@ -57,7 +57,7 @@ public:
 private:
 	void DownsampleDepth(ID3D12GraphicsCommandList*);
 	void GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT fmt, int width, int height, uint32_t arraySize);
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTarget(DXGI_FORMAT format, UINT width, UINT height, D3D12_RESOURCE_STATES state, LPCWSTR label = nullptr);
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTarget(DXGI_FORMAT format, UINT width, UINT height, D3D12_RESOURCE_STATES state, D3D12_CLEAR_VALUE* clearValue = nullptr, LPCWSTR label = nullptr);
 
 	DXGI_FORMAT backbufferFormat_, 
 		depthresourceFormat_ = DXGI_FORMAT_R32_TYPELESS, 
