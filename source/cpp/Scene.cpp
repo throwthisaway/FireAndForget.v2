@@ -169,7 +169,7 @@ void Scene::ObjectsWindow() {
 	ImGui::Begin("Objects Window");
 	int id = 0;
 	for (auto& o : modoObjects_) {
-		ImGui::Text("%f %f %f | %f %f %f", o.pos.x, o.pos.y, o.pos.z, o.rot.x, o.rot.y, o.rot.z);
+		ImGui::Text("%s: %f %f %f | %f %f %f", assets_.meshes[o.mesh].name.c_str(), o.pos.x, o.pos.y, o.pos.z, o.rot.x, o.rot.y, o.rot.z);
 		for (auto& s : assets_.meshes[o.mesh].submeshes) {
 			if ((s.textureMask & (1 << (int)ModoMeshLoader::TextureTypes::kAlbedo)) == 0) {
 				std::string idDiffuse("Diffuse###MaterialDiffuse" + std::to_string(++id));

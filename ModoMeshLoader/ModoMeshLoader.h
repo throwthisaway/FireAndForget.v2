@@ -36,6 +36,7 @@ namespace ModoMeshLoader {
 	}
 
 	struct Result {
+		std::string name;
 		std::vector<std::string> images;
 		std::vector<Submesh> submeshes ;
 		std::vector<uint8_t> vertices, indices;

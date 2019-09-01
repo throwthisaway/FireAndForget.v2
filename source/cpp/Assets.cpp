@@ -183,6 +183,7 @@ namespace assets {
 	Concurrency::task<void> Assets::ModoLoadContext::LoadMesh(const wchar_t* fname, size_t id) {
 		return DX::ReadDataAsync(fname).then([this, fname, id](std::vector<byte>& data) {
 			auto res = ModoMeshLoader::Load(data);
+			res.name = ws2s(fname);
 			for (auto& s : res.submeshes)
 				for (int i = 0; i < _countof(s.textures); ++i) {
 					auto& tex = s.textures[i];
@@ -348,7 +349,7 @@ namespace assets {
 			for (int id = 0; id < (int)loadContextModo.createModelResults.size(); ++id) {
 				auto& res = loadContextModo.createModelResults[id];
 				if (res.submeshes.empty()) continue;
-				loadContextModo.meshes[id] = { renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
+				loadContextModo.meshes[id] = { std::move(res.name), renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
 					renderer->CreateBuffer(res.indices.data(), res.indices.size()),
 					std::move(res.submeshes) };
 			}

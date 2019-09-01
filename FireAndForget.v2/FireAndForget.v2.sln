@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FireAndForget.v2", "FireAndForget.v2.vcxproj", "{2EC8955C-572F-47A1-9F45-D22B2C522CE3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC} = {2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC}
+		{BF8230D4-B7C5-48D9-B7DC-3A35002B86B4} = {BF8230D4-B7C5-48D9-B7DC-3A35002B86B4}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshLoader", "..\..\MeshLoader\MeshLoader\MeshLoader.vcxproj", "{2A1B5A4E-9A4A-4D28-9A86-2A3DC939FABC}"
