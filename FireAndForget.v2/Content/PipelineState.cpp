@@ -248,6 +248,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDN, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNPS.cso", nullptr, { pntLayout, _countof(pntLayout) }, geometry, State::RenderPass::Geometry));
 	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDNMR, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNMRPS.cso", nullptr, { pntLayout, _countof(pntLayout) }, geometry, State::RenderPass::Geometry));
 #endif
+	shaderTasks.push_back(CreateShader(ShaderStructures::SSAO, ROOT_UNKNOWN, L"FSQuadViewPosVS.cso", L"SSAOPS.cso", nullptr, { {}, 0 }, depth, State::RenderPass::Lighting));
 	completionTask_ = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }
 

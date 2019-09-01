@@ -54,6 +54,7 @@ public:
 	void DoLightingPass(const ShaderStructures::DeferredCmd& cmd);
 
 	std::shared_ptr<DX::DeviceResources> m_deviceResources;
+	bool Ready() const { return loadingComplete_; }
 private:
 	void DownsampleDepth(ID3D12GraphicsCommandList*);
 	void GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT fmt, int width, int height, uint32_t arraySize);

@@ -446,7 +446,10 @@
     <FxCompile Include="Content\shaders\TangentGS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\shaders\AOPS.hlsl">
+    <FxCompile Include="Content\shaders\FSQuadViewPosVS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\SSAOPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
   </ItemGroup>

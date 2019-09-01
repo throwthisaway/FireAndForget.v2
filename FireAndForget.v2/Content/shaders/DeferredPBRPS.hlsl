@@ -28,41 +28,12 @@ float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 	float4 world_pos = mul(ip, projected_pos);
 	return world_pos.xyz / world_pos.w;
 }
-float AOPass(float2 uv, float3 p, float3 n, float4x4 ivp, Texture2D<float> depth) {
-	float3 worldPos = WorldPosFormDepth(uv, ivp, depth.Sample(smp, uv).x);
-	float3 diff = worldPos - p;
-	float len = length(diff);
-	float3 v = diff / len;
-	len *= ao.scale;
-	return max(0.f, dot(v, n) - ao.bias) * 1.f / (1.f + len) * ao.intensity;
-}
-
-#define ITERATION 4
-float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, float4x4 ivp, Texture2D<float> depth, Texture2D<float2> random) {
-	const float2 sampling[] = { float2(-1.f, 0.f), float2(1.f, 0.f), float2(0.f, 1.f), float2(0.f, -1.f) };
-
-	float sum = 0.f, radius = ao.rad / center_pos.z;
-	float2 rnd = normalize(random.Sample(linearSmp, vp * uv / ao.random_size).rg * 2.f - 1.f);
-	// TODO:: int iterations = lerp(6.0,2.0,p.z/g_far_clip);
-	for (int i = 0; i < ITERATION; i++) {
-		float2 c1 = reflect(sampling[i], rnd) * radius
-		, c2 = float2(c1.x * .70716f - c1.y * .70716f,
-					  c1.x * .70716f + c1.y * .70716f);
-
-		sum += AOPass(uv + c1 * .25f, center_pos, n, ivp, depth);
-		sum += AOPass(uv + c1 * .75f, center_pos, n, ivp, depth);
-		sum += AOPass(uv + c2 * .5f, center_pos, n, ivp, depth);
-		sum += AOPass(uv + c2, center_pos, n, ivp, depth);
-	}
-	sum /= (float)ITERATION * 4.f;
-	return sum;
-}
 
 [RootSignature(DeferredRS)]
 float4 main(PS_UV input) : SV_TARGET{
 	float4 albedo = texAlbedo.Sample(smp, input.uv);
 	float4 debug = texDebug.Sample(smp, input.uv);
-	float3 n = debug.rgb;// TODO:: nans Decode(texNormal.Sample(smp, input.uv).xy);
+	float3 n = Decode(texNormal.Sample(smp, input.uv).xy);
 	float4 material = texMaterial.Sample(smp, input.uv);
 	float depth = texDepth.Sample(smp, input.uv).r;
 	// TODO:: better one with linear depth and without mat mult: https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
@@ -102,7 +73,7 @@ float4 main(PS_UV input) : SV_TARGET{
 		kD *= 1.f - metallic;
 		Lo += (kD * albedo.rgb / M_PI_F + specular) * radiance * ndotl;
 	}
-	float ao = CalcAO(input.uv, worldPos, n, scene.viewport, scene.ivp, texHalfResDepth, texRandom);
+	float ao = 0.f;// CalcAO(input.uv, worldPos, n, scene.viewport, scene.ivp, texHalfResDepth, texRandom);
 	// 
 	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
 	float3 ks = f;

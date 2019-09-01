@@ -235,7 +235,7 @@ void Scene::UpdateSceneTransform() {
 }
 void Scene::Update(double frame, double total) {
 	assets_.Update(renderer_);
-	if (state != State::Ready && assets_.status == assets::Assets::Status::kReady) {
+	if (state != State::Ready && assets_.status == assets::Assets::Status::kReady && renderer_->Ready()) {
 		state = State::Ready;
 		renderer_->Update(frame, total);
 		return;

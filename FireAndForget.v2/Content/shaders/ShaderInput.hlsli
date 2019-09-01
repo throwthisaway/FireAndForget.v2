@@ -23,7 +23,11 @@ struct PS_UV {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD0;
 };
-
+struct PS_PUV {
+	float4 pos : SV_POSITION;
+	float3 p : POSITION0;
+	float2 uv : TEXCOORD0;
+};
 struct PS_P {
 	float4 pos : SV_POSITION;
 	float3 p : POSITION0;
