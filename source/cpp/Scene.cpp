@@ -170,13 +170,21 @@ void Scene::ObjectsWindow() {
 	int id = 0;
 	for (auto& o : modoObjects_) {
 		ImGui::Text("%f %f %f | %f %f %f", o.pos.x, o.pos.y, o.pos.z, o.rot.x, o.rot.y, o.rot.z);
-		std::string idDiffuse("Diffuse###MaterialDiffuse" + std::to_string(++id));
-		ImGui::ColorEdit3(idDiffuse.c_str(), (float*)&assets_.meshes[o.mesh].submeshes[0].material.diffuse);
-		auto idMetallic = std::string("Metallic###Metallic") + std::to_string(++id);
-		ImGui::SliderFloat(idMetallic.c_str(), &assets_.meshes[o.mesh].submeshes[0].material.metallic_roughness.x, 0.f, 1.f);
-		auto idRoughness = std::string("Roughness###Roughness1") + std::to_string(++id);
-		ImGui::SliderFloat(idRoughness.c_str(), &assets_.meshes[o.mesh].submeshes[0].material.metallic_roughness.y, 0.05f, 1.f);
-		ImGui::Separator();
+		for (auto& s : assets_.meshes[o.mesh].submeshes) {
+			if ((s.textureMask & (1 << (int)ModoMeshLoader::TextureTypes::kAlbedo)) == 0) {
+				std::string idDiffuse("Diffuse###MaterialDiffuse" + std::to_string(++id));
+				ImGui::ColorEdit3(idDiffuse.c_str(), (float*)& s.material.diffuse);
+			}
+			if ((s.textureMask & (1 << (int)ModoMeshLoader::TextureTypes::kMetallic)) == 0) {
+				auto idMetallic = std::string("Metallic###Metallic") + std::to_string(++id);
+				ImGui::SliderFloat(idMetallic.c_str(), &s.material.metallic_roughness.x, 0.f, 1.f);
+			}
+			if ((s.textureMask & (1 << (int)ModoMeshLoader::TextureTypes::kRoughness)) == 0) {
+				auto idRoughness = std::string("Roughness###Roughness1") + std::to_string(++id);
+				ImGui::SliderFloat(idRoughness.c_str(), &s.material.metallic_roughness.y, 0.05f, 1.f);
+			}
+			ImGui::Separator();
+		}
 	}
 	ImGui::End();
 }

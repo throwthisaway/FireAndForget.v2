@@ -260,7 +260,7 @@ namespace assets {
 			//loadContextModo.LoadMesh(L"BEETHOVE_object_modo.mesh", BEETHOVEN),
 			//loadContextModo.LoadMesh(L"sphere_modo.mesh", SPHERE),
 			loadContextModo.LoadMesh(L"textured_unit_cube_modo.mesh", UNITCUBE),
-			//loadContextModo.LoadMesh(L"test_torus.mesh"),
+			loadContextModo.LoadMesh(L"test_torus.mesh"),
 			//loadContextModo.LoadMesh(L"checkerboard_modo.mesh"),
 			loadContextModo.LoadMesh(L"sphere_modo.mesh"),
 			//loadContextModo.LoadMesh(L"modo_ball_test.mesh"),
@@ -347,7 +347,7 @@ namespace assets {
 			loadContextModo.meshes.resize(loadContextModo.createModelResults.size());
 			for (int id = 0; id < (int)loadContextModo.createModelResults.size(); ++id) {
 				auto& res = loadContextModo.createModelResults[id];
-				for (auto& s : res.submeshes)
+				if (res.submeshes.empty()) continue;
 				loadContextModo.meshes[id] = { renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
 					renderer->CreateBuffer(res.indices.data(), res.indices.size()),
 					std::move(res.submeshes) };
