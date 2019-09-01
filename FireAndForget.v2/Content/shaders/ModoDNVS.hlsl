@@ -3,7 +3,7 @@
 
 ConstantBuffer<Object> obj : register(b0);
 #if 1
-GS_PUVN main(VS_PNUV input, uint id : SV_VertexID) {
+GS_PUVN main(VS_PNUV input) {
 	GS_PUVN output;
 	float4 pos = float4(input.pos, 1.f);
 	output.pos = mul(obj.mvp, pos);
@@ -13,7 +13,7 @@ GS_PUVN main(VS_PNUV input, uint id : SV_VertexID) {
 	return output;
 }
 #else
-PS_UVNT main(VS_PNUV input, uint id : SV_VertexID) {
+PS_UVNT main(VS_PNUV input) {
 	PS_UVNT output;
 	float4 pos = float4(input.pos, 1.f);
 	output.pos = mul(obj.mvp, pos);

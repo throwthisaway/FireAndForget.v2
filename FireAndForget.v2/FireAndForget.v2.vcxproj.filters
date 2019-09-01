@@ -446,5 +446,8 @@
     <FxCompile Include="Content\shaders\TangentGS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Content\shaders\AOPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -141,7 +141,7 @@ private:
 	}frames_[ShaderStructures::FrameCount], *frame_;
 
 	
-	BufferIndex fsQuad_ = InvalidBuffer;
+	//BufferIndex fsQuad_ = InvalidBuffer;
 
 	D3D12_RECT scissorRect_;
 	bool loadingComplete_ = false;

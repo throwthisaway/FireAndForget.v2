@@ -240,13 +240,13 @@ void Renderer::CreateDeviceDependentResources() {
 		commandLists_.push_back(commandList);
 	}
 
-	BeginUploadResources();
-	{
-		// fullscreen quad...
-		VertexFSQuad quad[] = { { { -1., -1.f },{ 0.f, 1.f } },{ { -1., 1.f },{ 0.f, 0.f } },{ { 1., -1.f },{ 1.f, 1.f } },{ { 1., 1.f },{ 1.f, 0.f } } };
-		fsQuad_ = CreateBuffer(quad, sizeof(quad));
-	}
-	EndUploadResources();
+	//BeginUploadResources();
+	//{
+	//	// fullscreen quad...
+	//	VertexFSQuad quad[] = { { { -1., -1.f },{ 0.f, 1.f } },{ { -1., 1.f },{ 0.f, 0.f } },{ { 1., -1.f },{ 1.f, 1.f } },{ { 1., 1.f },{ 1.f, 0.f } } };
+	//	fsQuad_ = CreateBuffer(quad, sizeof(quad));
+	//}
+	//EndUploadResources();
 }
 void Renderer::BeginPrePass() {
 #ifdef DXGI_ANALYSIS
@@ -624,14 +624,14 @@ TextureIndex Renderer::GenBRDFLUT(uint32_t dim, ShaderId shader, LPCSTR label) {
 	commandList->OMSetRenderTargets(1, &entry.cpuHandle, false, nullptr);
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	assert(fsQuad_ != InvalidBuffer);
-	
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
-		{ buffers_[fsQuad_].bufferLocation,
-		(UINT)buffers_[fsQuad_].size,
-		(UINT)sizeof(VertexFSQuad) } };
+	//assert(fsQuad_ != InvalidBuffer);
+	//
+	//D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
+	//	{ buffers_[fsQuad_].bufferLocation,
+	//	(UINT)buffers_[fsQuad_].size,
+	//	(UINT)sizeof(VertexFSQuad) } };
 
-	commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
+	//commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
 	commandList->DrawInstanced(4, 1, 0, 0);
 	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	commandList->ResourceBarrier(1, &barrier);
@@ -1182,14 +1182,14 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	assert(fsQuad_ != InvalidBuffer);
-	
-	D3D12_VERTEX_BUFFER_VIEW vbv[] = {
-		{ buffers_[fsQuad_].bufferLocation,
-		(UINT)buffers_[fsQuad_].size,
-		(UINT)sizeof(VertexFSQuad) } };
+	//assert(fsQuad_ != InvalidBuffer);
+	//
+	//D3D12_VERTEX_BUFFER_VIEW vbv[] = {
+	//	{ buffers_[fsQuad_].bufferLocation,
+	//	(UINT)buffers_[fsQuad_].size,
+	//	(UINT)sizeof(VertexFSQuad) } };
 
-	commandList->IASetVertexBuffers(0, _countof(vbv), vbv);
+	//commandList->IASetVertexBuffers(0, _countof(vbv), vbv);
 	commandList->DrawInstanced(4, 1, 0, 0);
 	PIXEndEvent(commandList);
 }
@@ -1262,14 +1262,14 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-		assert(fsQuad_ != InvalidBuffer);
+		//assert(fsQuad_ != InvalidBuffer);
 	
-		D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
-			{ buffers_[fsQuad_].bufferLocation,
-			(UINT)buffers_[fsQuad_].size,
-			(UINT)sizeof(VertexFSQuad) } };
+		//D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
+		//	{ buffers_[fsQuad_].bufferLocation,
+		//	(UINT)buffers_[fsQuad_].size,
+		//	(UINT)sizeof(VertexFSQuad) } };
 
-		commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
+		//commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
 		commandList->DrawInstanced(4, 1, 0, 0);
 	}
 	PIXEndEvent(commandList);
