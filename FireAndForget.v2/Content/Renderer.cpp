@@ -10,9 +10,6 @@
 #include "..\..\source\cpp\ShaderStructures.h"
 #include <glm/gtc/matrix_transform.hpp>
 // TODO::
-// - deferredPBR blends beige color as bg instead of transparent black
-// - irradiance is flipped
-// - requesting new ppol in cbframealloc causes "CPU descriptor handle expected, but specified handle refers to a GPU descriptor handle." during CreateCBV
 // - all embedded rootsignatures are read from the ps source
 // - depthstencil transition to depth write happens at the present resource barrier at the very end
 // - DownsampleDepth transitions depth stencil to pixel shader resouce
@@ -22,6 +19,13 @@
 // - fix rootparamindex counting via templates (1 root paramindex for vs, 1 for ps instead of buffercount)
 // - rename: shaders “scene.vs.hlsl” and “scene.ps.hlsl”, I create a third file “scene.rs.hlsli”, which contains two things:
 // - simplify RootSignature access for SetGraphicsRootSignature
+
+#define DEBUG_PIX
+#ifdef DEBUG_PIX
+#define PIX(x) x
+#else
+#define PIX(x)
+#endif
 using namespace ShaderStructures;
 // Resource Binding Flow of Control - https://msdn.microsoft.com/en-us/library/windows/desktop/mt709154(v=vs.85).aspx
 // Resource Binding - https://msdn.microsoft.com/en-us/library/windows/desktop/dn899206(v=vs.85).aspx
@@ -669,11 +673,11 @@ void Renderer::CreateWindowSizeDependentResources() {
 	auto device = m_deviceResources->GetD3DDevice();
 	auto size = m_deviceResources->GetOutputSize();
 	UI::OnResize(device, m_deviceResources->GetSwapChain(), size.Width, size.Height);
-	scissorRect_ = { 0, 0, lround(size.Width), lround(size.Height) };
 
 	// Create render target views of the swap chain back buffer.
 	{
 		renderTargets_.view = rtvDescAlloc_.Push(ShaderStructures::FrameCount);
+		renderTargets_.width = lround(size.Width); renderTargets_.height = lround(size.Height);
 		CD3DX12_CPU_DESCRIPTOR_HANDLE handle = renderTargets_.view.cpuHandle;
 		for (UINT n = 0; n < ShaderStructures::FrameCount; n++) {
 			DX::ThrowIfFailed(m_deviceResources->GetSwapChain()->GetBuffer(n, IID_PPV_ARGS(&renderTargets_.resource[n])));
@@ -689,7 +693,8 @@ void Renderer::CreateWindowSizeDependentResources() {
 	{
 		depthStencil_.view = dsvDescAlloc_.Push(1);
 		D3D12_HEAP_PROPERTIES depthHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		D3D12_RESOURCE_DESC depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(depthresourceFormat_, lround(size.Width), lround(size.Height), 1, 1);
+		depthStencil_.width = lround(size.Width); depthStencil_.height = lround(size.Height);
+		D3D12_RESOURCE_DESC depthResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(depthresourceFormat_, depthStencil_.width, depthStencil_.height, 1, 1);
 		depthResourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 		depthStencil_.state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 		CD3DX12_CLEAR_VALUE depthOptimizedClearValue(depthbufferFormat_, 1.0f, 0);
@@ -712,12 +717,12 @@ void Renderer::CreateWindowSizeDependentResources() {
 	rtt_.view = rtvDescAlloc_.Push(_countof(PipelineStates::deferredRTFmts));
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = rtt_.view.cpuHandle;
 	rtt_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	rtt_.width = lround(size.Width); rtt_.height = lround(size.Height);
 	for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
 		clearValue.Format = PipelineStates::deferredRTFmts[j];
 		WCHAR label[25];
 		swprintf_s(label, L"renderTarget[%u]", j);
-		rtt_.res[j] = CreateRenderTarget(PipelineStates::deferredRTFmts[j], lround(size.Width), lround(size.Height), rtt_.state, &clearValue, label);
-
+		rtt_.res[j] = CreateRenderTarget(PipelineStates::deferredRTFmts[j], rtt_.width, rtt_.height, rtt_.state, &clearValue, label);
 		rtvDescAlloc_.CreateRTV(handle, rtt_.res[j].Get(), PipelineStates::deferredRTFmts[j]);
 		handle.Offset(rtvDescAlloc_.GetDescriptorSize());
 	}
@@ -725,22 +730,22 @@ void Renderer::CreateWindowSizeDependentResources() {
 	auto halfWidth = lround(size.Width) >> 1, halfHeight = lround(size.Height) >> 1;
 	// half-res depth
 	{
+		halfResDepth_.width = halfWidth; halfResDepth_.height = halfHeight;
 		DXGI_FORMAT format = DXGI_FORMAT_R32_FLOAT;
 		halfResDepth_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-		halfResDepth_.resource = CreateRenderTarget(format, halfWidth, halfHeight, halfResDepth_.state, nullptr, L"halfResDepth");
-
+		halfResDepth_.resource = CreateRenderTarget(format, halfResDepth_.width, halfResDepth_.height, halfResDepth_.state, nullptr, L"halfResDepth");
 		halfResDepth_.view = rtvDescAlloc_.Push(1);
 		rtvDescAlloc_.CreateRTV(halfResDepth_.view.cpuHandle, halfResDepth_.resource.Get(), format);
 	}
 
-	// ao
+	// ssao
 	{
+		ssao_.width = halfWidth; ssao_.height = halfHeight;
 		DXGI_FORMAT format = DXGI_FORMAT_R32_FLOAT;
-		ao_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-		ao_.resource = CreateRenderTarget(format, halfWidth, halfHeight, ao_.state, nullptr, L"aoRT");
-
-		ao_.view = rtvDescAlloc_.Push(1);
-		rtvDescAlloc_.CreateRTV(ao_.view.cpuHandle, ao_.resource.Get(), format);
+		ssao_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		ssao_.resource = CreateRenderTarget(format, ssao_.width, ssao_.height, ssao_.state, nullptr, L"aoRT");
+		ssao_.view = rtvDescAlloc_.Push(1);
+		rtvDescAlloc_.CreateRTV(ssao_.view.cpuHandle, ssao_.resource.Get(), format);
 	}
 }
 Microsoft::WRL::ComPtr<ID3D12Resource> Renderer::CreateRenderTarget(DXGI_FORMAT format, UINT width, UINT height, D3D12_RESOURCE_STATES state, D3D12_CLEAR_VALUE* clearValue, LPCWSTR label) {
@@ -754,7 +759,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> Renderer::CreateRenderTarget(DXGI_FORMAT 
 		&defaultHeapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&desc,
-		ao_.state,
+		ssao_.state,
 		clearValue,
 		IID_PPV_ARGS(&resource)));
 	if (label) DX::SetName(resource.Get(), label);
@@ -786,8 +791,8 @@ void Renderer::BeginRender() {
 	// Initialise depth
 	// TODO:: !!! this commandlist might not be used everytime
 	auto* commandList = commandLists_[0].Get();
-	commandList->RSSetViewports(1, &GetViewport());
-	commandList->RSSetScissorRects(1, &scissorRect_);
+	commandList->RSSetViewports(1, &renderTargets_.GetViewport());
+	commandList->RSSetScissorRects(1, &renderTargets_.GetScissorRect());
 	commandList->ClearDepthStencilView(depthStencil_.view.cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
@@ -798,8 +803,8 @@ void Renderer::StartForwardPass() {
 		auto& state = pipelineStates_.states_[i];
 		if (state.pass != PipelineStates::State::RenderPass::Forward) continue;
 		auto* commandList = commandLists_[i].Get();
-		commandList->RSSetViewports(1, &GetViewport());
-		commandList->RSSetScissorRects(1, &scissorRect_);
+		commandList->RSSetViewports(1, &renderTargets_.GetViewport());
+		commandList->RSSetScissorRects(1, &renderTargets_.GetScissorRect());
 		if (first) {
 			first = false;
 
@@ -827,8 +832,8 @@ void Renderer::StartGeometryPass() {
 		auto& state = pipelineStates_.states_[i];
 		if (state.pass != PipelineStates::State::RenderPass::Geometry) continue;
 		auto* commandList = commandLists_[i].Get();
-		commandList->RSSetViewports(1, &GetViewport());
-		commandList->RSSetScissorRects(1, &scissorRect_);
+		commandList->RSSetViewports(1, &rtt_.GetViewport());
+		commandList->RSSetScissorRects(1, &rtt_.GetScissorRect());
 		if (first) {
 			first = false;
 			CD3DX12_RESOURCE_BARRIER barriers[_countof(PipelineStates::deferredRTFmts)];
@@ -1148,19 +1153,13 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 	PIXEndEvent(commandList);
 }
 void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
-	PIXBeginEvent(commandList, 0, L"DownsampleDepth");
+	PIX(PIXBeginEvent(commandList, 0, L"DownsampleDepth"));
 
 	halfResDepth_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	depthStencil_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-	const float factor = .5f;
-	const float step = 2.f;
-	auto viewport = GetViewport();
-	viewport.Width *= factor; viewport.Height *= factor;
-	commandList->RSSetViewports(1, &viewport);
-	D3D12_RECT scissorRect = scissorRect_;
-	scissorRect.right *= factor; scissorRect.bottom *= factor;
-	commandList->RSSetScissorRects(1, &scissorRect);
+	commandList->RSSetViewports(1, &halfResDepth_.GetViewport());
+	commandList->RSSetScissorRects(1, &halfResDepth_.GetScissorRect());
 	auto& state = pipelineStates_.states_[Downsample];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
@@ -1168,8 +1167,7 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 
 	// TODO:: why can't set this??? ==> DXGI_ANALYSIS screws up
 	auto cb = frame_->cb.Alloc(sizeof(float));
-	*((float*)cb.cpuAddress) = step;
-	memcpy(cb.cpuAddress, &step, sizeof(step));
+	*((float*)cb.cpuAddress) = (float)depthStencil_.width / halfResDepth_.width;
 
 	auto entry = frame_->desc.Push(2);
 	frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
@@ -1191,86 +1189,101 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 
 	//commandList->IASetVertexBuffers(0, _countof(vbv), vbv);
 	commandList->DrawInstanced(4, 1, 0, 0);
-	PIXEndEvent(commandList);
+	halfResDepth_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	PIX(PIXEndEvent(commandList));
+}
+
+void Renderer::SSAOPass(ID3D12GraphicsCommandList* commandList) {
+	PIX(PIXBeginEvent(commandList, 0, L"SSAOPASS"));
+	auto* depth = &halfResDepth_;
+	depth->ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	ssao_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	auto& state = pipelineStates_.states_[SSAO];
+	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
+	commandList->SetPipelineState(state.pipelineState.Get());
+	commandList->RSSetViewports(1, &ssao_.GetViewport());
+	commandList->RSSetScissorRects(1, &ssao_.GetScissorRect());
+	commandList->DrawInstanced(4, 1, 0, 0);
+	ssao_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	PIX(PIXEndEvent(commandList));
 }
 void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	if (!loadingComplete_) return;
 	ID3D12GraphicsCommandList* commandList = deferredCommandList_.Get();
 
-	PIXBeginEvent(commandList, 0, L"DoLightingPass");
+	PIX(PIXBeginEvent(commandList, 0, L"DoLightingPass"));
+	CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount];
+	for (int i = 0; i < RenderTargetCount; ++i)
+		presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_.res[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	DownsampleDepth(commandList);
+	halfResDepth_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	// TODO:: done in startForwardPass presentResourceBarriers[RenderTargetCount + 1] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	commandList->RSSetViewports(1, &renderTargets_.GetViewport());
+	commandList->RSSetScissorRects(1, &renderTargets_.GetScissorRect());
+	commandList->ResourceBarrier(_countof(presentResourceBarriers), presentResourceBarriers);
+	auto& state = pipelineStates_.states_[DeferredPBR];
+	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
+	commandList->SetPipelineState(state.pipelineState.Get());
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv = GetRenderTargetView();
+	commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
+
+	const int descSize = frame_->desc.GetDescriptorSize();
+	auto entry = frame_->desc.Push(2 + BINDING_COUNT);
 	{
-		CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount];
-		for (int i = 0; i < RenderTargetCount; ++i)
-			presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_.res[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		DownsampleDepth(commandList);
-		halfResDepth_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		// TODO:: done in startForwardPass presentResourceBarriers[RenderTargetCount + 1] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-		commandList->RSSetViewports(1, &GetViewport());
-		commandList->RSSetScissorRects(1, &scissorRect_);
-		commandList->ResourceBarrier(_countof(presentResourceBarriers), presentResourceBarriers);
-		auto& state = pipelineStates_.states_[DeferredPBR];
-		commandList->SetGraphicsRootSignature(state.rootSignature.Get());
-		commandList->SetPipelineState(state.pipelineState.Get());
-		D3D12_CPU_DESCRIPTOR_HANDLE rtv = GetRenderTargetView();
-		commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
-
-		const int descSize = frame_->desc.GetDescriptorSize();
-		auto entry = frame_->desc.Push(2 + BINDING_COUNT);
-		{
-			// Scene
-			auto cb = frame_->cb.Alloc(sizeof(cmd.scene));
-			memcpy(cb.cpuAddress, &cmd.scene, sizeof(cmd.scene));
-			frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-			entry.cpuHandle.Offset(descSize);
-		}
-		{
-			// AO
-			auto cb = frame_->cb.Alloc(sizeof(cmd.ao));
-			memcpy(cb.cpuAddress, &cmd.ao, sizeof(cmd.ao));
-			frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-			entry.cpuHandle.Offset(descSize);
-		}
-		// RTs
-		for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
-			frame_->desc.CreateSRV(entry.cpuHandle, rtt_.res[j].Get());
-			entry.cpuHandle.Offset(descSize);
-		}
-		// Depth
-		frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.resource.Get());
+		// Scene
+		auto cb = frame_->cb.Alloc(sizeof(cmd.scene));
+		memcpy(cb.cpuAddress, &cmd.scene, sizeof(cmd.scene));
+		frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
 		entry.cpuHandle.Offset(descSize);
-
-		// Irradiance
-		frame_->desc.CreateCubeSRV(entry.cpuHandle, buffers_[cmd.irradiance].resource.Get());
-		entry.cpuHandle.Offset(descSize);
-		// Prefiltered env. map
-		frame_->desc.CreateCubeSRV(entry.cpuHandle, buffers_[cmd.prefilteredEnvMap].resource.Get());
-		entry.cpuHandle.Offset(descSize);
-		// BRDFLUT
-		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.BRDFLUT].resource.Get());
-		entry.cpuHandle.Offset(descSize);
-		// Halfresdepth
-		frame_->desc.CreateSRV(entry.cpuHandle, halfResDepth_.resource.Get());
-		entry.cpuHandle.Offset(descSize);
-		// Random
-		frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());
-		entry.cpuHandle.Offset(descSize);
-
-		ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
-		commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
-
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-		//assert(fsQuad_ != InvalidBuffer);
-	
-		//D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
-		//	{ buffers_[fsQuad_].bufferLocation,
-		//	(UINT)buffers_[fsQuad_].size,
-		//	(UINT)sizeof(VertexFSQuad) } };
-
-		//commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
-		commandList->DrawInstanced(4, 1, 0, 0);
 	}
+	{
+		// AO
+		auto cb = frame_->cb.Alloc(sizeof(cmd.ao));
+		memcpy(cb.cpuAddress, &cmd.ao, sizeof(cmd.ao));
+		frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
+		entry.cpuHandle.Offset(descSize);
+	}
+	// RTs
+	for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
+		frame_->desc.CreateSRV(entry.cpuHandle, rtt_.res[j].Get());
+		entry.cpuHandle.Offset(descSize);
+	}
+	// Depth
+	frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.resource.Get());
+	entry.cpuHandle.Offset(descSize);
+
+	// Irradiance
+	frame_->desc.CreateCubeSRV(entry.cpuHandle, buffers_[cmd.irradiance].resource.Get());
+	entry.cpuHandle.Offset(descSize);
+	// Prefiltered env. map
+	frame_->desc.CreateCubeSRV(entry.cpuHandle, buffers_[cmd.prefilteredEnvMap].resource.Get());
+	entry.cpuHandle.Offset(descSize);
+	// BRDFLUT
+	frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.BRDFLUT].resource.Get());
+	entry.cpuHandle.Offset(descSize);
+	// Halfresdepth
+	frame_->desc.CreateSRV(entry.cpuHandle, halfResDepth_.resource.Get());
+	entry.cpuHandle.Offset(descSize);
+	// Random
+	frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());
+	entry.cpuHandle.Offset(descSize);
+
+	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
+
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	//assert(fsQuad_ != InvalidBuffer);
+	
+	//D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
+	//	{ buffers_[fsQuad_].bufferLocation,
+	//	(UINT)buffers_[fsQuad_].size,
+	//	(UINT)sizeof(VertexFSQuad) } };
+
+	//commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
+	commandList->DrawInstanced(4, 1, 0, 0);
+
 	PIXEndEvent(commandList);
 }

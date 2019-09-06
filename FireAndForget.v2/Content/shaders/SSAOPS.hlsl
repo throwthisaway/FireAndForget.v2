@@ -36,7 +36,7 @@ float3 WorldPosFormDepth(float depth, float3 pos) {
 	// Find t such that p = t*pos.
 	// p.z = t*pos.z
 	// t = p.z / pos.z
-	return (z / pos) * pos;
+	return (z / pos.z) * pos;
 }
 float AOPass(float2 uv, float3 center, float3 n) {
 	float3 worldPos = WorldPosFormDepth(depth.Sample(smp, uv).x, center);

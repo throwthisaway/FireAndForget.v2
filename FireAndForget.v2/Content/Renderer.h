@@ -57,6 +57,7 @@ public:
 	bool Ready() const { return loadingComplete_; }
 private:
 	void DownsampleDepth(ID3D12GraphicsCommandList*);
+	void SSAOPass(ID3D12GraphicsCommandList*);
 	void GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT fmt, int width, int height, uint32_t arraySize);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTarget(DXGI_FORMAT format, UINT width, UINT height, D3D12_RESOURCE_STATES state, D3D12_CLEAR_VALUE* clearValue = nullptr, LPCWSTR label = nullptr);
 
@@ -101,6 +102,7 @@ private:
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 		D3D12_RESOURCE_STATES state;
 		DescriptorFrameAlloc::Entry view;
+		UINT width, height;
 		void ResourceTransition(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {
 			if (state != afterState) {
 				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), state, afterState);
@@ -108,16 +110,30 @@ private:
 				commandList->ResourceBarrier(1, &barrier);
 			}
 		}
-	}ao_, halfResDepth_, depthStencil_;
+		D3D12_VIEWPORT GetViewport() const {
+			return { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
+		}
+		D3D12_RECT GetScissorRect() const {
+			return { 0, 0, (LONG)width, (LONG)height };
+		}
+	}ssao_, halfResDepth_, depthStencil_;
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12Resource> res[_countof(PipelineStates::deferredRTFmts)];
 		D3D12_RESOURCE_STATES state;
 		DescriptorFrameAlloc::Entry view;
+		UINT width, height;
+		D3D12_VIEWPORT GetViewport() const {
+			return { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
+		}
+		D3D12_RECT GetScissorRect() const {
+			return { 0, 0, (LONG)width, (LONG)height };
+		}
 	}rtt_;
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource[ShaderStructures::FrameCount];
 		D3D12_RESOURCE_STATES state[ShaderStructures::FrameCount];
 		DescriptorFrameAlloc::Entry view;
+		UINT width, height;
 		void ResourceTransition(ID3D12GraphicsCommandList* commandList, int index, D3D12_RESOURCE_STATES afterState) {
 			if (state[index] != afterState) {
 				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource[index].Get(), state[index], afterState);
@@ -125,15 +141,19 @@ private:
 				commandList->ResourceBarrier(1, &barrier);
 			}
 		}
+		D3D12_VIEWPORT GetViewport() const {
+			return { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
+		}
+		D3D12_RECT GetScissorRect() const {
+			return { 0, 0, (LONG)width, (LONG)height };
+		}
+
 	}renderTargets_;
 	ID3D12Resource* GetRenderTarget() { return renderTargets_.resource[GetCurrenFrameIndex()].Get(); }
 	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView() {
 		return CD3DX12_CPU_DESCRIPTOR_HANDLE(renderTargets_.view.cpuHandle, GetCurrenFrameIndex(), rtvDescAlloc_.GetDescriptorSize());
 	}
-	D3D12_VIEWPORT GetViewport() const {
-		auto size = m_deviceResources->GetOutputSize();
-		return { 0.0f, 0.0f, size.Width, size.Height, 0.0f, 1.0f };
-	}
+
 	// for per frame dynamic data
 	struct {
 		CBFrameAlloc cb;
@@ -143,8 +163,6 @@ private:
 
 	
 	//BufferIndex fsQuad_ = InvalidBuffer;
-
-	D3D12_RECT scissorRect_;
 	bool loadingComplete_ = false;
 #ifdef DXGI_ANALYSIS
 	Microsoft::WRL::ComPtr<IDXGraphicsAnalysis> pGraphicsAnalysis;
