@@ -77,16 +77,18 @@ void Scene::PrepareScene() {
 	deferredCmd_.ao.rad = .04f;
 	deferredCmd_.ao.scale = 1.f;
 	deferredCmd_.ao.intensity = 1.f;
+
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
 		deferredCmd_.scene.light[i] = defaultPointLight;
 		//FromVec3(camera_.view * glm::vec4(ToVec3(lights_[i].pointLight.pos), 1.f), shaderStructures.cScene.scene.light[i].pos);
 	}
 	deferredCmd_.scene.light[0].pos.x = deferredCmd_.scene.light[0].pos.y = -4.f;
 	renderer_->BeginPrePass();
-	deferredCmd_.random = assets_.textures[assets::Assets::RANDOM];
+	ssaoCmd_.random = deferredCmd_.random = assets_.textures[assets::Assets::RANDOM];
 	Dim dim = renderer_->GetDimensions(deferredCmd_.random);
 	deferredCmd_.ao.random_size.x = (float)dim.w;
 	deferredCmd_.ao.random_size.y = (float)dim.h;
+	ssaoCmd_.ao = deferredCmd_.ao;
 	const auto& mesh = assets_.meshes[assets::Assets::UNITCUBE];
 	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
 	const uint64_t cubeEnvMapDim = 512;
@@ -156,6 +158,7 @@ void Scene::Render() {
 			renderer_->Submit(cmd);
 		}
 	}
+	renderer_->SSAOPass(ssaoCmd_);
 	renderer_->DoLightingPass(deferredCmd_);
 	renderer_->Render();
 }
@@ -248,10 +251,15 @@ void Scene::Update(double frame, double total) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
 	}
 	camera_.Update();
+	auto ip = glm::inverse(camera_.proj);
+	ssaoCmd_.ip = ip;
+	ssaoCmd_.scene.proj = camera_.proj;
+	ssaoCmd_.scene.viewport = { (float)viewport_.width, (float)viewport_.height };
+
 	// need to determine it from view because of ScreenSpaceRotator...
 	deferredCmd_.scene.eyePos = camera_.eyePos;
 	// TODO:: WTF?
-	deferredCmd_.scene.ip = glm::inverse(camera_.proj);
+	deferredCmd_.scene.ip = ip;
 	deferredCmd_.scene.ivp = camera_.ivp;
 	deferredCmd_.scene.nf.x = camera_.n; deferredCmd_.scene.nf.y = camera_.f;
 	deferredCmd_.scene.viewport = { (float)viewport_.width, (float)viewport_.height };

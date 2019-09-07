@@ -2,6 +2,7 @@
 #include <type_traits>
 #include <vector>
 #include <wrl.h>
+#include "CBFrameAlloc.h"
 
 struct ID3D12Device;
 struct ID3D12Resource;
@@ -30,6 +31,8 @@ public:
 	void CreateArrayUAV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, UINT arrayIndex, UINT mipSlice = 0);
 	void CreateRTV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, DXGI_FORMAT format);
 	void CreateDSV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource, DXGI_FORMAT format);
+	void BindCBV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, const CBFrameAlloc::Entry& cb);
+	void BindSRV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, ID3D12Resource* resource);
 	void Reset();
 
 };

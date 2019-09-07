@@ -721,9 +721,9 @@ void Renderer::CreateWindowSizeDependentResources() {
 	for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
 		clearValue.Format = PipelineStates::deferredRTFmts[j];
 		WCHAR label[25];
-		swprintf_s(label, L"renderTarget[%u]", j);
-		rtt_.res[j] = CreateRenderTarget(PipelineStates::deferredRTFmts[j], rtt_.width, rtt_.height, rtt_.state, &clearValue, label);
-		rtvDescAlloc_.CreateRTV(handle, rtt_.res[j].Get(), PipelineStates::deferredRTFmts[j]);
+		swprintf_s(label, L"rtt[%u]", j);
+		rtt_.resources[j] = CreateRenderTarget(PipelineStates::deferredRTFmts[j], rtt_.width, rtt_.height, rtt_.state, &clearValue, label);
+		rtvDescAlloc_.CreateRTV(handle, rtt_.resources[j].Get(), PipelineStates::deferredRTFmts[j]);
 		handle.Offset(rtvDescAlloc_.GetDescriptorSize());
 	}
 
@@ -740,7 +740,7 @@ void Renderer::CreateWindowSizeDependentResources() {
 
 	// ssao
 	{
-		ssao_.width = halfWidth; ssao_.height = halfHeight;
+		ssao_.width = lround(size.Width); ssao_.height = lround(size.Height);
 		DXGI_FORMAT format = DXGI_FORMAT_R32_FLOAT;
 		ssao_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 		ssao_.resource = CreateRenderTarget(format, ssao_.width, ssao_.height, ssao_.state, nullptr, L"aoRT");
@@ -836,11 +836,7 @@ void Renderer::StartGeometryPass() {
 		commandList->RSSetScissorRects(1, &rtt_.GetScissorRect());
 		if (first) {
 			first = false;
-			CD3DX12_RESOURCE_BARRIER barriers[_countof(PipelineStates::deferredRTFmts)];
-			for (int i = 0; i < _countof(barriers); ++i) {
-				barriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_.res[i].Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			}
-			commandList->ResourceBarrier(_countof(barriers), barriers);
+			rtt_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(rtt_.view.cpuHandle);
 			// TODO:: should not clean downsampled depth RT
 			for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
@@ -1165,11 +1161,10 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	commandList->SetPipelineState(state.pipelineState.Get());
 	commandList->OMSetRenderTargets(1, &halfResDepth_.view.cpuHandle, false, nullptr);
 
-	// TODO:: why can't set this??? ==> DXGI_ANALYSIS screws up
-	auto cb = frame_->cb.Alloc(sizeof(float));
-	*((float*)cb.cpuAddress) = (float)depthStencil_.width / halfResDepth_.width;
 
 	auto entry = frame_->desc.Push(2);
+	auto cb = frame_->cb.Alloc(sizeof(float));
+	*((float*)cb.cpuAddress) = (float)depthStencil_.width / halfResDepth_.width;
 	frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
 	const int descSize = frame_->desc.GetDescriptorSize();
 	entry.cpuHandle.Offset(descSize);
@@ -1192,9 +1187,10 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	halfResDepth_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	PIX(PIXEndEvent(commandList));
 }
-
-void Renderer::SSAOPass(ID3D12GraphicsCommandList* commandList) {
+void Renderer::SSAOPass(const SSAOCmd& cmd) {
+	ID3D12GraphicsCommandList* commandList = deferredCommandList_.Get();
 	PIX(PIXBeginEvent(commandList, 0, L"SSAOPASS"));
+	DownsampleDepth(commandList);
 	auto* depth = &halfResDepth_;
 	depth->ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	ssao_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -1203,6 +1199,20 @@ void Renderer::SSAOPass(ID3D12GraphicsCommandList* commandList) {
 	commandList->SetPipelineState(state.pipelineState.Get());
 	commandList->RSSetViewports(1, &ssao_.GetViewport());
 	commandList->RSSetScissorRects(1, &ssao_.GetScissorRect());
+	commandList->OMSetRenderTargets(1, &ssao_.view.cpuHandle, false, nullptr);
+	rtt_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	auto entry = frame_->desc.Push(6);
+	frame_->BindCBV(entry.cpuHandle, cmd.ip);
+	frame_->BindCBV(entry.cpuHandle, cmd.scene);
+	frame_->BindCBV(entry.cpuHandle, cmd.ao);
+	frame_->BindSRV(entry.cpuHandle, depthStencil_.resource.Get());
+	frame_->BindSRV(entry.cpuHandle, rtt_.resources[(int)PipelineStates::RTTs::CompressedNormal].Get());
+	frame_->BindSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());
+
+	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
+	entry.gpuHandle.Offset(1, frame_->desc.GetDescriptorSize());
+	commandList->SetGraphicsRootDescriptorTable(1, entry.gpuHandle);
+
 	commandList->DrawInstanced(4, 1, 0, 0);
 	ssao_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	PIX(PIXEndEvent(commandList));
@@ -1212,16 +1222,11 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	ID3D12GraphicsCommandList* commandList = deferredCommandList_.Get();
 
 	PIX(PIXBeginEvent(commandList, 0, L"DoLightingPass"));
-	CD3DX12_RESOURCE_BARRIER presentResourceBarriers[RenderTargetCount];
-	for (int i = 0; i < RenderTargetCount; ++i)
-		presentResourceBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(rtt_.res[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	DownsampleDepth(commandList);
+	rtt_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	halfResDepth_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	// TODO:: done in startForwardPass presentResourceBarriers[RenderTargetCount + 1] = CD3DX12_RESOURCE_BARRIER::Transition(m_deviceResources->GetRenderTarget(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	commandList->RSSetViewports(1, &renderTargets_.GetViewport());
 	commandList->RSSetScissorRects(1, &renderTargets_.GetScissorRect());
-	commandList->ResourceBarrier(_countof(presentResourceBarriers), presentResourceBarriers);
 	auto& state = pipelineStates_.states_[DeferredPBR];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
@@ -1246,7 +1251,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	}
 	// RTs
 	for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
-		frame_->desc.CreateSRV(entry.cpuHandle, rtt_.res[j].Get());
+		frame_->desc.CreateSRV(entry.cpuHandle, rtt_.resources[j].Get());
 		entry.cpuHandle.Offset(descSize);
 	}
 	// Depth

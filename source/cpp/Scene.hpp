@@ -57,5 +57,6 @@ private:
 	std::vector<Object> modoObjects_;
 	TextureIndex cubeEnv_ = InvalidTexture;
 	ShaderStructures::DeferredCmd deferredCmd_;
+	ShaderStructures::SSAOCmd ssaoCmd_;
 	bool prepared_ = false;
 };

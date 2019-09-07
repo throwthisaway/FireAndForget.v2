@@ -25,5 +25,10 @@ public:
 		UINT size;
 	};
 	Entry Alloc(unsigned int size);
+	template<typename T> Entry Upload(const T& data) {
+		auto cb = Alloc(sizeof(T));
+		memcpy(cb.cpuAddress, &data, sizeof(T));
+		return cb;
+	}
 	void Reset();
 };

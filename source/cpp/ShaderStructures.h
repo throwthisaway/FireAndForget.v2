@@ -116,5 +116,10 @@ struct DeferredCmd {
 		BRDFLUT = InvalidTexture,
 		random = InvalidTexture;
 };
-
+struct SSAOCmd {
+	float4x4 ip;
+	SSAOScene scene;
+	AO ao;
+	TextureIndex random = InvalidTexture;
+};
 }

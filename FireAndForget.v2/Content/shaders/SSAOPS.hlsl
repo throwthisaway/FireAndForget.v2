@@ -12,12 +12,7 @@
 			"addressW = TEXTURE_ADDRESS_CLAMP," \
 			"filter = FILTER_MIN_MAG_MIP_LINEAR," \
 			"visibility = SHADER_VISIBILITY_PIXEL)"
-
-struct Scene {
-	float4x4 proj;
-	float2 vp;
-};
-ConstantBuffer<Scene> scene : register(b0);
+ConstantBuffer<SSAOScene> scene : register(b0);
 ConstantBuffer<AO> ao : register(b1);
 Texture2D<float> depth : register(t0);
 Texture2D<float2> random : register(t1);
@@ -52,7 +47,7 @@ float CalcAO(float2 uv, float3 center_pos, float3 n) {
 	const float2 sampling[] = { float2(-1.f, 0.f), float2(1.f, 0.f), float2(0.f, 1.f), float2(0.f, -1.f) };
 
 	float sum = 0.f, radius = ao.rad / center_pos.z;
-	float2 rnd = normalize(random.Sample(smp, scene.vp * uv / ao.random_size).rg * 2.f - 1.f);
+	float2 rnd = normalize(random.Sample(smp, scene.viewport * uv / ao.random_size).rg * 2.f - 1.f);
 	// TODO:: int iterations = lerp(6.0,2.0,p.z/g_far_clip);
 	for (int i = 0; i < ITERATION; i++) {
 		float2 c1 = reflect(sampling[i], rnd) * radius

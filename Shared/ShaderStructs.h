@@ -1,37 +1,33 @@
 #ifndef __SHADERSTRUCTS___
 #define __SHADERSTRUCTS___
-#ifndef MSVC_ALIGN16
-// when used inside shaders
-#define MSVC_ALIGN16
-#endif
-#ifndef CLANG_ALIGN16
-// when used inside shaders
-#define CLANG_ALIGN16
-#endif
 
-MSVC_ALIGN16 struct Object {
+struct Object {
 	float4x4 mvp, m;
 };
-MSVC_ALIGN16 struct Material {
-	CLANG_ALIGN16 float3 diffuse;
-	CLANG_ALIGN16 float2 metallic_roughness;
+struct Material {
+	float3 diffuse;
+	float2 metallic_roughness;
 };
-MSVC_ALIGN16 struct PointLight {
-	CLANG_ALIGN16 float3 diffuse;
-	CLANG_ALIGN16 float3 ambient;
-	CLANG_ALIGN16 float3 specular;
-	CLANG_ALIGN16 float3 pos;
+struct PointLight {
+	float3 diffuse;
+	float3 ambient;
+	float3 specular;
+	float3 pos;
 	float4 att_range;
 };
 #define MAX_LIGHTS 2
-MSVC_ALIGN16 struct SceneCB {
+struct SceneCB {
 	float4x4 ip, ivp;
 	PointLight light[MAX_LIGHTS];
-	CLANG_ALIGN16 float3 eyePos;
-	CLANG_ALIGN16 float2 nf;
+	float3 eyePos;
+	float2 nf;
 	float2 viewport;
 };
-MSVC_ALIGN16 struct AO {
+struct SSAOScene {
+	float4x4 proj;
+	float2 viewport;
+};
+struct AO {
 	float2 random_size;
 	float rad;
 	float scale;

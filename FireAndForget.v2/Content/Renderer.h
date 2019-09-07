@@ -51,13 +51,13 @@ public:
 	void StartGeometryPass();
 	void Submit(const ShaderStructures::DrawCmd& cmd);
 	void Submit(const ShaderStructures::ModoDrawCmd&);
+	void SSAOPass(const ShaderStructures::SSAOCmd& cmd);
 	void DoLightingPass(const ShaderStructures::DeferredCmd& cmd);
 
 	std::shared_ptr<DX::DeviceResources> m_deviceResources;
 	bool Ready() const { return loadingComplete_; }
 private:
 	void DownsampleDepth(ID3D12GraphicsCommandList*);
-	void SSAOPass(ID3D12GraphicsCommandList*);
 	void GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT fmt, int width, int height, uint32_t arraySize);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTarget(DXGI_FORMAT format, UINT width, UINT height, D3D12_RESOURCE_STATES state, D3D12_CLEAR_VALUE* clearValue = nullptr, LPCWSTR label = nullptr);
 
@@ -118,7 +118,7 @@ private:
 		}
 	}ssao_, halfResDepth_, depthStencil_;
 	struct {
-		Microsoft::WRL::ComPtr<ID3D12Resource> res[_countof(PipelineStates::deferredRTFmts)];
+		Microsoft::WRL::ComPtr<ID3D12Resource> resources[_countof(PipelineStates::deferredRTFmts)];
 		D3D12_RESOURCE_STATES state;
 		DescriptorFrameAlloc::Entry view;
 		UINT width, height;
@@ -127,6 +127,15 @@ private:
 		}
 		D3D12_RECT GetScissorRect() const {
 			return { 0, 0, (LONG)width, (LONG)height };
+		}
+		void ResourceTransition(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {
+			if (state != afterState) {
+				CD3DX12_RESOURCE_BARRIER barriers[_countof(resources)];
+				for (int i = 0; i < _countof(resources); ++i)
+					barriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(resources[i].Get(), state, afterState);
+				state = afterState;
+				commandList->ResourceBarrier(_countof(barriers), barriers);
+			}
 		}
 	}rtt_;
 	struct {
@@ -159,6 +168,13 @@ private:
 		CBFrameAlloc cb;
 		DescriptorFrameAlloc desc;
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> deferredCommandAllocator;
+		template<typename T>
+		void BindCBV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, const T& data) {
+			desc.BindCBV(cpuHandle, cb.Upload(data));
+		}
+		void BindSRV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, ID3D12Resource* resource) {
+			desc.BindSRV(cpuHandle, resource);
+		}
 	}frames_[ShaderStructures::FrameCount], *frame_;
 
 	

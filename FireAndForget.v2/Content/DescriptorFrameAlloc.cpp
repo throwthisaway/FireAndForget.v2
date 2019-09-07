@@ -102,6 +102,14 @@ void DescriptorFrameAlloc::CreateDSV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D
 	desc.Flags = D3D12_DSV_FLAG_NONE;
 	device_->CreateDepthStencilView(resource, &desc, cpuHandle);
 }
+void DescriptorFrameAlloc::BindCBV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, const CBFrameAlloc::Entry& cb) {
+	CreateCBV(cpuHandle, cb.gpuAddress, cb.size);
+	cpuHandle.Offset(descSize_);
+}
+void DescriptorFrameAlloc::BindSRV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, ID3D12Resource* resource) {
+	CreateSRV(cpuHandle, resource);
+	cpuHandle.Offset(descSize_);
+}
 void DescriptorFrameAlloc::Reset() {
 	index_ = 0;
 	offset_ = 0;
