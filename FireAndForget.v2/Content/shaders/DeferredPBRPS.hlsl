@@ -7,7 +7,7 @@
 ConstantBuffer<SceneCB> scene: register(b0);
 ConstantBuffer<AO> ao : register(b1);
 Texture2D<float4> texAlbedo : register(t0);
-Texture2D<float2> texNormal : register(t1);
+Texture2D<float4> texNormal : register(t1);
 Texture2D<float4> texMaterial : register(t2);
 #ifdef DEBUG_RT
 Texture2D<float4> texDebug : register(t3);
@@ -33,7 +33,7 @@ float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 float4 main(PS_UV input) : SV_TARGET{
 	float4 albedo = texAlbedo.Sample(smp, input.uv);
 	float4 debug = texDebug.Sample(smp, input.uv);
-	float3 n = Decode(texNormal.Sample(smp, input.uv).xy);
+	float3 n = texNormal.Sample(smp, input.uv).rgb;
 	float4 material = texMaterial.Sample(smp, input.uv);
 	float depth = texDepth.Sample(smp, input.uv).r;
 	// TODO:: better one with linear depth and without mat mult: https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
@@ -95,7 +95,7 @@ float4 main(PS_UV input) : SV_TARGET{
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
 	return float4(GammaCorrection(color), albedo.a);
-	//return float4(debug.rgb, albedo.a);
+	//return float4(n, 1.f);
 	/*float3 l = normalize(scene.light[0].pos - worldPos);
 	float d = max(0.f, dot(debug.rgb, l));
 	return float4(d, d, d, albedo.a);*/

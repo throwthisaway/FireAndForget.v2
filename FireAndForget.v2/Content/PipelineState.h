@@ -15,7 +15,7 @@ public:
 	enum class RTTs{Albedo, CompressedNormal, Material, Debug};
 	static constexpr DXGI_FORMAT deferredRTFmts[] = {
 		DXGI_FORMAT_R8G8B8A8_UNORM, // albedo
-		DXGI_FORMAT_R16G16_UNORM,	// compressed normals
+		DXGI_FORMAT_R16G16B16A16_FLOAT,	// normals
 		DXGI_FORMAT_R8G8B8A8_UNORM, // material properties
 #ifdef DEBUG_RT
 		DXGI_FORMAT_R32G32B32A32_FLOAT, // debug

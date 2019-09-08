@@ -21,7 +21,7 @@ MRTOut main(PS_UVNT input) {
 	float3 b = cross(n, t);
 	float3x3 tbn = float3x3(t, b, n);
 	n = mul(nTex, tbn);
-	output.normal = Encode(n);
+	output.normal = float4(n, 1.f);
 
 	float metallic = tMetallic.Sample(smp, input.uv).r;
 	float roughness = tRoughness.Sample(smp, input.uv).r;

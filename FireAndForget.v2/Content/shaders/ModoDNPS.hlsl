@@ -21,9 +21,9 @@ MRTOut main(PS_UVNT input) {
 	float3 b = cross(n, t);
 	float3x3 tbn = float3x3(t, b, n);
 	n = mul(nTex, tbn);
-	output.normal = Encode(n);
+	output.normal = float4(n, 1.f);
 
 	output.material = float4(mat.metallic_roughness, 0.f, 1.f);
-	output.debug = float4(n, 1.f);
+	//output.debug = float4(n, 1.f);
 	return output;
 }

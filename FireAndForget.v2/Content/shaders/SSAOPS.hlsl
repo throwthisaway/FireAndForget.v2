@@ -15,8 +15,8 @@
 ConstantBuffer<SSAOScene> scene : register(b0);
 ConstantBuffer<AO> ao : register(b1);
 Texture2D<float> depth : register(t0);
-Texture2D<float2> random : register(t1);
-Texture2D<float3> normal : register(t2);
+Texture2D<float3> normal : register(t1);
+Texture2D<float2> random : register(t2);
 SamplerState smp : register(s0);
 
 // from: https://github.com/d3dcoder/d3d12book/blob/master/Chapter%2021%20Ambient%20Occlusion/Ssao/Shaders/Ssao.hlsl
