@@ -1,10 +1,14 @@
 #pragma once
 #ifdef _MSC_VER
 #define MSVC_ALIGN16 _declspec(align(16))
+#define row_major
+#define column_major
 #define CLANG_ALIGN16
 #else /* if CLANG */
 #define CLANG_ALIGN16 __attribute__((aligned(16)))
 #define MSVC_ALIGN16
+#define row_major
+#define column_major
 #endif
 // TODO:: #define GLM_DEPTH_ZERO_TO_ONE
 // TODO:: #define GLM_LEFT_HANDED

@@ -131,7 +131,7 @@ void Scene::Render() {
 	}
 
 	renderer_->StartGeometryPass();
-	/*for (const auto& o : objects_) {
+	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
 		const auto& mesh = assets_.models[o.mesh];
 		for (const auto& l : mesh.layers) {
@@ -145,11 +145,11 @@ void Scene::Render() {
 				renderer_->Submit(cmd);
 			}
 		}
-	}*/
+	}
 
 	for (const auto& o : modoObjects_) {
 		const auto& mesh = assets_.meshes[o.mesh];
-		auto m = glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
+		auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
 		//m[3] += float4(l.pivot, 0.f);
 		auto mvp = camera_.vp * m;
 		for (const auto& submesh : mesh.submeshes) {
@@ -226,15 +226,17 @@ void Scene::SceneWindow() {
 	}
 	ImGui::End();
 }
+//static glm::vec3 rot;
 void Scene::UpdateSceneTransform() {
 	transform.pos += input.dpos;
 	auto rot = glm::inverse(glm::mat3(camera_.view)) * input.drot;
-	m = ScreenSpaceRotator({}, Transform{ transform.pos, transform.center, rot });
+	m = ScreenSpaceRotator(m, Transform{ transform.pos, transform.center, rot });
 	auto irotm = glm::transpose(float3x3(m));
-	for (auto& o : modoObjects_) {
+	/*for (auto& o : modoObjects_) {
 		o.pos += input.dpos;
 		o.rot = irotm * o.rot;
-	}
+		::rot = o.rot;
+	}*/
 }
 void Scene::Update(double frame, double total) {
 	assets_.Update(renderer_);
@@ -247,19 +249,23 @@ void Scene::Update(double frame, double total) {
 	renderer_->Update(frame, total);
 	ObjectsWindow();
 	SceneWindow();
+	/*ImGui::Begin("Rot Window");
+	ImGui::Text("%5.5g %5.5g %5.5g", rot.x, rot.y, rot.z);
+	ImGui::End();*/
 	for (const auto& o : objects_) {
 		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
 	}
 	camera_.Update();
-	auto ip = glm::inverse(camera_.proj);
-	ssaoCmd_.ip = ip;
+	ssaoCmd_.ip = camera_.ip;
 	ssaoCmd_.scene.proj = camera_.proj;
+	ssaoCmd_.scene.ip = camera_.ip;
+	ssaoCmd_.scene.ivp = camera_.ivp;
 	ssaoCmd_.scene.viewport = { (float)viewport_.width, (float)viewport_.height };
 
 	// need to determine it from view because of ScreenSpaceRotator...
 	deferredCmd_.scene.eyePos = camera_.eyePos;
 	// TODO:: WTF?
-	deferredCmd_.scene.ip = ip;
+	deferredCmd_.scene.ip = camera_.ip;
 	deferredCmd_.scene.ivp = camera_.ivp;
 	deferredCmd_.scene.nf.x = camera_.n; deferredCmd_.scene.nf.y = camera_.f;
 	deferredCmd_.scene.viewport = { (float)viewport_.width, (float)viewport_.height };

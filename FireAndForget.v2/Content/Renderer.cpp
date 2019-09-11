@@ -740,7 +740,7 @@ void Renderer::CreateWindowSizeDependentResources() {
 
 	// ssao
 	{
-		ssao_.width = lround(size.Width); ssao_.height = lround(size.Height);
+		ssao_.width = halfWidth; ssao_.height = halfHeight;
 		DXGI_FORMAT format = DXGI_FORMAT_R32_FLOAT;
 		ssao_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 		ssao_.resource = CreateRenderTarget(format, ssao_.width, ssao_.height, ssao_.state, nullptr, L"aoRT");

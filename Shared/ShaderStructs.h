@@ -2,7 +2,9 @@
 #define __SHADERSTRUCTS___
 
 struct Object {
-	float4x4 mvp, m;
+	// https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-per-component-math?redirectedfrom=MSDN#Matrix_Ordering
+	// or use #pragmapack_matrix directive in shader
+	row_major float4x4 mvp, m;
 };
 struct Material {
 	float3 diffuse;
@@ -24,7 +26,7 @@ struct SceneCB {
 	float2 viewport;
 };
 struct SSAOScene {
-	float4x4 proj;
+	float4x4 proj, ivp, ip;
 	float2 viewport;
 };
 struct AO {

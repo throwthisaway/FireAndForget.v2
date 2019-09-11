@@ -1,7 +1,7 @@
 #include "ShaderInput.hlsli"
 
 cbuffer cIP : register(b0) {
-	float4x4 ip;
+	row_major float4x4 ip;
 };
 struct PUV {
 	float2 pos, uv;
@@ -14,7 +14,7 @@ PS_PUV main(uint id : SV_VertexID) {
 	res.pos = float4(pos.x, -pos.y, 0.f, 1.f);
 	// https://github.com/d3dcoder/d3d12book/blob/master/Chapter%2021%20Ambient%20Occlusion/Ssao/Shaders/Ssao.hlsl
 	// to view space near-plane
-	float4 p = mul(ip, res.pos);
+	float4 p = mul(res.pos, ip);
 	res.p = p.xyz / p.w;
 	res.uv = uv[id];
 	return res;

@@ -23,7 +23,9 @@ SamplerState smp : register(s0);
 float NDCDepthToViewDepth(float zNDC, float4x4 proj) {
 	// z_ndc = A + B/viewZ, where proj[2,2]=A and proj[3,2]=B.
 	// [3][2] => [2][3] due to glm::mat4 in-memory representation
-	return proj[2][3] / (zNDC - proj[2][2]);
+	// seems like column major
+	float p23 = proj[2][3], p22 = proj[2][2];
+	return p23 / (zNDC - p22);
 }
 float3 WorldPosFormDepth(float depth, float3 pos) {
 	float z = NDCDepthToViewDepth(depth, scene.proj);
@@ -33,8 +35,15 @@ float3 WorldPosFormDepth(float depth, float3 pos) {
 	// t = p.z / pos.z
 	return (z / pos.z) * pos;
 }
+float3 WorldPosFormDepth2(float2 uv, float4x4 ip, float depth) {
+	float4 projected_pos = float4(uv * 2.f - 1.f, depth, 1.f);
+	projected_pos.y = -projected_pos.y;
+	float4 world_pos = mul(ip, projected_pos);
+	return world_pos.xyz / world_pos.w;
+}
 float AOPass(float2 uv, float3 center, float3 n) {
-	float3 worldPos = WorldPosFormDepth(depth.Sample(smp, uv).x, center);
+	float d = depth.Sample(smp, uv).x;
+	float3 worldPos = WorldPosFormDepth(d, center);
 	float3 diff = worldPos - center;
 	float len = length(diff);
 	float3 v = diff / len;
@@ -64,8 +73,10 @@ float CalcAO(float2 uv, float3 center_pos, float3 n) {
 }
 
 [RootSignature(RS)]
-float main(PS_PUV input) : SV_TARGET {
-	float3 worldPos = WorldPosFormDepth(depth.Sample(smp, input.uv).x, input.p);
+float main(PS_PUV input) : SV_TARGET{
+	float d = depth.Sample(smp, input.uv).x;
+	float3 worldPos2 = WorldPosFormDepth(d, input.p);
+	float3 worldPos = WorldPosFormDepth2(input.uv, scene.ip, d);
 	float3 n = normal.Sample(smp, input.uv);
 	return CalcAO(input.uv, worldPos, n);
 }
