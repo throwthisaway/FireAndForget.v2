@@ -1240,7 +1240,7 @@ void Renderer::SSAOPass(const SSAOCmd& cmd) {
 	frame_->BindCBV(entry.cpuHandle, ssao_.resource->GetGPUVirtualAddress(), ssao_.size256);
 	//auto kernel = SSAO::GenKernel();
 	//frame_->BindCBV()
-	frame_->BindSRV(entry.cpuHandle, depthStencil_.resource.Get());
+	frame_->BindSRV(entry.cpuHandle, depth->resource.Get());
 	frame_->BindSRV(entry.cpuHandle, deferredRT_.resources[(int)PipelineStates::RTTs::CompressedNormal].Get());
 	frame_->BindSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());
 
@@ -1329,15 +1329,15 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	PIXEndEvent(commandList);
 }
 
-std::array<glm::vec3, Renderer::SSAO::kKernelSize> Renderer::SSAO::GenKernel() {
-	std::array<glm::vec3, Renderer::SSAO::kKernelSize> result;
+std::array<glm::vec4, Renderer::SSAO::kKernelSize> Renderer::SSAO::GenKernel() {
+	std::array<glm::vec4, Renderer::SSAO::kKernelSize> result;
 	std::uniform_real_distribution dist(-1.f, 1.f);
 	// http://john-chapman-graphics.blogspot.com/2013/01/ssao-tutorial.html
 	for (int i = 0; i < kKernelSize; ++i) {
-		glm::vec3 v = { dist(mt), dist(mt), (dist(mt) * .5f + .5f) /*0..1*/ };
+		glm::vec4 v = { dist(mt), dist(mt), (dist(mt) * .5f + .5f) /*0..1*/, 0.f/*pad*/};
 		v = glm::normalize(v);
 		float scale = (dist(mt) * .5f + .5f) * .75f + .25f; /* 0.25..1*/
-		v = glm::mix(glm::vec3{}, v, scale * scale); 
+		v = glm::mix(glm::vec4{}, v, scale * scale); 
 		result[i] = v;
 	}
 	return result;

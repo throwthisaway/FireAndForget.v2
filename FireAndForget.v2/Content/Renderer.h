@@ -184,7 +184,7 @@ private:
 		static const int kKernelSize = 14;
 		size_t size256;
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
-		static std::array<glm::vec3, kKernelSize> GenKernel();
+		static std::array<glm::vec4, kKernelSize> GenKernel();
 	}ssao_;
 	bool loadingComplete_ = false;
 #ifdef DXGI_ANALYSIS

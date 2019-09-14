@@ -11,18 +11,25 @@
 			"addressV = TEXTURE_ADDRESS_CLAMP," \
 			"addressW = TEXTURE_ADDRESS_CLAMP," \
 			"filter = FILTER_MIN_MAG_MIP_LINEAR," \
+			"visibility = SHADER_VISIBILITY_PIXEL),"\
+		"StaticSampler(s1," \
+			"addressU = TEXTURE_ADDRESS_WRAP," \
+			"addressV = TEXTURE_ADDRESS_WRAP," \
+			"addressW = TEXTURE_ADDRESS_WRAP," \
+			"filter = FILTER_MIN_MAG_MIP_LINEAR," \
 			"visibility = SHADER_VISIBILITY_PIXEL)"
 static const int kKernelSize = 14;
 ConstantBuffer<SSAOScene> scene : register(b0);
 ConstantBuffer<AO> ao : register(b1);
 cbuffer cb : register(b2) {
-	float kernel[kKernelSize];
+	float3 kernel[kKernelSize];
 };
 
 Texture2D<float> tDepth : register(t0);
 Texture2D<float3> tNormal : register(t1);
 Texture2D<float3> tRandom : register(t2);
-SamplerState smp : register(s0);
+SamplerState smpLinearClamp : register(s0);
+SamplerState smpLinearWrap : register(s1);
 
 // from: https://github.com/d3dcoder/d3d12book/blob/master/Chapter%2021%20Ambient%20Occlusion/Ssao/Shaders/Ssao.hlsl
 float NDCDepthToViewDepth(float zNDC, float4x4 proj) {
@@ -80,15 +87,15 @@ struct MRTOut {
 	float4 debug : SV_TARGET1;
 };
 [RootSignature(RS)]
-MRTOut main(PS_PUV input) : SV_TARGET{
+MRTOut main(PS_PUV input) {
 	//float d = tDepth.Sample(smp, input.uv).x;
 	//float3 viewPos = ViewPosFromDepth(d, input.p);
 	////float3 worldPos = ViewPosFormDepth2(input.uv, scene.ip, d);
 	//float3 n = normal.Sample(smp, input.uv);
 	//return CalcAO(input.uv, viewPos, n);
-	float d = tDepth.Sample(smp, input.uv).x;
-	float3 n = tNormal.Sample(smp, input.uv).xyz;	// f16 no need to transform
-	float3 random = tRandom.Sample(smp, input.uv * ao.randomFactor).rgb * 2.f - 1.f;
+	float d = tDepth.Sample(smpLinearClamp, input.uv).x;
+	float3 n = tNormal.Sample(smpLinearClamp, input.uv).xyz;	// f16 no need to transform
+	float3 random = tRandom.Sample(smpLinearWrap, input.uv * ao.randomFactor).rgb * 2.f - 1.f;
 	float3 p = ViewPosFromDepth(d, input.p);
 	float occlusion = 0;
 	for (int i = 0; i < kKernelSize; ++i) {
@@ -100,7 +107,7 @@ MRTOut main(PS_PUV input) : SV_TARGET{
 		float4 qNDC = mul(float4(q, 1.f), scene.proj);
 		qNDC.xy = qNDC.xy * .5f + .5f;
 		qNDC.z /= qNDC.w;
-		float rd = tDepth.Sample(smp, qNDC.xy).x;
+		float rd = tDepth.Sample(smpLinearClamp, qNDC.xy).x;
 		float3 r = ViewPosFromDepth(rd, qNDC.xyz);
 		float3 rp = normalize(r - p);
 		occlusion += ao.intensity* dot(rp, n);
@@ -110,6 +117,6 @@ MRTOut main(PS_PUV input) : SV_TARGET{
 	occlusion /= kKernelSize;
 	MRTOut result;
 	result.ao = 1.f - occlusion;
-	result.debug = float4(p, 1.f);
+	result.debug = float4(random * .5f +.5f, 1.f);// float4(p, 1.f);
 	return result;
 }
