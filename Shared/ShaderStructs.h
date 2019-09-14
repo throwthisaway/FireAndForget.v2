@@ -26,11 +26,11 @@ struct SceneCB {
 	float2 viewport;
 };
 struct SSAOScene {
-	float4x4 proj, ivp, ip;
+	row_major float4x4 proj, ivp, ip;
 	float2 viewport;
 };
 struct AO {
-	float2 random_size;
+	float2 randomFactor;
 	float rad;
 	float scale;
 	float intensity;

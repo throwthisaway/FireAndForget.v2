@@ -255,17 +255,18 @@ namespace assets {
 			loadContext.LoadMesh(L"sphere.mesh", SPHERE),
 			loadContext.LoadMesh(L"textured_unit_cube.mesh", UNITCUBE),
 
+			loadContextModo.LoadMesh(L"textured_unit_cube_modo.mesh", UNITCUBE),
 			//loadContextModo.LoadMesh(L"light_modo.mesh", LIGHT),
 			//loadContextModo.LoadMesh(L"box_modo.mesh", PLACEHOLDER),
 			//loadContextModo.LoadMesh(L"checkerboard_modo.mesh", CHECKERBOARD),
 			//loadContextModo.LoadMesh(L"BEETHOVE_object_modo.mesh", BEETHOVEN),
 			//loadContextModo.LoadMesh(L"sphere_modo.mesh", SPHERE),
-			loadContextModo.LoadMesh(L"textured_unit_cube_modo.mesh", UNITCUBE),
 		//	loadContextModo.LoadMesh(L"test_torus.mesh"),
 			//loadContextModo.LoadMesh(L"checkerboard_modo.mesh"),
-			loadContextModo.LoadMesh(L"sphere_modo.mesh"),
+			//loadContextModo.LoadMesh(L"sphere_modo.mesh"),
 			//loadContextModo.LoadMesh(L"modo_ball_test.mesh"),
-			loadContextModo.LoadMesh(L"box_normal_map_test.mesh"),
+			//loadContextModo.LoadMesh(L"box_normal_map_test.mesh"),
+			loadContextModo.LoadMesh(L"BEETHOVE_object_modo.mesh"),
 		};
 		
 		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {

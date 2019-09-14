@@ -16,7 +16,7 @@ Texture2D<float> texDepth : register(t4);
 TextureCube<float4> texIrradiance : register(t5);
 TextureCube<float4> texPrefilteredEnv : register(t6);
 Texture2D<float2> texBRDFLUT : register(t7);
-Texture2D<float> texHalfResDepth : register(t8);
+Texture2D<float> texSSAO : register(t8);
 Texture2D<float2> texRandom : register(t9);
 SamplerState smp : register(s0);
 SamplerState linearSmp : register(s1);
@@ -73,7 +73,7 @@ float4 main(PS_UV input) : SV_TARGET{
 		kD *= 1.f - metallic;
 		Lo += (kD * albedo.rgb / M_PI_F + specular) * radiance * ndotl;
 	}
-	float ao = 0.f;// CalcAO(input.uv, worldPos, n, scene.viewport, scene.ivp, texHalfResDepth, texRandom);
+	float ao = texSSAO.Sample(linearSmp, input.uv).r;// CalcAO(input.uv, worldPos, n, scene.viewport, scene.ivp, texHalfResDepth, texRandom);
 	// 
 	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
 	float3 ks = f;
@@ -94,8 +94,9 @@ float4 main(PS_UV input) : SV_TARGET{
 	//
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
-	return float4(GammaCorrection(color), albedo.a);
-	//return float4(worldPos, 1.f);
+	//return float4(GammaCorrection(color), albedo.a);
+	return float4(ao, ao, ao, 1.f);
+	//return float4(debug.xyz, 1.f);
 	/*float3 l = normalize(scene.light[0].pos - worldPos);
 	float d = max(0.f, dot(debug.rgb, l));
 	return float4(d, d, d, albedo.a);*/

@@ -116,7 +116,7 @@ private:
 		D3D12_RECT GetScissorRect() const {
 			return { 0, 0, (LONG)width, (LONG)height };
 		}
-	}ssao_, halfResDepth_, depthStencil_;
+	}ssaoRT_, halfResDepthRT_, depthStencil_, ssaoDebugRT_;
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12Resource> resources[_countof(PipelineStates::deferredRTFmts)];
 		D3D12_RESOURCE_STATES state;
@@ -137,7 +137,7 @@ private:
 				commandList->ResourceBarrier(_countof(barriers), barriers);
 			}
 		}
-	}rtt_;
+	}deferredRT_;
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource[ShaderStructures::FrameCount];
 		D3D12_RESOURCE_STATES state[ShaderStructures::FrameCount];
@@ -172,13 +172,20 @@ private:
 		void BindCBV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, const T& data) {
 			desc.BindCBV(cpuHandle, cb.Upload(data));
 		}
+		void BindCBV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress, UINT size) {
+			desc.BindCBV(cpuHandle, gpuAddress, size);
+		}
 		void BindSRV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, ID3D12Resource* resource) {
 			desc.BindSRV(cpuHandle, resource);
 		}
 	}frames_[ShaderStructures::FrameCount], *frame_;
 
-	
-	//BufferIndex fsQuad_ = InvalidBuffer;
+	struct SSAO {
+		static const int kKernelSize = 14;
+		size_t size256;
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
+		static std::array<glm::vec3, kKernelSize> GenKernel();
+	}ssao_;
 	bool loadingComplete_ = false;
 #ifdef DXGI_ANALYSIS
 	Microsoft::WRL::ComPtr<IDXGraphicsAnalysis> pGraphicsAnalysis;

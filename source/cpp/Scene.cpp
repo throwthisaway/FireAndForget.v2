@@ -50,7 +50,7 @@ void Scene::PrepareScene() {
 	float y = -.5f;
 	for (int i = assets::Assets::STATIC_MODEL_COUNT; i < assets_.meshes.size(); ++i) {
 //		auto& mesh = assets_.meshes[i];
-		modoObjects_.push_back({{ 0.f, y, 0.f}, {}, (index_t)i});
+		modoObjects_.push_back({{ 0.f, y, 0.f}, {0.f, glm::pi<float>(), 0.f}, (index_t)i});
 		y += 1.f;
 	}
 	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
@@ -86,8 +86,8 @@ void Scene::PrepareScene() {
 	renderer_->BeginPrePass();
 	ssaoCmd_.random = deferredCmd_.random = assets_.textures[assets::Assets::RANDOM];
 	Dim dim = renderer_->GetDimensions(deferredCmd_.random);
-	deferredCmd_.ao.random_size.x = (float)dim.w;
-	deferredCmd_.ao.random_size.y = (float)dim.h;
+	deferredCmd_.ao.randomFactor.x = (float)(viewport_.width >> 1) / (float)dim.w;
+	deferredCmd_.ao.randomFactor.y = (float)(viewport_.height >> 1) / (float)dim.h;
 	ssaoCmd_.ao = deferredCmd_.ao;
 	const auto& mesh = assets_.meshes[assets::Assets::UNITCUBE];
 	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
@@ -131,21 +131,21 @@ void Scene::Render() {
 	}
 
 	renderer_->StartGeometryPass();
-	for (const auto& o : objects_) {
-		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
-		const auto& mesh = assets_.models[o.mesh];
-		for (const auto& l : mesh.layers) {
-			auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
-			m[3] += float4(l.pivot, 0.f);
-			auto mvp = camera_.vp * m;
-			for (const auto& submesh : l.submeshes) {
-				const auto& material = assets_.materials[submesh.material];
-				ShaderId shader = (submesh.texAlbedo != InvalidTexture && submesh.vertexType == VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
-				ShaderStructures::DrawCmd cmd{ m, mvp, submesh, material, mesh.vb, mesh.ib, shader};
-				renderer_->Submit(cmd);
-			}
-		}
-	}
+	//for (const auto& o : objects_) {
+	//	assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
+	//	const auto& mesh = assets_.models[o.mesh];
+	//	for (const auto& l : mesh.layers) {
+	//		auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
+	//		m[3] += float4(l.pivot, 0.f);
+	//		auto mvp = camera_.vp * m;
+	//		for (const auto& submesh : l.submeshes) {
+	//			const auto& material = assets_.materials[submesh.material];
+	//			ShaderId shader = (submesh.texAlbedo != InvalidTexture && submesh.vertexType == VertexType::PNT) ? ShaderStructures::Tex : ShaderStructures::Pos;
+	//			ShaderStructures::DrawCmd cmd{ m, mvp, submesh, material, mesh.vb, mesh.ib, shader};
+	//			renderer_->Submit(cmd);
+	//		}
+	//	}
+	//}
 
 	for (const auto& o : modoObjects_) {
 		const auto& mesh = assets_.meshes[o.mesh];
@@ -202,10 +202,10 @@ void Scene::SceneWindow() {
 		ImGui::DragFloat3("EyePos", (float*)& camera_.eyePos, 0.f, 100.f);
 	}
 	if (ImGui::CollapsingHeader("AO", &ui.aoOpen)) {
-		ImGui::SliderFloat("Intensity", &deferredCmd_.ao.intensity, 0.f, 1.f);
-		ImGui::SliderFloat("Radius", &deferredCmd_.ao.rad, 0.f, .1f);
-		ImGui::SliderFloat("Scale", &deferredCmd_.ao.scale, 0.f, 2.f);
-		ImGui::SliderFloat("Bias", &deferredCmd_.ao.bias, 0.f, 1.f);
+		ImGui::SliderFloat("Intensity", &ssaoCmd_.ao.intensity, 0.f, 1.f);
+		ImGui::SliderFloat("Radius", &ssaoCmd_.ao.rad, 0.f, .1f);
+		ImGui::SliderFloat("Scale", &ssaoCmd_.ao.scale, 0.f, 2.f);
+		ImGui::SliderFloat("Bias", &ssaoCmd_.ao.bias, 0.f, 1.f);
 	}
 	if (ImGui::CollapsingHeader("Lights", &ui.lightOpen)) {
 		for (int i = 0; i < MAX_LIGHTS; ++i) {

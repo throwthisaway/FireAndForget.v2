@@ -139,6 +139,20 @@ PipelineStates::PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferForma
 			pre = state;
 		}
 
+		{
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = {};
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 2;
+			state.RTVFormats[0] = DXGI_FORMAT_R32_FLOAT;
+			state.RTVFormats[1] = DXGI_FORMAT_R32G32B32A32_FLOAT; // debug
+			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			state.SampleDesc.Count = 1;
+			ssao = state;
+		}
 }
 
 PipelineStates::~PipelineStates() {}
@@ -248,7 +262,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDN, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNPS.cso", nullptr, { pntLayout, _countof(pntLayout) }, geometry, State::RenderPass::Geometry));
 	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDNMR, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNMRPS.cso", nullptr, { pntLayout, _countof(pntLayout) }, geometry, State::RenderPass::Geometry));
 #endif
-	shaderTasks.push_back(CreateShader(ShaderStructures::SSAO, ROOT_UNKNOWN, L"FSQuadViewPosVS.cso", L"SSAOPS.cso", nullptr, { {}, 0 }, depth, State::RenderPass::Lighting));
+	shaderTasks.push_back(CreateShader(ShaderStructures::SSAOShader, ROOT_UNKNOWN, L"FSQuadViewPosVS.cso", L"SSAOPS.cso", nullptr, { {}, 0 }, ssao, State::RenderPass::Lighting));
 	completionTask_ = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }
 

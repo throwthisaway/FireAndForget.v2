@@ -31,7 +31,7 @@ const ShaderId GenMipsOddYSRGB = 17; // SRGB
 const ShaderId GenMipsOddXOddYSRGB = 18; // SRGB
 const ShaderId ModoDNMR = 19;
 const ShaderId ModoDN = 20;
-const ShaderId SSAO = 21;
+const ShaderId SSAOShader = 21;
 const ShaderId Count = 22;
 const int RenderTargetCount = 4;
 
