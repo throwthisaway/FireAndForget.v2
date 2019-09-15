@@ -328,6 +328,12 @@
     <None Include="..\source\assets\box_normal_map_test.mesh">
       <Filter>Assets</Filter>
     </None>
+    <None Include="..\source\assets\BEETHOVE_high_modo.mesh">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\source\assets\BEETHOVE_subdivided_twice.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">

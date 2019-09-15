@@ -27,9 +27,10 @@ namespace ModoMeshLoader {
 	}
 	Result Load(const std::vector<uint8_t>& data) {
 		Result result;
+		size_t offset = 0, dataSize = data.size();
 		auto p = data.data();
 		auto end = data.data() + data.size();
-		while (p < data.data() + data.size()) {
+		while (p < end) {
 			uint32_t tag = *(uint32_t*)p; p+=sizeof(tag);
 			uint32_t size = *(uint32_t*)p; p+=sizeof(tag);
 			uint32_t count = *(uint32_t*)p; p+=sizeof(tag);
@@ -44,6 +45,7 @@ namespace ModoMeshLoader {
 			else
 				assert(false);
 			p+= size;
+			offset += size;
 		}
 		return result;
 	}

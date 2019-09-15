@@ -14,6 +14,7 @@
 #include <array>
 
 // TODO::
+// - polygon import crashes on beethoveen subdivided twice
 // - all embedded rootsignatures are read from the ps source
 // - depthstencil transition to depth write happens at the present resource barrier at the very end
 // - DownsampleDepth transitions depth stencil to pixel shader resouce

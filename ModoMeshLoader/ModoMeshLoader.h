@@ -28,7 +28,7 @@ namespace ModoMeshLoader {
 		unsigned textureMask;
 		unsigned uvCount;
 		Texture textures[(int)TextureTypes::kCount];
-		uint16_t count;
+		uint32_t count;
 	};
 
 	constexpr tag_t Tag(const char* t) {
