@@ -19,11 +19,14 @@
 			"filter = FILTER_MIN_MAG_MIP_LINEAR," \
 			"visibility = SHADER_VISIBILITY_PIXEL)"
 static const int kKernelSize = 14;
+static const float kEpsilon = .0001f;
+
 ConstantBuffer<SSAOScene> scene : register(b0);
 ConstantBuffer<AO> ao : register(b1);
-cbuffer cb : register(b2) {
-	float3 kernel[kKernelSize];
+struct Kernel {
+	float3 data[kKernelSize];
 };
+ConstantBuffer<Kernel> kernel: register(b2);
 
 Texture2D<float> tDepth : register(t0);
 Texture2D<float3> tNormal : register(t1);
@@ -35,7 +38,8 @@ SamplerState smpLinearWrap : register(s1);
 float NDCDepthToViewDepth(float zNDC, float4x4 proj) {
 	// z_ndc = A + B/viewZ, where proj[2,2]=A and proj[3,2]=B.
 	// [3][2] => [2][3] due scene.proj is row_major
-	float p23 = proj[3][2], p22 = proj[2][2];
+	// [3][2] is not adressing [3].z instead into the kernel array for some reason
+	float p23 = proj[3].z, p22 = proj[2].z;
 	return p23 / (zNDC - p22);
 }
 float3 ViewPosFromDepth(float depth, float3 pos) {
@@ -46,77 +50,48 @@ float3 ViewPosFromDepth(float depth, float3 pos) {
 	// t = p.z / pos.z
 	return (z / pos.z) * pos;
 }
-//float3 ViewPosFormDepth2(float2 uv, float4x4 ip, float depth) {
-//	float4 projected_pos = float4(uv * 2.f - 1.f, depth, 1.f);
-//	projected_pos.y = -projected_pos.y;
-//	float4 viewPos = mul(ip, projected_pos);
-//	return viewPos.xyz / viewPos.w;
-//}
-//float AOPass(float2 uv, float3 center, float3 n) {
-//	float d = depth.Sample(smp, uv).x;
-//	float3 viewPos = ViewPosFormDepth(d, center);
-//	float3 diff = viewPos - center;
-//	float len = length(diff);
-//	float3 v = diff / len;
-//	len *= ao.scale;
-//	return max(0.f, dot(v, n) - ao.bias) * 1.f / (1.f + len) * ao.intensity;
-//}
-//
-//#define ITERATION 4
-//float CalcAO(float2 uv, float3 center_pos, float3 n) {
-//	const float2 sampling[] = { float2(-1.f, 0.f), float2(1.f, 0.f), float2(0.f, 1.f), float2(0.f, -1.f) };
-//
-//	float sum = 0.f, radius = ao.rad / center_pos.z;
-//	float2 rnd = normalize(random.Sample(smp, scene.viewport * uv / ao.random_size).rg * 2.f - 1.f);
-//	// TODO:: int iterations = lerp(6.0,2.0,p.z/g_far_clip);
-//	for (int i = 0; i < ITERATION; i++) {
-//		float2 c1 = reflect(sampling[i], rnd) * radius
-//		, c2 = float2(c1.x * .70716f - c1.y * .70716f,
-//					  c1.x * .70716f + c1.y * .70716f);
-//
-//		sum += AOPass(uv + c1 * .25f, center_pos, n);
-//		sum += AOPass(uv + c1 * .75f, center_pos, n);
-//		sum += AOPass(uv + c2 * .5f, center_pos, n);
-//		sum += AOPass(uv + c2, center_pos, n);
-//	}
-//	sum /= (float)ITERATION * 4.f;
-//	return sum;
-//}
 struct MRTOut {
 	float ao : SV_TARGET0;
 	float4 debug : SV_TARGET1;
 };
 [RootSignature(RS)]
 MRTOut main(PS_PUV input) {
-	//float d = tDepth.Sample(smp, input.uv).x;
-	//float3 viewPos = ViewPosFromDepth(d, input.p);
-	////float3 worldPos = ViewPosFormDepth2(input.uv, scene.ip, d);
-	//float3 n = normal.Sample(smp, input.uv);
-	//return CalcAO(input.uv, viewPos, n);
+	MRTOut result;
 	float d = tDepth.Sample(smpLinearClamp, input.uv).x;
-	float3 n = tNormal.Sample(smpLinearClamp, input.uv).xyz;	// f16 no need to transform
+	float3 n = normalize(tNormal.Sample(smpLinearClamp, input.uv).xyz);	// f16 no need to transform
 	float3 random = tRandom.Sample(smpLinearWrap, input.uv * ao.randomFactor).rgb * 2.f - 1.f;
-	float3 p = ViewPosFromDepth(d, input.p);
+	float3 p = ViewPosFromDepth(d, input.p/*near clip plane viewpos*/);
 	float occlusion = 0;
+	// https://github.com/d3dcoder/d3d12book/blob/master/Chapter%2021%20Ambient%20Occlusion/Ssao/Shaders/Ssao.hlsl
 	for (int i = 0; i < kKernelSize; ++i) {
-		float3 sample = kernel[i];
-		sample = reflect(random, sample);
+		float3 sample = kernel.data[i];
+		//sample = reflect(random, sample);
 		float flip = sign(dot(sample, n));
 		float3 offset = flip * sample * ao.rad;
-		float3 q = p + offset *ao.scale; // q in view space
+		float3 q = p + offset * ao.scale; // q in view  space
 		float4 qNDC = mul(float4(q, 1.f), scene.proj);
-		qNDC.xy = qNDC.xy * .5f + .5f;
-		qNDC.z /= qNDC.w;
-		float rd = tDepth.Sample(smpLinearClamp, qNDC.xy).x;
-		float3 r = ViewPosFromDepth(rd, qNDC.xyz);
-		float3 rp = normalize(r - p);
-		occlusion += ao.intensity* dot(rp, n);
+		qNDC /= qNDC.w;
+		qNDC.xy = qNDC.xy * float2(.5f, -.5f) + .5f;
+		
+		float rz = tDepth.Sample(smpLinearClamp, qNDC.xy).x;
+		rz = NDCDepthToViewDepth(rz, scene.proj);
 		// r = t*q, rz = t*qz => r = rz/qz * q;
-		// TODO:: fade out
+		float3 r = (rz / q.z) * q;
+
+		float3 rp = normalize(r - p);
+		// occlusion factor
+		float occlusionFactor =	0.f;
+		float distZ = r.z - p.z;
+		if (distZ > kEpsilon) {
+			float fadeLength = ao.fadeEnd - ao.fadeStart;
+			occlusionFactor = saturate((ao.fadeEnd - distZ) / fadeLength);
+		}
+		occlusion += occlusionFactor * ao.intensity * max(dot(rp, n), 0.f);
+
 	}
 	occlusion /= kKernelSize;
-	MRTOut result;
 	result.ao = 1.f - occlusion;
-	result.debug = float4(random * .5f +.5f, 1.f);// float4(p, 1.f);
+	result.ao = pow(result.ao, 4.f);	
+	result.debug = float4(p, 1.f);
 	return result;
 }

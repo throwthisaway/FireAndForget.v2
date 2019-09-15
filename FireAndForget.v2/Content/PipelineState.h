@@ -12,7 +12,7 @@ class PipelineStates {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pre, rg16, depth, forward, geometry, lighting, ssao;
 	std::vector<Concurrency::task<void>> shaderTasks;
 public:
-	enum class RTTs{Albedo, CompressedNormal, Material, Debug};
+	enum class RTTs{Albedo, Normal, Material, Debug};
 	static constexpr DXGI_FORMAT deferredRTFmts[] = {
 		DXGI_FORMAT_R8G8B8A8_UNORM, // albedo
 		DXGI_FORMAT_R16G16B16A16_FLOAT,	// normals

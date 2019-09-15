@@ -137,7 +137,7 @@ private:
 				commandList->ResourceBarrier(_countof(barriers), barriers);
 			}
 		}
-	}deferredRT_;
+	}gbuffersRT_;
 	struct {
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource[ShaderStructures::FrameCount];
 		D3D12_RESOURCE_STATES state[ShaderStructures::FrameCount];

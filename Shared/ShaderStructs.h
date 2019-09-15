@@ -34,6 +34,7 @@ struct AO {
 	float rad;
 	float scale;
 	float intensity;
+	float fadeStart, fadeEnd;
 	float bias;
 };
 #endif

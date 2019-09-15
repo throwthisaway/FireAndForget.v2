@@ -47,11 +47,11 @@ void Scene::PrepareScene() {
 	objects_.push_back({ {}, {}, assets::Assets::PLACEHOLDER });
 	objects_.push_back({ {}, {}, assets::Assets::CHECKERBOARD });
 	objects_.push_back({ { 0.f, .5f, 0.f }, {}, assets::Assets::BEETHOVEN });
-	float y = -.5f;
+	float z = -.5f;
 	for (int i = assets::Assets::STATIC_MODEL_COUNT; i < assets_.meshes.size(); ++i) {
 //		auto& mesh = assets_.meshes[i];
-		modoObjects_.push_back({{ 0.f, y, 0.f}, {0.f, glm::pi<float>(), 0.f}, (index_t)i});
-		y += 1.f;
+		modoObjects_.push_back({{ 0.f, 0.f, z}, {0.f, glm::pi<float>(), 0.f}, (index_t)i});
+		z += 1.f;
 	}
 	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
 	const float incX = 2.4f, incY = 2.9f;
@@ -77,6 +77,8 @@ void Scene::PrepareScene() {
 	deferredCmd_.ao.rad = .04f;
 	deferredCmd_.ao.scale = 1.f;
 	deferredCmd_.ao.intensity = 1.f;
+	deferredCmd_.ao.fadeStart = 1.f;
+	deferredCmd_.ao.fadeEnd = 10.f;
 
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
 		deferredCmd_.scene.light[i] = defaultPointLight;
@@ -205,6 +207,8 @@ void Scene::SceneWindow() {
 		ImGui::SliderFloat("Intensity", &ssaoCmd_.ao.intensity, 0.f, 1.f);
 		ImGui::SliderFloat("Radius", &ssaoCmd_.ao.rad, 0.f, .1f);
 		ImGui::SliderFloat("Scale", &ssaoCmd_.ao.scale, 0.f, 2.f);
+		ImGui::SliderFloat("Fade start", &ssaoCmd_.ao.fadeStart, 0.f, 50.f);
+		ImGui::SliderFloat("Fade end", &ssaoCmd_.ao.fadeEnd, 0.f, 50.f);
 		ImGui::SliderFloat("Bias", &ssaoCmd_.ao.bias, 0.f, 1.f);
 	}
 	if (ImGui::CollapsingHeader("Lights", &ui.lightOpen)) {

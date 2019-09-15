@@ -265,7 +265,7 @@ namespace assets {
 			//loadContextModo.LoadMesh(L"checkerboard_modo.mesh"),
 			//loadContextModo.LoadMesh(L"sphere_modo.mesh"),
 			//loadContextModo.LoadMesh(L"modo_ball_test.mesh"),
-			//loadContextModo.LoadMesh(L"box_normal_map_test.mesh"),
+			loadContextModo.LoadMesh(L"box_normal_map_test.mesh"),
 			loadContextModo.LoadMesh(L"BEETHOVE_object_modo.mesh"),
 		};
 		

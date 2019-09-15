@@ -17,7 +17,7 @@ TextureCube<float4> texIrradiance : register(t5);
 TextureCube<float4> texPrefilteredEnv : register(t6);
 Texture2D<float2> texBRDFLUT : register(t7);
 Texture2D<float> texSSAO : register(t8);
-Texture2D<float2> texRandom : register(t9);
+Texture2D<float4> texSSAODebug : register(t9);
 SamplerState smp : register(s0);
 SamplerState linearSmp : register(s1);
 SamplerState linearClampSmp : register(s2);
@@ -33,7 +33,7 @@ float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 float4 main(PS_UV input) : SV_TARGET{
 	float4 albedo = texAlbedo.Sample(smp, input.uv);
 	float4 debug = texDebug.Sample(smp, input.uv);
-	float3 n = texNormal.Sample(smp, input.uv).rgb;
+	float3 n = normalize(texNormal.Sample(smp, input.uv).rgb);
 	float4 material = texMaterial.Sample(smp, input.uv);
 	float depth = texDepth.Sample(smp, input.uv).r;
 	// TODO:: better one with linear depth and without mat mult: https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
@@ -86,17 +86,20 @@ float4 main(PS_UV input) : SV_TARGET{
 	/*in the PBR fragment shader in line R = reflect(-V,N) - flip the sign of V.
 	 Also I noticed author of this amazing article did't multiply reflected vector by inverse ModelView matrix. While it look fine in this example in a place where view matrix is rotated(with env cubemap) you'll really notice how it's going off.*/
 	const float max_ref_lod = 4.f;	// TODO:: pass it as constant buffer
-	float3 prefilerColor = texPrefilteredEnv.SampleLevel(linearSmp, r, roughness * max_ref_lod).rgb;
+	float3 prefilterColor = texPrefilteredEnv.SampleLevel(linearSmp, r, roughness * max_ref_lod).rgb;
 
 	float2 envBRDF = texBRDFLUT.Sample(linearClampSmp, float2(ndotv, roughness)).rg;
-	float3 specular = prefilerColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnel Shlick
-	float3 ambient = (kd * diffuse + specular) - ao; // * aoResult;
+	float3 specular = prefilterColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnel Shlick
+	float3 ambient = (kd * diffuse + specular) * ao;
 	//
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
-	//return float4(GammaCorrection(color), albedo.a);
-	return float4(ao, ao, ao, 1.f);
-	//return float4(debug.xyz, 1.f);
+	return float4(GammaCorrection(color), albedo.a);
+	//return float4(ao, ao, ao, 1.f);
+	//float4 ssaoDebug = texSSAODebug.Sample(linearClampSmp, input.uv);
+	//return float4(ssaoDebug.xyz, 1.f);
+	//float4 vp = mul(scene.ip, debug);
+	//return float4(vp.xyz, 1.f);
 	/*float3 l = normalize(scene.light[0].pos - worldPos);
 	float d = max(0.f, dot(debug.rgb, l));
 	return float4(d, d, d, albedo.a);*/

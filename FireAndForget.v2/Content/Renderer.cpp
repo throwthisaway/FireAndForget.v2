@@ -728,16 +728,16 @@ void Renderer::CreateWindowSizeDependentResources() {
 
 	D3D12_CLEAR_VALUE clearValue;
 	memcpy(clearValue.Color, Black, sizeof(clearValue.Color));
-	deferredRT_.view = rtvDescAlloc_.Push(_countof(PipelineStates::deferredRTFmts));
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = deferredRT_.view.cpuHandle;
-	deferredRT_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	deferredRT_.width = lround(size.Width); deferredRT_.height = lround(size.Height);
+	gbuffersRT_.view = rtvDescAlloc_.Push(_countof(PipelineStates::deferredRTFmts));
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = gbuffersRT_.view.cpuHandle;
+	gbuffersRT_.state = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	gbuffersRT_.width = lround(size.Width); gbuffersRT_.height = lround(size.Height);
 	for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
 		clearValue.Format = PipelineStates::deferredRTFmts[j];
 		WCHAR label[25];
 		swprintf_s(label, L"deferredRT[%u]", j);
-		deferredRT_.resources[j] = CreateRenderTarget(PipelineStates::deferredRTFmts[j], deferredRT_.width, deferredRT_.height, deferredRT_.state, &clearValue, label);
-		rtvDescAlloc_.CreateRTV(handle, deferredRT_.resources[j].Get(), PipelineStates::deferredRTFmts[j]);
+		gbuffersRT_.resources[j] = CreateRenderTarget(PipelineStates::deferredRTFmts[j], gbuffersRT_.width, gbuffersRT_.height, gbuffersRT_.state, &clearValue, label);
+		rtvDescAlloc_.CreateRTV(handle, gbuffersRT_.resources[j].Get(), PipelineStates::deferredRTFmts[j]);
 		handle.Offset(rtvDescAlloc_.GetDescriptorSize());
 	}
 
@@ -862,19 +862,19 @@ void Renderer::StartGeometryPass() {
 		auto& state = pipelineStates_.states_[i];
 		if (state.pass != PipelineStates::State::RenderPass::Geometry) continue;
 		auto* commandList = commandLists_[i].Get();
-		commandList->RSSetViewports(1, &deferredRT_.GetViewport());
-		commandList->RSSetScissorRects(1, &deferredRT_.GetScissorRect());
+		commandList->RSSetViewports(1, &gbuffersRT_.GetViewport());
+		commandList->RSSetScissorRects(1, &gbuffersRT_.GetScissorRect());
 		if (first) {
 			first = false;
-			deferredRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(deferredRT_.view.cpuHandle);
+			gbuffersRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(gbuffersRT_.view.cpuHandle);
 			// TODO:: should not clean downsampled depth RT
 			for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
 				commandList->ClearRenderTargetView(handle, Black, 0, nullptr);
 				handle.Offset(rtvDescAlloc_.GetDescriptorSize());
 			}
 		}
-		commandList->OMSetRenderTargets(_countof(PipelineStates::deferredRTFmts), &deferredRT_.view.cpuHandle, true, &depthStencil_.view.cpuHandle);
+		commandList->OMSetRenderTargets(_countof(PipelineStates::deferredRTFmts), &gbuffersRT_.view.cpuHandle, true, &depthStencil_.view.cpuHandle);
 		commandList->SetPipelineState(state.pipelineState.Get());
 		// Set the graphics root signature and descriptor heaps to be used by this frame.
 		commandList->SetGraphicsRootSignature(state.rootSignature.Get());
@@ -1223,7 +1223,7 @@ void Renderer::SSAOPass(const SSAOCmd& cmd) {
 	DownsampleDepth(commandList);
 	auto* depth = &halfResDepthRT_;
 	depth->ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	deferredRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE); // normal rt needed
+	gbuffersRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE); // normal rt needed
 	ssaoRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	ssaoDebugRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	auto& state = pipelineStates_.states_[SSAOShader];
@@ -1238,10 +1238,8 @@ void Renderer::SSAOPass(const SSAOCmd& cmd) {
 	frame_->BindCBV(entry.cpuHandle, cmd.scene);
 	frame_->BindCBV(entry.cpuHandle, cmd.ao);
 	frame_->BindCBV(entry.cpuHandle, ssao_.resource->GetGPUVirtualAddress(), ssao_.size256);
-	//auto kernel = SSAO::GenKernel();
-	//frame_->BindCBV()
 	frame_->BindSRV(entry.cpuHandle, depth->resource.Get());
-	frame_->BindSRV(entry.cpuHandle, deferredRT_.resources[(int)PipelineStates::RTTs::CompressedNormal].Get());
+	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::Normal].Get());
 	frame_->BindSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());
 
 	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
@@ -1250,6 +1248,7 @@ void Renderer::SSAOPass(const SSAOCmd& cmd) {
 
 	commandList->DrawInstanced(4, 1, 0, 0);
 	ssaoRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	ssaoDebugRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	PIX(PIXEndEvent(commandList));
 }
 void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
@@ -1257,7 +1256,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	ID3D12GraphicsCommandList* commandList = deferredCommandList_.Get();
 
 	PIX(PIXBeginEvent(commandList, 0, L"DoLightingPass"));
-	deferredRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	gbuffersRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	ssaoRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	depthStencil_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
@@ -1287,7 +1286,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	}
 	// RTs
 	for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
-		frame_->desc.CreateSRV(entry.cpuHandle, deferredRT_.resources[j].Get());
+		frame_->desc.CreateSRV(entry.cpuHandle, gbuffersRT_.resources[j].Get());
 		entry.cpuHandle.Offset(descSize);
 	}
 	// Depth
@@ -1306,8 +1305,8 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	// SSAO
 	frame_->desc.CreateSRV(entry.cpuHandle, ssaoRT_.resource.Get());
 	entry.cpuHandle.Offset(descSize);
-	// Random
-	frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());
+	// SSAO debug
+	frame_->desc.CreateSRV(entry.cpuHandle, ssaoDebugRT_.resource.Get());
 	entry.cpuHandle.Offset(descSize);
 
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
@@ -1334,7 +1333,7 @@ std::array<glm::vec4, Renderer::SSAO::kKernelSize> Renderer::SSAO::GenKernel() {
 	std::uniform_real_distribution dist(-1.f, 1.f);
 	// http://john-chapman-graphics.blogspot.com/2013/01/ssao-tutorial.html
 	for (int i = 0; i < kKernelSize; ++i) {
-		glm::vec4 v = { dist(mt), dist(mt), (dist(mt) * .5f + .5f) /*0..1*/, 0.f/*pad*/};
+		glm::vec4 v = { dist(mt), dist(mt), (dist(mt)/* * .5f + .5f*/) /*0..1*/, 0.f/*pad*/};
 		v = glm::normalize(v);
 		float scale = (dist(mt) * .5f + .5f) * .75f + .25f; /* 0.25..1*/
 		v = glm::mix(glm::vec4{}, v, scale * scale); 
