@@ -61,6 +61,14 @@ private:
 	void GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT fmt, int width, int height, uint32_t arraySize);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTarget(DXGI_FORMAT format, UINT width, UINT height, D3D12_RESOURCE_STATES state, D3D12_CLEAR_VALUE* clearValue = nullptr, LPCWSTR label = nullptr);
 
+	template<int RTCount> struct RTDesc {
+		D3D12_VIEWPORT viewport;
+		D3D12_RECT scissorRect;
+		D3D12_CPU_DESCRIPTOR_HANDLE rts[RTCount];
+	};
+	template<int RTCount> void Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RTDesc<RTCount>& rtDesc, PCWSTR eventName = nullptr);
+	void Blur4x4R32Pass();
+
 	DXGI_FORMAT backbufferFormat_, 
 		depthresourceFormat_ = DXGI_FORMAT_R32_TYPELESS, 
 		depthbufferFormat_ = DXGI_FORMAT_D32_FLOAT;
@@ -98,57 +106,28 @@ private:
 
 	// render targets
 	DescriptorFrameAlloc rtvDescAlloc_, dsvDescAlloc_;
-	struct {
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-		D3D12_RESOURCE_STATES state;
+	template<int ResourceCount>
+	struct RT {
+		Microsoft::WRL::ComPtr<ID3D12Resource> resources[ResourceCount];
+		D3D12_RESOURCE_STATES states[ResourceCount];
 		DescriptorFrameAlloc::Entry view;
 		UINT width, height;
 		void ResourceTransition(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {
-			if (state != afterState) {
-				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource.Get(), state, afterState);
-				state = afterState;
-				commandList->ResourceBarrier(1, &barrier);
+			CD3DX12_RESOURCE_BARRIER barriers[_countof(resources)];
+			int count = 0;
+			for (int i = 0; i < _countof(resources); ++i) {
+				if (states[i] == afterState) continue;
+				barriers[count] = CD3DX12_RESOURCE_BARRIER::Transition(resources[i].Get(), states[i], afterState);
+				states[count] = afterState;
+				++count;
 			}
+			if (count) commandList->ResourceBarrier(count, barriers);
 		}
-		D3D12_VIEWPORT GetViewport() const {
-			return { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
-		}
-		D3D12_RECT GetScissorRect() const {
-			return { 0, 0, (LONG)width, (LONG)height };
-		}
-	}ssaoRT_, halfResDepthRT_, depthStencil_, ssaoDebugRT_;
-	struct {
-		Microsoft::WRL::ComPtr<ID3D12Resource> resources[_countof(PipelineStates::deferredRTFmts)];
-		D3D12_RESOURCE_STATES state;
-		DescriptorFrameAlloc::Entry view;
-		UINT width, height;
-		D3D12_VIEWPORT GetViewport() const {
-			return { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
-		}
-		D3D12_RECT GetScissorRect() const {
-			return { 0, 0, (LONG)width, (LONG)height };
-		}
-		void ResourceTransition(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES afterState) {
-			if (state != afterState) {
-				CD3DX12_RESOURCE_BARRIER barriers[_countof(resources)];
-				for (int i = 0; i < _countof(resources); ++i)
-					barriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(resources[i].Get(), state, afterState);
-				state = afterState;
-				commandList->ResourceBarrier(_countof(barriers), barriers);
-			}
-		}
-	}gbuffersRT_;
-	struct {
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource[ShaderStructures::FrameCount];
-		D3D12_RESOURCE_STATES state[ShaderStructures::FrameCount];
-		DescriptorFrameAlloc::Entry view;
-		UINT width, height;
 		void ResourceTransition(ID3D12GraphicsCommandList* commandList, int index, D3D12_RESOURCE_STATES afterState) {
-			if (state[index] != afterState) {
-				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource[index].Get(), state[index], afterState);
-				state[index] = afterState;
-				commandList->ResourceBarrier(1, &barrier);
-			}
+			if (states[index] == afterState) return;
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resources[index].Get(), states[index], afterState);
+			states[index] = afterState;
+			commandList->ResourceBarrier(1, &barrier);
 		}
 		D3D12_VIEWPORT GetViewport() const {
 			return { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
@@ -156,9 +135,13 @@ private:
 		D3D12_RECT GetScissorRect() const {
 			return { 0, 0, (LONG)width, (LONG)height };
 		}
+	};
+	RT<1> ssaoRT_, halfResDepthRT_, depthStencil_, ssaoDebugRT_;
+	RT<_countof(PipelineStates::deferredRTFmts)> gbuffersRT_;
+	RT<ShaderStructures::FrameCount> renderTargets_;
 
-	}renderTargets_;
-	ID3D12Resource* GetRenderTarget() { return renderTargets_.resource[GetCurrenFrameIndex()].Get(); }
+	// helper for retrieving the currently active final rendertarget
+	ID3D12Resource* GetRenderTarget() { return renderTargets_.resources[GetCurrenFrameIndex()].Get(); }
 	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView() {
 		return CD3DX12_CPU_DESCRIPTOR_HANDLE(renderTargets_.view.cpuHandle, GetCurrenFrameIndex(), rtvDescAlloc_.GetDescriptorSize());
 	}
@@ -183,7 +166,7 @@ private:
 	struct SSAO {
 		static const int kKernelSize = 14;
 		size_t size256;
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
+		Microsoft::WRL::ComPtr<ID3D12Resource> kernelResource = nullptr;
 		static std::array<glm::vec4, kKernelSize> GenKernel();
 	}ssao_;
 	bool loadingComplete_ = false;

@@ -32,7 +32,8 @@ const ShaderId GenMipsOddXOddYSRGB = 18; // SRGB
 const ShaderId ModoDNMR = 19;
 const ShaderId ModoDN = 20;
 const ShaderId SSAOShader = 21;
-const ShaderId Count = 22;
+const ShaderId Blur4x4R32 = 22;
+const ShaderId Count = 23;
 const int RenderTargetCount = 4;
 
 // resource types

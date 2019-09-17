@@ -47,11 +47,11 @@ void Scene::PrepareScene() {
 	objects_.push_back({ {}, {}, assets::Assets::PLACEHOLDER });
 	objects_.push_back({ {}, {}, assets::Assets::CHECKERBOARD });
 	objects_.push_back({ { 0.f, .5f, 0.f }, {}, assets::Assets::BEETHOVEN });
-	float z = -.5f;
+	float y = -0.25f;// -.5f * (assets_.meshes.size() >> 1);
 	for (int i = assets::Assets::STATIC_MODEL_COUNT; i < assets_.meshes.size(); ++i) {
 //		auto& mesh = assets_.meshes[i];
-		modoObjects_.push_back({{ 0.f, 0.f, z}, {0.f, glm::pi<float>(), 0.f}, (index_t)i});
-		z += 1.f;
+		modoObjects_.push_back({{ 0.f, y, 0.f}, {0.f, glm::pi<float>(), 0.f}, (index_t)i});
+		y += .5f;
 	}
 	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
 	const float incX = 2.4f, incY = 2.9f;

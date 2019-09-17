@@ -153,6 +153,20 @@ PipelineStates::PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferForma
 			state.SampleDesc.Count = 1;
 			ssao = state;
 		}
+
+		{
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = {};
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 1;
+			state.RTVFormats[0] = DXGI_FORMAT_R32_FLOAT;
+			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			state.SampleDesc.Count = 1;
+			r32 = state;
+		}
 }
 
 PipelineStates::~PipelineStates() {}
@@ -263,6 +277,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDNMR, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNMRPS.cso", nullptr, { pntLayout, _countof(pntLayout) }, geometry, State::RenderPass::Geometry));
 #endif
 	shaderTasks.push_back(CreateShader(ShaderStructures::SSAOShader, ROOT_UNKNOWN, L"FSQuadViewPosVS.cso", L"SSAOPS.cso", nullptr, { {}, 0 }, ssao, State::RenderPass::Lighting));
+	shaderTasks.push_back(CreateShader(ShaderStructures::Blur4x4R32, ROOT_UNKNOWN, L"FSQuadVS.cso", L"Blur4x4R32.cso", nullptr, { {}, 0 }, r32, State::RenderPass::Post));
 	completionTask_ = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }
 

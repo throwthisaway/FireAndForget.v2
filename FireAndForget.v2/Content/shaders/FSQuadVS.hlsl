@@ -1,8 +1,5 @@
 #include "ShaderInput.hlsli"
 
-struct PUV {
-	float2 pos, uv;
-};
 static const float2 uv[] = { { 0.f, 1.f }, { 0.f, 0.f }, { 1.f, 1.f }, { 1.f, 0.f } };
 
 PS_UV main(uint id : SV_VertexID) {

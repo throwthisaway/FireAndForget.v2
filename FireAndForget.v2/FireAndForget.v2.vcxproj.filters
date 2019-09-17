@@ -458,5 +458,8 @@
     <FxCompile Include="Content\shaders\SSAOPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Content\shaders\Blur4x4R32.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

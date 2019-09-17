@@ -9,7 +9,7 @@ namespace DX {
 
 class PipelineStates {
 	ID3D12Device* device;
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC pre, rg16, depth, forward, geometry, lighting, ssao;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC pre, rg16, depth, forward, geometry, lighting, ssao, r32;
 	std::vector<Concurrency::task<void>> shaderTasks;
 public:
 	enum class RTTs{Albedo, Normal, Material, Debug};

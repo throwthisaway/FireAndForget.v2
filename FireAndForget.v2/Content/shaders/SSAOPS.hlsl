@@ -78,14 +78,15 @@ MRTOut main(PS_PUV input) {
 		// r = t*q, rz = t*qz => r = rz/qz * q;
 		float3 r = (rz / q.z) * q;
 
-		float3 rp = normalize(r - p);
+		
 		// occlusion factor
 		float occlusionFactor =	0.f;
 		float distZ = r.z - p.z;
 		if (distZ > kEpsilon) {
 			float fadeLength = ao.fadeEnd - ao.fadeStart;
-			occlusionFactor = saturate((ao.fadeEnd - distZ) / fadeLength);
+			occlusionFactor = 1.f;// saturate((ao.fadeEnd - distZ) / fadeLength);
 		}
+		float3 rp = normalize(r - p);
 		occlusion += occlusionFactor * ao.intensity * max(dot(rp, n), 0.f);
 
 	}
