@@ -45,6 +45,7 @@ void DescriptorFrameAlloc::CreateCBV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D1
 }
 
 void DescriptorFrameAlloc::CreateSRV(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, ID3D12Resource* resource) {
+	assert(resource);
 	const auto desc = resource->GetDesc();
 	D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
 	srv.Format = (desc.Format == DXGI_FORMAT_R32_TYPELESS) ? DXGI_FORMAT_R32_FLOAT : desc.Format;

@@ -67,7 +67,7 @@ private:
 		D3D12_CPU_DESCRIPTOR_HANDLE rts[RTCount];
 	};
 	template<int RTCount> void Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RTDesc<RTCount>& rtDesc, PCWSTR eventName = nullptr);
-	void Blur4x4R32Pass();
+	void SSAOBlurPass(ID3D12GraphicsCommandList*);
 
 	DXGI_FORMAT backbufferFormat_, 
 		depthresourceFormat_ = DXGI_FORMAT_R32_TYPELESS, 
@@ -136,7 +136,7 @@ private:
 			return { 0, 0, (LONG)width, (LONG)height };
 		}
 	};
-	RT<1> ssaoRT_, halfResDepthRT_, depthStencil_, ssaoDebugRT_;
+	RT<1> ssaoRT_, halfResDepthRT_, depthStencil_, ssaoDebugRT_, ssaoBlurRT_;
 	RT<_countof(PipelineStates::deferredRTFmts)> gbuffersRT_;
 	RT<ShaderStructures::FrameCount> renderTargets_;
 

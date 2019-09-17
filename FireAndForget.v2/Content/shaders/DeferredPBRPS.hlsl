@@ -94,8 +94,8 @@ float4 main(PS_UV input) : SV_TARGET{
 	//
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
-	return float4(GammaCorrection(color), albedo.a);
-	//return float4(ao, ao, ao, 1.f);
+	//return float4(GammaCorrection(color), albedo.a);
+	return float4(ao, ao, ao, 1.f);
 	//float4 ssaoDebug = texSSAODebug.Sample(linearClampSmp, input.uv);
 	//return float4(ssaoDebug.xyz, 1.f);
 	//float4 vp = mul(scene.ip, debug);
