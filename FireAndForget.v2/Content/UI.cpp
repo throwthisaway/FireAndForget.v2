@@ -8,7 +8,7 @@
 //#include <d3d11on12.h>
 //#include "imgui_impl_dx11.h"
 
-namespace UI {
+namespace ui {
 	using namespace Microsoft::WRL;
 	namespace {
 		// Data

@@ -122,7 +122,7 @@ void App::Run()
 					m_main->Update();
 				}
 				PIXEndEvent(commandQueue);
-				UI::UpdateMouseCursor(m_window.Get());
+				DEBUGUI(ui::UpdateMouseCursor(m_window.Get()));
 				PIXBeginEvent(commandQueue, 0, L"Render");
 				{
 					if (m_main->Render())
@@ -185,7 +185,7 @@ void App::OnResuming(Platform::Object^ sender, Platform::Object^ args)
 void App::OnWindowSizeChanged(CoreWindow^ sender, WindowSizeChangedEventArgs^ args)
 {
 	GetDeviceResources()->WaitForGpu();
-	UI::BeforeResize();
+	DEBUGUI(ui::BeforeResize());
 	GetDeviceResources()->SetLogicalSize(Size(sender->Bounds.Width, sender->Bounds.Height));
 	m_main->OnWindowSizeChanged();
 }
@@ -253,10 +253,11 @@ std::shared_ptr<DX::DeviceResources> App::GetDeviceResources()
 
 void App::OnPointerMoved(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
 {
-	UI::UpdateKeyboardModifiers(args->KeyModifiers == VirtualKeyModifiers::Control, args->KeyModifiers == VirtualKeyModifiers::Menu, args->KeyModifiers == VirtualKeyModifiers::Shift);
+	DEBUGUI(ui::UpdateKeyboardModifiers(args->KeyModifiers == VirtualKeyModifiers::Control, args->KeyModifiers == VirtualKeyModifiers::Menu, args->KeyModifiers == VirtualKeyModifiers::Shift));
 	float x = DX::ConvertDipsToPixels(args->CurrentPoint->Position.X, GetDeviceResources()->GetDpi());
 	float y = DX::ConvertDipsToPixels(args->CurrentPoint->Position.Y, GetDeviceResources()->GetDpi());
-	if (!UI::UpdateMousePos((int)x, (int)y)) {
+	bool updateMouse = true;
+	if(DEBUGUI_PROCESSINPUT(!ui::UpdateMousePos((int)x, (int)y))) {
 		if (pointerdown == 1) {
 			m_main->PointerMoved(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, (size_t)args->KeyModifiers);
 		}
@@ -269,10 +270,12 @@ void App::OnPointerMoved(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Cor
 void App::OnPointerPressed(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::PointerEventArgs^ args)
 {
 	sender->SetPointerCapture();
-	UI::UpdateKeyboardModifiers((args->KeyModifiers & VirtualKeyModifiers::Control) == VirtualKeyModifiers::Control,
+	DEBUGUI(ui::UpdateKeyboardModifiers((args->KeyModifiers & VirtualKeyModifiers::Control) == VirtualKeyModifiers::Control,
 		(args->KeyModifiers & VirtualKeyModifiers::Menu) == VirtualKeyModifiers::Menu,
-		(args->KeyModifiers & VirtualKeyModifiers::Shift) == VirtualKeyModifiers::Shift);
-	if (!UI::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed)) {
+		(args->KeyModifiers & VirtualKeyModifiers::Shift) == VirtualKeyModifiers::Shift));
+	if(DEBUGUI_PROCESSINPUT(!ui::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed,
+		args->CurrentPoint->Properties->IsRightButtonPressed,
+		args->CurrentPoint->Properties->IsMiddleButtonPressed))) {
 		pointerdown++;
 		m_main->PointerPressed(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
 		unsigned int pointerId = args->CurrentPoint->PointerId;
@@ -281,9 +284,10 @@ void App::OnPointerPressed(Windows::UI::Core::CoreWindow^ sender, Windows::UI::C
 	}
 }
 
-void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args)
-{
-	if (!UI::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed)) {
+void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::PointerEventArgs ^args) {
+	if (DEBUGUI_PROCESSINPUT(!ui::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, 
+		args->CurrentPoint->Properties->IsRightButtonPressed,
+		args->CurrentPoint->Properties->IsMiddleButtonPressed))) {
 		pointerdown--;
 		// TODO:: UI::UpdateKeyboardModifiers();
 		m_main->PointerReleased(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
@@ -296,14 +300,14 @@ void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::
 
 void App::OnKeyUp(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args)
 {
-	if (!UI::UpdateKeyboard((int)args->VirtualKey, false)) {
+	if (DEBUGUI_PROCESSINPUT(!ui::UpdateKeyboard((int)args->VirtualKey, false))) {
 		m_main->KeyUp(args->VirtualKey);
 	}
 }
 
 void App::OnKeyDown(Windows::UI::Core::CoreWindow ^sender, Windows::UI::Core::KeyEventArgs ^args)
 {
-	if (!UI::UpdateKeyboard((int)args->VirtualKey, true)) {
+	if (DEBUGUI_PROCESSINPUT(!ui::UpdateKeyboard((int)args->VirtualKey, true))) {
 		m_main->KeyDown(args->VirtualKey);
 	}
 }
@@ -379,11 +383,11 @@ void App::Holding(Windows::UI::Input::GestureRecognizer^ gestureRecognizer, Wind
 
 void FireAndForget_v2::App::OnCharacterReceived(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::CharacterReceivedEventArgs^ args)
 {
-	UI::UpdateKeyboardInput(args->KeyCode);
+	DEBUGUI(ui::UpdateKeyboardInput(args->KeyCode));
 }
 
 
 void FireAndForget_v2::App::OnPointerWheelChanged(Windows::UI::Core::CoreWindow^ sender, Windows::UI::Core::PointerEventArgs^ args)
 {
-	UI::UpdateMouseWheel(args->CurrentPoint->Properties->MouseWheelDelta, args->CurrentPoint->Properties->IsHorizontalMouseWheel);
+	DEBUGUI(ui::UpdateMouseWheel(args->CurrentPoint->Properties->MouseWheelDelta, args->CurrentPoint->Properties->IsHorizontalMouseWheel));
 }

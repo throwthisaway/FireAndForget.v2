@@ -64,7 +64,7 @@ Renderer::Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, 
 }
 
 Renderer::~Renderer() {
-	UI::Shutdown();
+	DEBUGUI(ui::Shutdown());
 }
 
 void Renderer::SaveState() {}
@@ -201,7 +201,7 @@ void Renderer::CreateDeviceDependentResources() {
 	graphicsDebugging = SUCCEEDED(hr);
 #endif
 	auto device = m_deviceResources->GetD3DDevice();
-	UI::Init(device, m_deviceResources->GetSwapChain());
+	DEBUGUI(ui::Init(device, m_deviceResources->GetSwapChain()));
 
 	rtvDescAlloc_.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, defaultRTVDescCount, false);
 	dsvDescAlloc_.Init(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
@@ -687,7 +687,7 @@ void Renderer::EndPrePass() {
 void Renderer::CreateWindowSizeDependentResources() {
 	auto device = m_deviceResources->GetD3DDevice();
 	auto size = m_deviceResources->GetOutputSize();
-	UI::OnResize(device, m_deviceResources->GetSwapChain(), size.Width, size.Height);
+	DEBUGUI(ui::OnResize(device, m_deviceResources->GetSwapChain(), size.Width, size.Height));
 
 	// Create render target views of the swap chain back buffer.
 	{
@@ -808,7 +808,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> Renderer::CreateRenderTarget(DXGI_FORMAT 
 }
 void Renderer::Update(double frame, double total) {
 	if (loadingComplete_){
-		UI::Update(frame, total);
+		DEBUGUI(ui::Update(frame, total));
 	}
 }
 void Renderer::BeginRender() {
@@ -902,7 +902,7 @@ bool Renderer::Render() {
 		ppCommandLists.push_back(commandList.Get());
 	ppCommandLists.push_back(deferredCommandList_.Get());
 
-	ppCommandLists.push_back(UI::Render(m_deviceResources->GetSwapChain()->GetCurrentBackBufferIndex()));
+	DEBUGUI(ppCommandLists.push_back(ui::Render(m_deviceResources->GetSwapChain()->GetCurrentBackBufferIndex())));
 
 	auto commandList = (ID3D12GraphicsCommandList*)ppCommandLists.back();
 	renderTargets_.ResourceTransition(commandList, GetCurrenFrameIndex(), D3D12_RESOURCE_STATE_PRESENT);

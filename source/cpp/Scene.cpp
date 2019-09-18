@@ -250,8 +250,8 @@ void Scene::Update(double frame, double total) {
 	}
 	if (state != State::Ready) return;
 	renderer_->Update(frame, total);
-	ObjectsWindow();
-	SceneWindow();
+	DEBUGUI(ObjectsWindow());
+	DEBUGUI(SceneWindow());
 	/*ImGui::Begin("Rot Window");
 	ImGui::Text("%5.5g %5.5g %5.5g", rot.x, rot.y, rot.z);
 	ImGui::End();*/
