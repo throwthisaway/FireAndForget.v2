@@ -73,12 +73,12 @@ void Scene::PrepareScene() {
 		pos.x = -3 * incX;
 	}
 
-	deferredCmd_.ao.bias = 0.f;
+	deferredCmd_.ao.bias = 4.f;
 	deferredCmd_.ao.rad = .04f;
 	deferredCmd_.ao.scale = 1.f;
 	deferredCmd_.ao.intensity = 1.f;
-	deferredCmd_.ao.fadeStart = 1.f;
-	deferredCmd_.ao.fadeEnd = 10.f;
+	deferredCmd_.ao.fadeStart = .1f;
+	deferredCmd_.ao.fadeEnd = .1f;
 
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
 		deferredCmd_.scene.light[i] = defaultPointLight;
@@ -207,9 +207,9 @@ void Scene::SceneWindow() {
 		ImGui::SliderFloat("Intensity", &ssaoCmd_.ao.intensity, 0.f, 1.f);
 		ImGui::SliderFloat("Radius", &ssaoCmd_.ao.rad, 0.f, .1f);
 		ImGui::SliderFloat("Scale", &ssaoCmd_.ao.scale, 0.f, 2.f);
-		ImGui::SliderFloat("Fade start", &ssaoCmd_.ao.fadeStart, 0.f, 50.f);
-		ImGui::SliderFloat("Fade end", &ssaoCmd_.ao.fadeEnd, 0.f, 50.f);
-		ImGui::SliderFloat("Bias", &ssaoCmd_.ao.bias, 0.f, 1.f);
+		ImGui::SliderFloat("Fade start", &ssaoCmd_.ao.fadeStart, 0.f, .2f);
+		ImGui::SliderFloat("Fade end", &ssaoCmd_.ao.fadeEnd, 0.f, .2f);
+		ImGui::SliderFloat("Bias", &ssaoCmd_.ao.bias, 0.1f, 7.f);
 	}
 	if (ImGui::CollapsingHeader("Lights", &ui.lightOpen)) {
 		for (int i = 0; i < MAX_LIGHTS; ++i) {
@@ -264,6 +264,7 @@ void Scene::Update(double frame, double total) {
 	ssaoCmd_.scene.proj = camera_.proj;
 	ssaoCmd_.scene.ip = camera_.ip;
 	ssaoCmd_.scene.ivp = camera_.ivp;
+	ssaoCmd_.scene.view = camera_.view;
 	ssaoCmd_.scene.viewport = { (float)viewport_.width, (float)viewport_.height };
 
 	// need to determine it from view because of ScreenSpaceRotator...

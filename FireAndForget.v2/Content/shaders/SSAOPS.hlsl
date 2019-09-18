@@ -59,6 +59,7 @@ MRTOut main(PS_PUV input) {
 	MRTOut result;
 	float d = tDepth.Sample(smpLinearClamp, input.uv).x;
 	float3 n = normalize(tNormal.Sample(smpLinearClamp, input.uv).xyz);	// f16 no need to transform
+	n = mul(n, scene.view);
 	float3 random = tRandom.Sample(smpLinearWrap, input.uv * ao.randomFactor).rgb * 2.f - 1.f;
 	float3 p = ViewPosFromDepth(d, input.p/*near clip plane viewpos*/);
 	float occlusion = 0;
@@ -78,13 +79,12 @@ MRTOut main(PS_PUV input) {
 		// r = t*q, rz = t*qz => r = rz/qz * q;
 		float3 r = (rz / q.z) * q;
 
-		
 		// occlusion factor
 		float occlusionFactor =	0.f;
 		float distZ = r.z - p.z;
 		if (distZ > kEpsilon) {
 			float fadeLength = ao.fadeEnd - ao.fadeStart;
-			occlusionFactor = 1.f;// saturate((ao.fadeEnd - distZ) / fadeLength);
+			occlusionFactor = saturate((ao.fadeEnd - distZ) / fadeLength);
 		}
 		float3 rp = normalize(r - p);
 		occlusion += occlusionFactor * ao.intensity * max(dot(rp, n), 0.f);
@@ -92,7 +92,7 @@ MRTOut main(PS_PUV input) {
 	}
 	occlusion /= kKernelSize;
 	result.ao = 1.f - occlusion;
-	result.ao = pow(result.ao, 4.f);	
+	result.ao = pow(result.ao, ao.bias);	
 	result.debug = float4(p, 1.f);
 	return result;
 }

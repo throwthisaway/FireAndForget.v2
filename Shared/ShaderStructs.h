@@ -26,7 +26,7 @@ struct SceneCB {
 	float2 viewport;
 };
 struct SSAOScene {
-	row_major float4x4 proj, ivp, ip;
+	row_major float4x4 proj, ivp, ip, view;
 	float2 viewport;
 };
 struct AO {
