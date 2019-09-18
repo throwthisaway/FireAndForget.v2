@@ -684,6 +684,11 @@ void Renderer::EndPrePass() {
 	prePass_.cb = {};
 	prePass_.desc = {};
 }
+void Renderer::BeforeResize() {
+	m_deviceResources->WaitForGpu();
+	DEBUGUI(ui::BeforeResize());
+	for (int i = 0; i < _countof(renderTargets_.resources); ++i) renderTargets_.resources[i].Reset();
+}
 void Renderer::CreateWindowSizeDependentResources() {
 	auto device = m_deviceResources->GetD3DDevice();
 	auto size = m_deviceResources->GetOutputSize();

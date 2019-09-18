@@ -25,7 +25,7 @@ void FireAndForget_v2Main::CreateRenderers(const std::shared_ptr<DX::DeviceResou
 {
 	m_sceneRenderer = std::unique_ptr<Renderer>(new Renderer(deviceResources, deviceResources->GetBackBufferFormat()));
 	scene_.Init(m_sceneRenderer.get(), (int)deviceResources->GetOutputSize().Width, (int)deviceResources->GetOutputSize().Height);
-	OnWindowSizeChanged();
+	//OnWindowSizeChanged(deviceResources->GetOutputSize().Width, deviceResources->GetOutputSize().Height);
 }
 
 // Updates the application state once per frame.
@@ -52,6 +52,10 @@ bool FireAndForget_v2Main::Render()
 	return true;
 }
 
+void FireAndForget_v2Main::OnBeforeResize()
+{
+	m_sceneRenderer->BeforeResize();
+}
 // Updates application state when the window's size changes (e.g. device orientation change)
 void FireAndForget_v2Main::OnWindowSizeChanged()
 {

@@ -28,6 +28,7 @@ public:
 	Renderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, DXGI_FORMAT backBufferFormat);
 	~Renderer();
 	void CreateDeviceDependentResources();
+	void BeforeResize();
 	void CreateWindowSizeDependentResources();
 	void Update(double frame, double total);
 	uint32_t GetCurrenFrameIndex() const;

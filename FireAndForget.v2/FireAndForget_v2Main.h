@@ -16,6 +16,7 @@ namespace FireAndForget_v2
 		void Update();
 		bool Render();
 
+		void OnBeforeResize();
 		void OnWindowSizeChanged();
 		void OnSuspending();
 		void OnResuming();

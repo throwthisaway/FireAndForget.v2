@@ -25,17 +25,17 @@ public:
 	uint32_t GetCurrenFrameIndex() const;
 
 	void BeginUploadResources();
-	BufferIndex CreateBuffer(const void* _Nonnull buffer, size_t length);
+	BufferIndex CreateBuffer(const void* buffer, size_t length);
 	BufferIndex CreateBuffer(size_t length);
-	TextureIndex CreateTexture(const void* _Nonnull buffer, uint64_t width, uint32_t height, Img::PixelFormat format, const char* _Nullable label = nullptr);
+	TextureIndex CreateTexture(const void* buffer, uint64_t width, uint32_t height, Img::PixelFormat format, const char* label = nullptr);
 	Dim GetDimensions(TextureIndex);
 	void EndUploadResources();
 
 	void BeginRender();
 	void BeginPrePass();
-	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, const char* _Nullable label = nullptr);
-	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, const char* _Nullable label = nullptr);
-	TextureIndex GenBRDFLUT(uint32_t dim, ShaderId shader, const char* _Nullable label = nullptr);
+	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, const char* label = nullptr);
+	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, const char* label = nullptr);
+	TextureIndex GenBRDFLUT(uint32_t dim, ShaderId shader, const char* label = nullptr);
 	void EndPrePass();
 	void StartForwardPass();
 	void Submit(const ShaderStructures::BgCmd& cmd);

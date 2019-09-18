@@ -184,8 +184,7 @@ void App::OnResuming(Platform::Object^ sender, Platform::Object^ args)
 
 void App::OnWindowSizeChanged(CoreWindow^ sender, WindowSizeChangedEventArgs^ args)
 {
-	GetDeviceResources()->WaitForGpu();
-	DEBUGUI(ui::BeforeResize());
+	m_main->OnBeforeResize();
 	GetDeviceResources()->SetLogicalSize(Size(sender->Bounds.Width, sender->Bounds.Height));
 	m_main->OnWindowSizeChanged();
 }
