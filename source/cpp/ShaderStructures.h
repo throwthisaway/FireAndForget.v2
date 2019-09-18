@@ -111,7 +111,6 @@ struct BgCmd {
 
 struct DeferredCmd {
 	SceneCB scene;
-	AO ao;
 	TextureIndex irradiance = InvalidTexture,
 		prefilteredEnvMap = InvalidTexture,
 		BRDFLUT = InvalidTexture,

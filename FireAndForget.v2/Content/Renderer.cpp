@@ -1310,18 +1310,11 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
 
 	const int descSize = frame_->desc.GetDescriptorSize();
-	auto entry = frame_->desc.Push(2 + BINDING_COUNT);
+	auto entry = frame_->desc.Push(1 + BINDING_COUNT);
 	{
 		// Scene
 		auto cb = frame_->cb.Alloc(sizeof(cmd.scene));
 		memcpy(cb.cpuAddress, &cmd.scene, sizeof(cmd.scene));
-		frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-		entry.cpuHandle.Offset(descSize);
-	}
-	{
-		// AO
-		auto cb = frame_->cb.Alloc(sizeof(cmd.ao));
-		memcpy(cb.cpuAddress, &cmd.ao, sizeof(cmd.ao));
 		frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
 		entry.cpuHandle.Offset(descSize);
 	}

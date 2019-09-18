@@ -5,7 +5,6 @@
 #include "DeferredRS.hlsli"
 
 ConstantBuffer<SceneCB> scene: register(b0);
-ConstantBuffer<AO> ao : register(b1);
 Texture2D<float4> texAlbedo : register(t0);
 Texture2D<float4> texNormal : register(t1);
 Texture2D<float4> texMaterial : register(t2);
@@ -73,7 +72,7 @@ float4 main(PS_UV input) : SV_TARGET{
 		kD *= 1.f - metallic;
 		Lo += (kD * albedo.rgb / M_PI_F + specular) * radiance * ndotl;
 	}
-	float ao = texSSAO.Sample(linearSmp, input.uv).r;// CalcAO(input.uv, worldPos, n, scene.viewport, scene.ivp, texHalfResDepth, texRandom);
+	float ao = texSSAO.Sample(linearSmp, input.uv).r;
 	// 
 	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
 	float3 ks = f;
@@ -91,11 +90,12 @@ float4 main(PS_UV input) : SV_TARGET{
 	float2 envBRDF = texBRDFLUT.Sample(linearClampSmp, float2(ndotv, roughness)).rg;
 	float3 specular = prefilterColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnel Shlick
 	float3 ambient = (kd * diffuse + specular) * ao;
+	Lo *= ao;
 	//
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
-	//return float4(GammaCorrection(color), albedo.a);
-	return float4(ao, ao, ao, 1.f);
+	return float4(GammaCorrection(color), albedo.a);
+	//return float4(ao, ao, ao, 1.f);
 	//float4 ssaoDebug = texSSAODebug.Sample(linearClampSmp, input.uv);
 	//return float4(ssaoDebug.xyz, 1.f);
 	//float4 vp = mul(scene.ip, debug);

@@ -73,12 +73,12 @@ void Scene::PrepareScene() {
 		pos.x = -3 * incX;
 	}
 
-	deferredCmd_.ao.bias = 4.f;
-	deferredCmd_.ao.rad = .04f;
-	deferredCmd_.ao.scale = 1.f;
-	deferredCmd_.ao.intensity = 1.f;
-	deferredCmd_.ao.fadeStart = .1f;
-	deferredCmd_.ao.fadeEnd = .1f;
+	ssaoCmd_.ao.bias = 4.f;
+	ssaoCmd_.ao.rad = .04f;
+	ssaoCmd_.ao.scale = 1.f;
+	ssaoCmd_.ao.intensity = 1.f;
+	ssaoCmd_.ao.fadeStart = .1f;
+	ssaoCmd_.ao.fadeEnd = .1f;
 
 	for (int i = 0; i < MAX_LIGHTS; ++i) {
 		deferredCmd_.scene.light[i] = defaultPointLight;
@@ -88,9 +88,8 @@ void Scene::PrepareScene() {
 	renderer_->BeginPrePass();
 	ssaoCmd_.random = deferredCmd_.random = assets_.textures[assets::Assets::RANDOM];
 	Dim dim = renderer_->GetDimensions(deferredCmd_.random);
-	deferredCmd_.ao.randomFactor.x = (float)(viewport_.width >> 1) / (float)dim.w;
-	deferredCmd_.ao.randomFactor.y = (float)(viewport_.height >> 1) / (float)dim.h;
-	ssaoCmd_.ao = deferredCmd_.ao;
+	ssaoCmd_.ao.randomFactor.x = (float)(viewport_.width >> 1) / (float)dim.w;
+	ssaoCmd_.ao.randomFactor.y = (float)(viewport_.height >> 1) / (float)dim.h;
 	const auto& mesh = assets_.meshes[assets::Assets::UNITCUBE];
 	TextureIndex envMap = assets_.textures[assets::Assets::ENVIRONMENT_MAP];
 	const uint64_t cubeEnvMapDim = 512;
