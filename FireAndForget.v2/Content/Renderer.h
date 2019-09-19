@@ -63,12 +63,6 @@ private:
 	void GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FORMAT fmt, int width, int height, uint32_t arraySize);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTarget(DXGI_FORMAT format, UINT width, UINT height, D3D12_RESOURCE_STATES state, D3D12_CLEAR_VALUE* clearValue = nullptr, LPCWSTR label = nullptr);
 
-	template<int RTCount> struct RTDesc {
-		D3D12_VIEWPORT viewport;
-		D3D12_RECT scissorRect;
-		D3D12_CPU_DESCRIPTOR_HANDLE rts[RTCount];
-	};
-	template<int RTCount> void Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RTDesc<RTCount>& rtDesc, PCWSTR eventName = nullptr);
 	void SSAOBlurPass(ID3D12GraphicsCommandList*);
 
 	DXGI_FORMAT backbufferFormat_, 
@@ -141,6 +135,7 @@ private:
 	RT<1> ssaoRT_, halfResDepthRT_, depthStencil_, ssaoDebugRT_, ssaoBlurRT_;
 	RT<_countof(PipelineStates::deferredRTFmts)> gbuffersRT_;
 	RT<ShaderStructures::FrameCount> renderTargets_;
+	template<int RTCount> void Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RT<RTCount>& rt, PCWSTR eventName = nullptr);
 
 	// helper for retrieving the currently active final rendertarget
 	ID3D12Resource* GetRenderTarget() { return renderTargets_.resources[GetCurrenFrameIndex()].Get(); }

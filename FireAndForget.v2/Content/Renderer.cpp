@@ -1201,18 +1201,11 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 	PIXEndEvent(commandList);
 }
 void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
-	PIX(PIXBeginEvent(commandList, 0, L"DownsampleDepth"));
 
 	halfResDepthRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	depthStencil_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-	commandList->RSSetViewports(1, &halfResDepthRT_.GetViewport());
-	commandList->RSSetScissorRects(1, &halfResDepthRT_.GetScissorRect());
-	auto& state = pipelineStates_.states_[Downsample];
-	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
-	commandList->SetPipelineState(state.pipelineState.Get());
-	commandList->OMSetRenderTargets(1, &halfResDepthRT_.view.cpuHandle, false, nullptr);
-
+	Setup(commandList, Downsample, halfResDepthRT_, L"DownsampleDepth");
 
 	auto entry = frame_->desc.Push(2);
 	auto cb = frame_->cb.Alloc(sizeof(float));
@@ -1226,37 +1219,25 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
 
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	//assert(fsQuad_ != InvalidBuffer);
-	//
-	//D3D12_VERTEX_BUFFER_VIEW vbv[] = {
-	//	{ buffers_[fsQuad_].bufferLocation,
-	//	(UINT)buffers_[fsQuad_].size,
-	//	(UINT)sizeof(VertexFSQuad) } };
-
-	//commandList->IASetVertexBuffers(0, _countof(vbv), vbv);
 	commandList->DrawInstanced(4, 1, 0, 0);
 	halfResDepthRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	PIX(PIXEndEvent(commandList));
 }
 template<int RTCount> 
-void Renderer::Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RTDesc<RTCount>& rtDesc, PCWSTR eventName) {
+void Renderer::Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RT<RTCount>& rt, PCWSTR eventName) {
 	if (!commandList) commandList = commandLists_[shaderId].Get();
 	PIX(PIXBeginEvent(commandList, 0, eventName));
 	auto& state = pipelineStates_.states_[shaderId];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
-	commandList->RSSetViewports(1, &rtDesc.viewport);
-	commandList->RSSetScissorRects(1, &rtDesc.scissorRect);
-	commandList->OMSetRenderTargets(_countof(rtDesc.rts), rtDesc.rts, false, nullptr);
+	commandList->RSSetViewports(1, &rt.GetViewport());
+	commandList->RSSetScissorRects(1, &rt.GetScissorRect());
+	D3D12_CPU_DESCRIPTOR_HANDLE rts[RTCount];
+	for (int i = 0; i < RTCount; ++i) rts[i] = rt.view.cpuHandle;
+	commandList->OMSetRenderTargets(_countof(rts), rts, false, nullptr);
 }
 void Renderer::SSAOBlurPass(ID3D12GraphicsCommandList* commandList) {
-	RTDesc<1> desc{
-		ssaoRT_.GetViewport(),
-		ssaoRT_.GetScissorRect(),
-		{ssaoRT_.view.cpuHandle}
-	};
-	Setup(deferredCommandList_.Get(), Blur4x4R32, desc, L"SSAOBlur4x4");
+	Setup(deferredCommandList_.Get(), Blur4x4R32, ssaoRT_, L"SSAOBlur4x4");
 	ssaoRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	ssaoBlurRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	auto entry = frame_->desc.Push(1);
