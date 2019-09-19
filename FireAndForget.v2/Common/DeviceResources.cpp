@@ -193,12 +193,12 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
 
 	// The width and height of the swap chain must be based on the window's
 	// natively-oriented width and height. If the window is not in the native
-	// orientation, the dimensions must be reversed.
-/*	DXGI_MODE_ROTATION displayRotation = ComputeDisplayRotation();
+	//// orientation, the dimensions must be reversed.
+	//DXGI_MODE_ROTATION displayRotation = ComputeDisplayRotation();
 
-	bool swapDimensions = displayRotation == DXGI_MODE_ROTATION_ROTATE90 || displayRotation == DXGI_MODE_ROTATION_ROTATE270;
-	m_d3dRenderTargetSize.Width = swapDimensions ? m_outputSize.Height : m_outputSize.Width;
-	m_d3dRenderTargetSize.Height = swapDimensions ? m_outputSize.Width : m_outputSize.Height;*/
+	//bool swapDimensions = displayRotation == DXGI_MODE_ROTATION_ROTATE90 || displayRotation == DXGI_MODE_ROTATION_ROTATE270;
+	m_d3dRenderTargetSize.Width =/* swapDimensions ? m_outputSize.Height :*/ m_outputSize.Width;
+	m_d3dRenderTargetSize.Height =/* swapDimensions ? m_outputSize.Width :*/ m_outputSize.Height;
 
 	UINT backBufferWidth = lround( m_outputSize.Width);
 	UINT backBufferHeight = lround( m_outputSize.Height);
@@ -253,7 +253,7 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
 
 		DX::ThrowIfFailed(swapChain.As(&m_swapChain));
 	}
-
+	m_currentFrame = m_swapChain->GetCurrentBackBufferIndex();
 	//// Set the proper orientation for the swap chain, and generate
 	//// 3D matrix transformations for rendering to the rotated swap chain.
 	//// The 3D matrix is specified explicitly to avoid rounding errors.

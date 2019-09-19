@@ -694,6 +694,8 @@ void Renderer::CreateWindowSizeDependentResources() {
 	auto size = m_deviceResources->GetOutputSize();
 	DEBUGUI(ui::OnResize(device, m_deviceResources->GetSwapChain(), size.Width, size.Height));
 
+	rtvDescAlloc_.Reset();
+	dsvDescAlloc_.Reset();
 	// Create render target views of the swap chain back buffer.
 	{
 		renderTargets_.view = rtvDescAlloc_.Push(ShaderStructures::FrameCount);
