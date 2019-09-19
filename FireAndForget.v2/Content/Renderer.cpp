@@ -765,28 +765,24 @@ void Renderer::CreateWindowSizeDependentResources() {
 			rtvDescAlloc_.CreateRTV(halfResDepthRT_.view.cpuHandle, halfResDepthRT_.resources->Get(), format);
 		}
 
-		auto entry = rtvDescAlloc_.Push(2);
 		// ssao
 		{
-			ssaoRT_.width = width; ssaoRT_.height = height;
+			auto entry = rtvDescAlloc_.Push(2);
+			auto& rt = ssaoRT_;
+			rt.width = width; rt.height = height;
 			DXGI_FORMAT format = DXGI_FORMAT_R32_FLOAT;
-			ssaoRT_.states[0] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-			ssaoRT_.resources[0] = CreateRenderTarget(format, ssaoRT_.width, ssaoRT_.height, *ssaoRT_.states, nullptr, L"aoRT");
-			ssaoRT_.view = entry;
-			rtvDescAlloc_.CreateRTV(ssaoRT_.view.cpuHandle, ssaoRT_.resources->Get(), format);
+			rt.states[0] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			rt.resources[0] = CreateRenderTarget(format, rt.width, rt.height, rt.states[0], nullptr, L"aoRT");
+			rt.view = entry;
+			rtvDescAlloc_.CreateRTV(entry.cpuHandle, rt.resources[0].Get(), format);
+
+			entry.cpuHandle.Offset(rtvDescAlloc_.GetDescriptorSize());
+			format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			rt.states[1] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			rt.resources[1] = CreateRenderTarget(format, rt.width, rt.height, rt.states[1], nullptr, L"aoDebugRT");
+			rtvDescAlloc_.CreateRTV(entry.cpuHandle, rt.resources[1].Get(), format);
 		}
 
-		entry.cpuHandle.Offset(rtvDescAlloc_.GetDescriptorSize());
-		entry.gpuHandle.Offset(rtvDescAlloc_.GetDescriptorSize());
-		// ssao debug
-		{
-			ssaoDebugRT_.width = width; ssaoDebugRT_.height = height;
-			DXGI_FORMAT format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-			ssaoDebugRT_.states[0] = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-			ssaoDebugRT_.resources[0] = CreateRenderTarget(format, ssaoDebugRT_.width, ssaoDebugRT_.height, *ssaoDebugRT_.states, nullptr, L"aoDebugRT");
-			ssaoDebugRT_.view = entry;
-			rtvDescAlloc_.CreateRTV(ssaoDebugRT_.view.cpuHandle, ssaoDebugRT_.resources->Get(), format);
-		}
 		// ssao blur
 		{
 			auto& rt = ssaoBlurRT_;
@@ -1232,9 +1228,7 @@ void Renderer::Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, 
 	commandList->SetPipelineState(state.pipelineState.Get());
 	commandList->RSSetViewports(1, &rt.GetViewport());
 	commandList->RSSetScissorRects(1, &rt.GetScissorRect());
-	D3D12_CPU_DESCRIPTOR_HANDLE rts[RTCount];
-	for (int i = 0; i < RTCount; ++i) rts[i] = rt.view.cpuHandle;
-	commandList->OMSetRenderTargets(_countof(rts), rts, false, nullptr);
+	commandList->OMSetRenderTargets(RTCount, &rt.view.cpuHandle, true, nullptr);
 }
 void Renderer::SSAOBlurPass(ID3D12GraphicsCommandList* commandList) {
 	Setup(deferredCommandList_.Get(), Blur4x4R32, ssaoRT_, L"SSAOBlur4x4");
@@ -1250,20 +1244,12 @@ void Renderer::SSAOBlurPass(ID3D12GraphicsCommandList* commandList) {
 }
 void Renderer::SSAOPass(const SSAOCmd& cmd) {
 	ID3D12GraphicsCommandList* commandList = deferredCommandList_.Get();
-	PIX(PIXBeginEvent(commandList, 0, L"SSAOPASS"));
 	DownsampleDepth(commandList);
 	auto* depth = &halfResDepthRT_;
 	depth->ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	gbuffersRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE); // normal rt needed
 	ssaoRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	ssaoDebugRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	auto& state = pipelineStates_.states_[SSAOShader];
-	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
-	commandList->SetPipelineState(state.pipelineState.Get());
-	commandList->RSSetViewports(1, &ssaoRT_.GetViewport());
-	commandList->RSSetScissorRects(1, &ssaoRT_.GetScissorRect());
-	D3D12_CPU_DESCRIPTOR_HANDLE rts[] = { ssaoRT_.view.cpuHandle, ssaoDebugRT_.view.cpuHandle};
-	commandList->OMSetRenderTargets(_countof(rts), rts, false, nullptr);
+	Setup(commandList, SSAOShader, ssaoRT_, L"SSAOPass");
 	auto entry = frame_->desc.Push(7);
 	frame_->BindCBV(entry.cpuHandle, cmd.ip);
 	frame_->BindCBV(entry.cpuHandle, cmd.scene);
@@ -1279,7 +1265,6 @@ void Renderer::SSAOPass(const SSAOCmd& cmd) {
 
 	commandList->DrawInstanced(4, 1, 0, 0);
 	ssaoRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	ssaoDebugRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	SSAOBlurPass(commandList);
 	PIX(PIXEndEvent(commandList));
 }
@@ -1331,7 +1316,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	frame_->desc.CreateSRV(entry.cpuHandle, ssaoBlurRT_.resources->Get());
 	entry.cpuHandle.Offset(descSize);
 	// SSAO debug
-	frame_->desc.CreateSRV(entry.cpuHandle, ssaoDebugRT_.resources->Get());
+	frame_->desc.CreateSRV(entry.cpuHandle, ssaoRT_.resources[1].Get());
 	entry.cpuHandle.Offset(descSize);
 
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };

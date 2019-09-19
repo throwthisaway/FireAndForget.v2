@@ -132,7 +132,8 @@ private:
 			return { 0, 0, (LONG)width, (LONG)height };
 		}
 	};
-	RT<1> ssaoRT_, halfResDepthRT_, depthStencil_, ssaoDebugRT_, ssaoBlurRT_;
+	RT<1> halfResDepthRT_, depthStencil_, ssaoBlurRT_;
+	RT<2> ssaoRT_;
 	RT<_countof(PipelineStates::deferredRTFmts)> gbuffersRT_;
 	RT<ShaderStructures::FrameCount> renderTargets_;
 	template<int RTCount> void Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RT<RTCount>& rt, PCWSTR eventName = nullptr);
