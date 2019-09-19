@@ -60,6 +60,8 @@ void FireAndForget_v2Main::OnBeforeResize()
 void FireAndForget_v2Main::OnWindowSizeChanged()
 {
 	m_sceneRenderer->CreateWindowSizeDependentResources();
+	Size size = m_sceneRenderer->GetWindowSize();
+	scene_.OnResize((int)size.Width, (int)size.Height);
 }
 
 // Notifies the app that it is being suspended.

@@ -109,8 +109,7 @@ void Scene::Init(Renderer* renderer, int width, int height) {
 	m = glm::identity<glm::mat4x4>();
 	using namespace ShaderStructures;
 	renderer_ = renderer;
-	viewport_.width = width; viewport_.height = height;
-	camera_.Perspective(width, height);
+	OnResize(width, height);
 
 //	shaderStructures.cScene.scene.light[1].diffuse[0] = 150.0f;
 //	shaderStructures.cScene.scene.light[1].diffuse[1] = 150.0f;
@@ -240,6 +239,10 @@ void Scene::UpdateSceneTransform() {
 		o.rot = irotm * o.rot;
 		::rot = o.rot;
 	}*/
+}
+void Scene::OnResize(int width, int height) {
+	viewport_.width = width; viewport_.height = height;
+	camera_.Perspective(width, height);
 }
 void Scene::Update(double frame, double total) {
 	assets_.Update(renderer_);

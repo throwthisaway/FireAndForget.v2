@@ -32,6 +32,7 @@ struct Scene {
 	void Update(double frame, double total);
 	void UpdateCameraTransform();
 	void UpdateSceneTransform();
+	void OnResize(int width, int height);
 	Input input;
 	enum class State{Start, AssetsLoading, Ready};
 	State state = State::Start;

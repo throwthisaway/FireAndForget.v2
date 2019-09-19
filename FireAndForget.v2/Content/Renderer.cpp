@@ -267,6 +267,9 @@ void Renderer::CreateDeviceDependentResources() {
 	ssao_.kernelResource->Unmap(0, &CD3DX12_RANGE(0, 0));
 
 }
+Windows::Foundation::Size Renderer::GetWindowSize() {
+	return m_deviceResources->GetOutputSize();
+}
 void Renderer::BeginPrePass() {
 #ifdef DXGI_ANALYSIS
 	if (graphicsDebugging) pGraphicsAnalysis->BeginCapture();
