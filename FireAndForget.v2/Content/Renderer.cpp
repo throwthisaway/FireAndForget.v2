@@ -1095,79 +1095,54 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 			entry = frame_->desc.Push(2);
 			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-			{
-				auto cb = frame_->cb.Alloc(sizeof(Object));
-				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((Object*)cb.cpuAddress)->m = cmd.o.m;
-				((Object*)cb.cpuAddress)->mvp = cmd.o.mvp;
-			}
+
+			frame_->BindCBV(entry.cpuHandle, cmd.o);
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
-			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
-			{
-				auto cb = frame_->cb.Alloc(sizeof(Material));
-				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((Material*)cb.cpuAddress)->diffuse = cmd.material.diffuse;
-				((Material*)cb.cpuAddress)->metallic_roughness = cmd.material.metallic_roughness;
-			}
+			++index; entry.gpuHandle.Offset(descSize);
+
+			frame_->BindCBV(entry.cpuHandle, cmd.material);
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
-			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
 			break;
 		}
 		case ShaderStructures::ModoDN: {
 			entry = frame_->desc.Push(2 + __popcnt(cmd.submesh.textureMask));
 			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-			{
-				auto cb = frame_->cb.Alloc(sizeof(Object));
-				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((Object*)cb.cpuAddress)->m = cmd.o.m;
-				((Object*)cb.cpuAddress)->mvp = cmd.o.mvp;
-			}
+
+			frame_->BindCBV(entry.cpuHandle, cmd.o);
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
-			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
+			++index; entry.gpuHandle.Offset(descSize);
+
 			for (int i = 0; i < _countof(cmd.submesh.textures); ++i) {
 				if (cmd.submesh.textureMask & (1 << i)) {
 					auto& texture = buffers_[cmd.submesh.textures[i].id];
-					frame_->desc.CreateSRV(entry.cpuHandle, texture.resource.Get());
-					entry.cpuHandle.Offset(descSize);
+					frame_->BindSRV(entry.cpuHandle, texture.resource.Get());
 				}
 			}
-			{
-				auto cb = frame_->cb.Alloc(sizeof(Material));
-				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((Material*)cb.cpuAddress)->diffuse = cmd.material.diffuse;
-				((Material*)cb.cpuAddress)->metallic_roughness = cmd.material.metallic_roughness;
-			}
+			frame_->BindCBV(entry.cpuHandle, cmd.material);
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
-			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
 			break;
 		}
 		case ShaderStructures::ModoDNMR:{
 			entry = frame_->desc.Push(1 + __popcnt(cmd.submesh.textureMask));
 			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-			{
-				auto cb = frame_->cb.Alloc(sizeof(Object));
-				frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-				((Object*)cb.cpuAddress)->m = cmd.o.m;
-				((Object*)cb.cpuAddress)->mvp = cmd.o.mvp;
-			}
+
+			frame_->BindCBV(entry.cpuHandle, cmd.o);
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
-			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
+			++index; entry.gpuHandle.Offset(descSize);
+
 			for (int i = 0; i < _countof(cmd.submesh.textures); ++i) {
 				if (cmd.submesh.textureMask & (1 << i)) {
 					auto& texture = buffers_[cmd.submesh.textures[i].id];
-					frame_->desc.CreateSRV(entry.cpuHandle, texture.resource.Get());
-					entry.cpuHandle.Offset(descSize);
+					frame_->BindSRV(entry.cpuHandle, texture.resource.Get());
 				}
 			}
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
-			++index; entry.cpuHandle.Offset(descSize); entry.gpuHandle.Offset(descSize);
 			break;
 		}
 		default: assert(false);
 		}
-
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		assert(cmd.vb != InvalidBuffer);
@@ -1197,19 +1172,14 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 	PIXEndEvent(commandList);
 }
 void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
-
 	halfResDepthRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	depthStencil_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	Setup(commandList, Downsample, halfResDepthRT_, L"DownsampleDepth");
 
 	auto entry = frame_->desc.Push(2);
-	auto cb = frame_->cb.Alloc(sizeof(float));
-	*((float*)cb.cpuAddress) = (float)depthStencil_.width / halfResDepthRT_.width;
-	frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-	const int descSize = frame_->desc.GetDescriptorSize();
-	entry.cpuHandle.Offset(descSize);
-	frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.resources->Get());
+	frame_->BindCBV(entry.cpuHandle, (float)depthStencil_.width / halfResDepthRT_.width);
+	frame_->BindSRV(entry.cpuHandle, depthStencil_.resources->Get());
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
