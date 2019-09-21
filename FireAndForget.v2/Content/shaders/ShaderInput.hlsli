@@ -32,23 +32,31 @@ struct PS_P {
 	float4 pos : SV_POSITION;
 	float3 p : POSITION0;
 };
-
+struct PS_PN {
+	float4 pos : SV_POSITION;
+	float4 p : POSITION0;
+	float3 nWS : NORMAL0;
+	float3 nVS : NORMAL1;
+};
 struct PS_UVN {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD0;
-	float3 n : NORMAL0;
+	float3 nWS : NORMAL0;
+	float3 nVS : NORMAL1;
 };
 
 struct GS_PUVN {
 	float4 pos : SV_POSITION;
 	float4 p : POSITION0;
 	float2 uv : TEXCOORD0;
-	float3 n : NORMAL0;
+	float3 nWS : NORMAL0;
+	float3 nVS : NORMAL1;
 };
 
 struct PS_UVNT {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD0;
-	float3 n : NORMAL0;
+	float3 nWS : NORMAL0;
+	float3 nVS : NORMAL1;
 	float3 t : TANGENT0;
 };

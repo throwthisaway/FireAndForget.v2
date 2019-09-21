@@ -159,6 +159,9 @@ private:
 		void BindSRV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, ID3D12Resource* resource) {
 			desc.BindSRV(cpuHandle, resource);
 		}
+		void BindCubeSRV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, ID3D12Resource* resource) {
+			desc.BindCubeSRV(cpuHandle, resource);
+		}
 	}frames_[ShaderStructures::FrameCount], *frame_;
 
 	struct SSAO {

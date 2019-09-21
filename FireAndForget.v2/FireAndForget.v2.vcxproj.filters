@@ -334,6 +334,9 @@
     <None Include="..\source\assets\BEETHOVE_subdivided_twice.mesh">
       <Filter>Assets</Filter>
     </None>
+    <None Include="..\source\assets\BEETHOVE_merged_subdivided_twice.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">

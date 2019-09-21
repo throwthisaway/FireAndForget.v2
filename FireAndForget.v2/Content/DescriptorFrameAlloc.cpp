@@ -114,6 +114,10 @@ void DescriptorFrameAlloc::BindSRV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, ID3
 	CreateSRV(cpuHandle, resource);
 	cpuHandle.Offset(descSize_);
 }
+void DescriptorFrameAlloc::BindCubeSRV(CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, ID3D12Resource* resource) {
+	CreateCubeSRV(cpuHandle, resource);
+	cpuHandle.Offset(descSize_);
+}
 void DescriptorFrameAlloc::Reset() {
 	index_ = 0;
 	offset_ = 0;

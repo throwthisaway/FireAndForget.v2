@@ -2,10 +2,11 @@ static const float M_PI_F = 3.14159265f;
 
 struct MRTOut {
 	float4 albedo : SV_TARGET0;
-	float4 normal : SV_TARGET1;
-	float4 material : SV_TARGET2;
+	float4 normalWS : SV_TARGET1;
+	float4 normalVS : SV_TARGET2;
+	float4 material : SV_TARGET3;
 #ifdef DEBUG_RT
-	float4 debug : SV_TARGET3;
+	float4 debug : SV_TARGET4;
 #endif
 };
 

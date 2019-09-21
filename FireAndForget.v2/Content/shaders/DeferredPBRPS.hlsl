@@ -98,6 +98,7 @@ float4 main(PS_UV input) : SV_TARGET{
 	//return float4(ao, ao, ao, 1.f);
 	//float4 ssaoDebug = texSSAODebug.Sample(linearClampSmp, input.uv);
 	//return float4(ssaoDebug.xyz, 1.f);
+	//return float4(n, 1.f);
 	//float4 vp = mul(scene.ip, debug);
 	//return float4(vp.xyz, 1.f);
 	/*float3 l = normalize(scene.light[0].pos - worldPos);

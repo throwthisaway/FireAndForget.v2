@@ -6,7 +6,6 @@
 #include "..\Common\DirectXHelper.h"
 #include "SIMDTypeAliases.h"
 #include "..\source\cpp\VertexTypes.h"
-#include "..\source\cpp\DeferredBindings.h"
 #include "..\..\source\cpp\BufferUtils.h"
 #include "..\..\source\cpp\ShaderStructures.h"
 #include <glm/gtc/matrix_transform.hpp>
@@ -1226,7 +1225,7 @@ void Renderer::SSAOPass(const SSAOCmd& cmd) {
 	frame_->BindCBV(entry.cpuHandle, cmd.ao);
 	frame_->BindCBV(entry.cpuHandle, ssao_.kernelResource->GetGPUVirtualAddress(), ssao_.size256);
 	frame_->BindSRV(entry.cpuHandle, depth->resources[0].Get());
-	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::Normal].Get());
+	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::NormalVS].Get());
 	frame_->BindSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());
 
 	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
@@ -1256,53 +1255,40 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
 
 	const int descSize = frame_->desc.GetDescriptorSize();
+#ifdef DEBUG_RT
+	#define BINDING_COUNT 10
+#else
+	#define BINDING_COUNT 9
+#endif
 	auto entry = frame_->desc.Push(1 + BINDING_COUNT);
-	{
-		// Scene
-		auto cb = frame_->cb.Alloc(sizeof(cmd.scene));
-		memcpy(cb.cpuAddress, &cmd.scene, sizeof(cmd.scene));
-		frame_->desc.CreateCBV(entry.cpuHandle, cb.gpuAddress, cb.size);
-		entry.cpuHandle.Offset(descSize);
-	}
+	// Scene
+	frame_->BindCBV(entry.cpuHandle, cmd.scene);
 	// RTs
-	for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
-		frame_->desc.CreateSRV(entry.cpuHandle, gbuffersRT_.resources[j].Get());
-		entry.cpuHandle.Offset(descSize);
-	}
+	
+	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::Albedo].Get());
+	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::NormalWS].Get());
+	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::Material].Get());
+#ifdef DEBUG_RT
+	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::Debug].Get());
+#endif
 	// Depth
-	frame_->desc.CreateSRV(entry.cpuHandle, depthStencil_.resources->Get());
-	entry.cpuHandle.Offset(descSize);
-
+	frame_->BindSRV(entry.cpuHandle, depthStencil_.resources->Get());
 	// Irradiance
-	frame_->desc.CreateCubeSRV(entry.cpuHandle, buffers_[cmd.irradiance].resource.Get());
-	entry.cpuHandle.Offset(descSize);
+	frame_->BindCubeSRV(entry.cpuHandle, buffers_[cmd.irradiance].resource.Get());
 	// Prefiltered env. map
-	frame_->desc.CreateCubeSRV(entry.cpuHandle, buffers_[cmd.prefilteredEnvMap].resource.Get());
-	entry.cpuHandle.Offset(descSize);
+	frame_->BindCubeSRV(entry.cpuHandle, buffers_[cmd.prefilteredEnvMap].resource.Get());
 	// BRDFLUT
-	frame_->desc.CreateSRV(entry.cpuHandle, buffers_[cmd.BRDFLUT].resource.Get());
-	entry.cpuHandle.Offset(descSize);
+	frame_->BindSRV(entry.cpuHandle, buffers_[cmd.BRDFLUT].resource.Get());
 	// SSAO
-	frame_->desc.CreateSRV(entry.cpuHandle, ssaoBlurRT_.resources->Get());
-	entry.cpuHandle.Offset(descSize);
+	frame_->BindSRV(entry.cpuHandle, ssaoBlurRT_.resources->Get());
 	// SSAO debug
-	frame_->desc.CreateSRV(entry.cpuHandle, ssaoRT_.resources[1].Get());
-	entry.cpuHandle.Offset(descSize);
+	frame_->BindSRV(entry.cpuHandle, ssaoRT_.resources[1].Get());
 
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
 
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	//assert(fsQuad_ != InvalidBuffer);
-	
-	//D3D12_VERTEX_BUFFER_VIEW vertexBufferViews[] = {
-	//	{ buffers_[fsQuad_].bufferLocation,
-	//	(UINT)buffers_[fsQuad_].size,
-	//	(UINT)sizeof(VertexFSQuad) } };
-
-	//commandList->IASetVertexBuffers(0, _countof(vertexBufferViews), vertexBufferViews);
 	commandList->DrawInstanced(4, 1, 0, 0);
 
 	PIXEndEvent(commandList);

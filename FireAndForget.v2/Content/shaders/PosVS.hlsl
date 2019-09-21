@@ -1,21 +1,13 @@
 #include "ShaderStructs.h"
+#include "ShaderInput.hlsli"
 ConstantBuffer<Object> obj : register(b0);
 
-struct VIn {
-	float3 pos : POSITION0;
-	float3 n : NORMAL0;
-};
-struct PSIn {
-	float4 pos : SV_POSITION;
-	float4 worldPos : POSITION0;
-	float3 n : NORMAL0;
-};
-
-PSIn main(VIn input) {
-	PSIn output;
+PS_PN main(VS_PN input) {
+	PS_PN output;
 	float4 pos = float4(input.pos, 1.f);
 	output.pos = mul(pos, obj.mvp);
-	output.n = normalize(mul(input.n, obj.m));
-	output.worldPos = mul(pos, obj.m);
+	output.nWS = normalize(mul(input.n, obj.m));
+	output.nVS = normalize(mul(input.n, obj.mv));
+	output.p = mul(pos, obj.m);
 	return output;
 }

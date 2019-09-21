@@ -51,7 +51,7 @@ void Scene::PrepareScene() {
 	for (int i = assets::Assets::STATIC_MODEL_COUNT; i < assets_.meshes.size(); ++i) {
 //		auto& mesh = assets_.meshes[i];
 		modoObjects_.push_back({{ 0.f, y, 0.f}, {0.f, glm::pi<float>(), 0.f}, (index_t)i});
-		y += .5f;
+		y += 1.5f;
 	}
 	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
 	const float incX = 2.4f, incY = 2.9f;
@@ -152,9 +152,10 @@ void Scene::Render() {
 		auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
 		//m[3] += float4(l.pivot, 0.f);
 		auto mvp = camera_.vp * m;
+		auto mv = camera_.view * m;
 		for (const auto& submesh : mesh.submeshes) {
 			ShaderId shader = SelectModoShader(submesh.uvCount, submesh.textureMask);
-			ShaderStructures::ModoDrawCmd cmd{ {mvp, m}, submesh, submesh.material, mesh.vb, mesh.ib, shader };
+			ShaderStructures::ModoDrawCmd cmd{ {mvp, m, mv}, submesh, submesh.material, mesh.vb, mesh.ib, shader };
 			renderer_->Submit(cmd);
 		}
 	}

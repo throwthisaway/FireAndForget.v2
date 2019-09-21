@@ -15,9 +15,10 @@ MRTOut main(PS_UVN input) {
 	float4 diffuseColor = tColor.Sample(smp, input.uv);
 	MRTOut output;
 	output.albedo = diffuseColor;
-	float3 n = normalize(input.n);
-	output.normal = float4(n, 1.f);
+	float3 nWS = normalize(input.nWS);
+	output.normalWS = float4(nWS, 1.f);
+	output.normalVS = float4(normalize(input.nVS), 1.f);
 	output.material = float4(mat.metallic_roughness, 0.f, 1.f);
-	output.debug = float4(n, 1.f);
+	output.debug = float4(nWS, 1.f);
 	return output;
 }

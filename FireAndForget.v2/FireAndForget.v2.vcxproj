@@ -357,6 +357,9 @@
     <None Include="..\source\assets\BEETHOVE_high_modo.mesh">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </None>
+    <None Include="..\source\assets\BEETHOVE_merged_subdivided_twice.mesh">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+    </None>
     <None Include="..\source\assets\BEETHOVE_object.mesh">
       <DeploymentContent>true</DeploymentContent>
     </None>
