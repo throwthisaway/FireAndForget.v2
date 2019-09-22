@@ -4,6 +4,8 @@
 #include "cpp/BufferUtils.h"
 #include <glm/gtc/matrix_transform.hpp>
 //#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
+#include "UI.h"
+#include "cpp/DebugUI.h"
 
 using namespace ShaderStructures;
 namespace {
@@ -28,6 +30,7 @@ namespace {
 }
 void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 	device_ = device;
+	DEBUGUI(ui::Init(device));
 	commandQueue_ = [device newCommandQueue];
 	shaders_ = [[Shaders alloc] initWithDevice:device andPixelFormat:pixelFormat];
 
@@ -96,7 +99,7 @@ void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 	const glm::vec3 at[] = {/*+x*/{1.f, 0.f, 0.f},/*-x*/{-1.f, 0.f, 0.f},/*+y*/{0.f, 1.f, 0.f},/*-y*/{0.f, -1.f, 0.f},/*+z*/{0.f, 0.f, 1.f},/*-z*/{0.f, 0.f, -1.f}},
 	up[] = {{0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, -1.f}, {0.f, 0.f, 1.f}, {0.f, 1.f, 0.f}, {0.f, 1.f, 0.f}};
 	const int faceCount = 6;
-	cubeViewBufInc_ = AlignTo<int, 256>(sizeof(glm::mat4x4));
+	cubeViewBufInc_ = AlignTo<256>(sizeof(glm::mat4x4));
 	cubeViews_ = [device_ newBufferWithLength: cubeViewBufInc_ * faceCount options: MTLResourceCPUCacheModeWriteCombined];
 	auto ptr = (uint8_t*)[cubeViews_ contents];
 	for (int i = 0; i < faceCount; ++i) {
@@ -135,7 +138,7 @@ TextureIndex Renderer::CreateTexture(const void* data, uint64_t width, uint32_t 
 	}
 	return (TextureIndex)textures_.size() - 1;
 }
-TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip,  const char* label) {
+TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const ModoMeshLoader::Submesh& submesh, uint32_t dim, ShaderId shader, bool mip,  const char* label) {
 	constexpr MTLPixelFormat format = MTLPixelFormatRGBA16Float;
 	constexpr uint8_t bytesPerPixel = 8;
 	MTLTextureDescriptor *textureDescriptor = [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat: format
@@ -188,7 +191,7 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 
 	return (TextureIndex)textures_.size() - 1;
 }
-TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, const char* label) {
+TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const ModoMeshLoader::Submesh& submesh, uint32_t dim, ShaderId shader, const char* label) {
 	constexpr MTLPixelFormat format = MTLPixelFormatRGBA16Float;
 	constexpr uint8_t bytesPerPixel = 8;
 	constexpr int mipLevelCount = 5;
@@ -209,7 +212,7 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 	// TODO:: do the same with 1 drawcall and mrt
 	constexpr int faceCount = 6;
 	using RoughnessBuffType = float;
-	const int buffLen = AlignTo<int, 256>(sizeof(RoughnessBuffType));
+	const int buffLen = AlignTo<256>(sizeof(RoughnessBuffType));
 	id<MTLBuffer> roughnessBuff = [device_ newBufferWithLength: buffLen*mipLevelCount options: MTLResourceCPUCacheModeWriteCombined];
 	roughnessBuff.label = @"roughness";
 	RoughnessBuffType* pRoughness = (RoughnessBuffType*)[roughnessBuff contents];
@@ -430,7 +433,6 @@ void Renderer::EndUploadResources() {
 	// TODO::
 }
 
-
 void Renderer::Downsample(id<MTLCommandBuffer> _Nonnull commandBuffer,
 						 id<MTLRenderPipelineState> _Nonnull pipelineState,
 						 id<MTLTexture> _Nonnull srcTex,
@@ -457,6 +459,9 @@ void Renderer::Downsample(id<MTLCommandBuffer> _Nonnull commandBuffer,
 	[encoder setFragmentBuffer:cb.buffer  offset: cb.offset atIndex: 0];
 	[encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
 	[encoder endEncoding];
+}
+void Renderer::SSAOPass(const ShaderStructures::SSAOCmd& cmd) {
+	// TODO::
 }
 void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	deferredCommandBuffer_ = [commandQueue_ commandBuffer];
@@ -501,11 +506,6 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	{
 		auto cb = frame.Alloc(sizeof(cmd.scene));
 		memcpy(cb.address, &cmd.scene, sizeof(cmd.scene));
-		[deferredEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsIndex++];
-	}
-	{
-		auto cb = frame.Alloc(sizeof(cmd.ao));
-		memcpy(cb.address, &cmd.ao, sizeof(cmd.ao));
 		[deferredEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsIndex++];
 	}
 
@@ -557,14 +557,21 @@ void Renderer::Render() {
 	for (auto commandBuffer : commandBuffers_) {
 		[commandBuffer commit];
 	}
-	[deferredCommandBuffer_ presentDrawable: drawable_];
+	id<MTLCommandBuffer> commandBuffer;
+#ifdef DEBUG_UI
+	commandBuffer = ui::Render([drawable_ texture], [commandQueue_ commandBuffer]);
+	[deferredCommandBuffer_ commit];
+#else
+	commandBuffer = deferredCommandBuffer_;
+#endif
+	[commandBuffer presentDrawable: drawable_];
 	__weak dispatch_semaphore_t semaphore = frameBoundarySemaphore_;
-	[deferredCommandBuffer_ addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
+	[commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
 		// GPU work is complete
 		// Signal the semaphore to start the CPU work
 		dispatch_semaphore_signal(semaphore);
 	}];
-	[deferredCommandBuffer_ commit];
+	[commandBuffer commit];
 	// TODO: is this necessary?
 	encoders_.clear();
 	// TODO: is this necessary?
@@ -578,7 +585,7 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 	id<MTLRenderCommandEncoder> commandEncoder = encoders_[ShaderStructures::Bg];
 
 	NSUInteger vsAttribIndex = 0;
-	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: cmd.submesh.vbByteOffset atIndex: vsAttribIndex++];
+	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: cmd.submesh.vertexByteOffset atIndex: vsAttribIndex++];
 
 	CBFrameAlloc& frame = frame_[currentFrameIndex_];
 	{
@@ -591,7 +598,7 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 		[commandEncoder setFragmentTexture: texture.texture atIndex:0];
 		[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
 	}
-	[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.submesh.ibByteOffset instanceCount: 1 baseVertex: 0 baseInstance: 0];
+	[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.submesh.indexByteOffset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 }
 
 void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
@@ -725,4 +732,10 @@ void Renderer::SetDrawable(id<CAMetalDrawable> _Nonnull drawable) { drawable_ = 
 Dim Renderer::GetDimensions(TextureIndex index) {
 	assert(index <= textures_.size());
 	return {(uint32_t)textures_[index].width, textures_[index].height};
+}
+void Renderer::Update(double frame, double total) {
+	DEBUGUI(ui::Update(frame, total));
+};
+void Renderer::OnResize(int width, int height) {
+	DEBUGUI(ui::OnResize(width, height));
 }

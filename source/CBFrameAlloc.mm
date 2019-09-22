@@ -17,7 +17,7 @@ void CBFrameAlloc::Init(id<MTLDevice> device, uint64_t bufferSize) {
 }
 
 CBFrameAlloc::Entry CBFrameAlloc::Alloc(uint32_t size) {
-	size = AlignTo<decltype(size), 256>(size);
+	size = AlignTo<256>(size);
 	if (offset_ + size > max_ && ++index_ >= pool_.size()) Request();
 	id<MTLBuffer> buffer = pool_[index_];
 	uint8_t* contents = (uint8_t*)[buffer contents];

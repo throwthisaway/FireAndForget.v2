@@ -8,45 +8,14 @@ struct FSIn {
 	float2 uv; // TODO:: ???[[]];
 };
 
-
 struct DeferredOut {
 	float4 frag [[color(0)]];
 	float4 debug [[color(1)]];
 };
 
-//https://martinkschroder.wordpress.com/2014/02/24/screen-space-ambient-occlusion-in-opengl-and-glsl/
-float AOPass(float2 uv, float3 p, float3 n, constant AO& ao, float4x4 ivp, texture2d<float> depth, sampler smp) {
-	float3 worldPos = WorldPosFormDepth(uv, ivp, depth.sample(smp, uv).x);
-	float3 diff = worldPos - p;
-	float len = length(diff);
-	float3 v = diff / len;
-	len *= ao.scale;
-	return max(0.f, dot(v, n) - ao.bias) * 1.f / (1.f + len) * ao.intensity;
-}
 
-#define ITERATION 4
-float CalcAO(float2 uv, float3 center_pos, float3 n, float2 vp, constant AO& ao, float4x4 ivp, texture2d<float> depth, texture2d<float> random, sampler deferresdmp, sampler linearsmp) {
-	const float2 sampling[] = { float2(-1.f, 0.f), float2(1.f, 0.f), float2(0.f, 1.f), float2(0.f, -1.f) };
-
-	float sum = 0.f, radius = ao.rad / center_pos.z;
-	float2 rnd = normalize(random.sample(linearsmp, vp * uv / ao.random_size).xy * 2.f - 1.f);
-	// TODO:: int iterations = lerp(6.0,2.0,p.z/g_far_clip);
-	for (int i = 0; i < ITERATION; i++) {
-		float2 c1 = reflect(sampling[i], rnd) * radius
-		, c2 = float2(c1.x * .70716f - c1.y * .70716f,
-					  c1.x * .70716f + c1.y * .70716f);
-
-		sum += AOPass(uv + c1 * .25f, center_pos, n, ao, ivp, depth, deferresdmp);
-		sum += AOPass(uv + c1 * .75f, center_pos, n, ao, ivp, depth, deferresdmp);
-		sum += AOPass(uv + c2 * .5f, center_pos, n, ao, ivp, depth, deferresdmp);
-		sum += AOPass(uv + c2, center_pos, n, ao, ivp, depth, deferresdmp);
-	}
-	sum /= (float)ITERATION * 4.f;
-	return sum;
-}
 fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 									  constant SceneCB& scene [[buffer(0)]],
-									  constant AO& ao [[buffer(1)]],
 									  texture2d<float> albedoTx [[texture(0)]],
 									  texture2d<float> normal [[texture(1)]],
 									  texture2d<float> materialTx [[texture(2)]],
@@ -101,8 +70,8 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 		Lo += (kD * albedo.rgb / M_PI_F + specular) * radiance * ndotl;
 	}
 	DeferredOut res;
-	float aoResult = CalcAO(input.uv, worldPos, n, scene.viewport, ao, scene.ivp, halfResDepth, random, deferredsmp, linearsmp);
-	//
+	float aoResult = 0.f;
+
 	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
 	float3 ks = f;
 	float3 kd = 1.f - ks;

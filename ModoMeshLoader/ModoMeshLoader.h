@@ -24,11 +24,14 @@ namespace ModoMeshLoader {
 	struct Submesh {
 		//string name;
 		uint32_t indexByteOffset, vertexByteOffset, stride;
+		uint32_t pad0;
 		Material material;
+		uint32_t pad1, pad2;
 		unsigned textureMask;
 		unsigned uvCount;
 		Texture textures[(int)TextureTypes::kCount];
 		uint32_t count;
+		uint32_t pad3;
 	};
 
 	constexpr tag_t Tag(const char* t) {

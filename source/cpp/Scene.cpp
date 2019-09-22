@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Scene.hpp"
 #include "MatrixUtils.h"
-#include "Content\UI.h"
 #include "imgui.h"
+#include "DebugUI.h"
 
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
@@ -62,7 +62,7 @@ void Scene::PrepareScene() {
 			auto model = assets_.models[assets::Assets::SPHERE];
 			assets_.models.push_back(model);
 			objects_.push_back({ pos, {}, index_t(assets_.models.size() - 1) });
-			assets_.materials.push_back({ { .5f, .0f, .0f },
+			assets_.materials.push_back({ { .5f, .0f, .0f },0/*pad*/,
 				{glm::clamp((float)j / count, .05f, 1.f), (float)i / count } });
 			pos.x += incX;
 			auto& submesh = assets_.models[objects_.back().mesh].layers.front().submeshes.front();

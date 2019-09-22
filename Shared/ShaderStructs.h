@@ -8,6 +8,7 @@ struct Object {
 };
 struct Material {
 	float3 diffuse;
+	uint32_t pad0;
 	float2 metallic_roughness;
 };
 struct PointLight {

@@ -1,11 +1,4 @@
 #pragma once
-#ifdef DEBUG_UI
-#define DEBUGUI(x) x
-#define DEBUGUI_PROCESSINPUT(x) x
-#else
-#define DEBUGUI(x)
-#define DEBUGUI_PROCESSINPUT(x) true
-#endif
 namespace ui {
 	bool Init(ID3D12Device* device, IDXGISwapChain* swapchain);
 	void Update(double frame, double total);

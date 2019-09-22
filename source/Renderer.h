@@ -25,17 +25,17 @@ public:
 	uint32_t GetCurrenFrameIndex() const;
 
 	void BeginUploadResources();
-	BufferIndex CreateBuffer(const void* buffer, size_t length);
+	BufferIndex CreateBuffer(const void* _Nonnull buffer, size_t length);
 	BufferIndex CreateBuffer(size_t length);
-	TextureIndex CreateTexture(const void* buffer, uint64_t width, uint32_t height, Img::PixelFormat format, const char* label = nullptr);
+	TextureIndex CreateTexture(const void* _Nonnull buffer, uint64_t width, uint32_t height, Img::PixelFormat format, const char* _Nullable label = nullptr);
 	Dim GetDimensions(TextureIndex);
 	void EndUploadResources();
 
 	void BeginRender();
 	void BeginPrePass();
-	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, const char* label = nullptr);
-	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const Submesh& submesh, uint32_t dim, ShaderId shader, const char* label = nullptr);
-	TextureIndex GenBRDFLUT(uint32_t dim, ShaderId shader, const char* label = nullptr);
+	TextureIndex GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const ModoMeshLoader::Submesh& submesh, uint32_t dim, ShaderId shader, bool mip, const char* _Nullable label = nullptr);
+	TextureIndex GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex ib, const ModoMeshLoader::Submesh& submesh, uint32_t dim, ShaderId shader, const char* _Nullable label = nullptr);
+	TextureIndex GenBRDFLUT(uint32_t dim, ShaderId shader, const char* _Nullable label = nullptr);
 	void EndPrePass();
 	void StartForwardPass();
 	void Submit(const ShaderStructures::BgCmd& cmd);
@@ -43,7 +43,11 @@ public:
 	void Submit(const ShaderStructures::DrawCmd& cmd);
 	void Submit(const ShaderStructures::ModoDrawCmd& cmd);
 	void DoLightingPass(const ShaderStructures::DeferredCmd& cmd);
+	void SSAOPass(const ShaderStructures::SSAOCmd& cmd);
 	void Render();
+	void Update(double frame, double total);
+	bool Ready() { return true; /* no need to async. load pipelinestates */ }
+	void OnResize(int width, int height);
 private:
 #ifdef __OBJC__
 	void MakeColorAttachmentTextures(NSUInteger width, NSUInteger height);
@@ -78,8 +82,8 @@ private:
 
 	dispatch_semaphore_t _Nonnull frameBoundarySemaphore_;
 	uint32_t currentFrameIndex_ = 0;
-	id<CAMetalDrawable> drawable_;
-	id<MTLCommandBuffer> deferredCommandBuffer_;
+	id<CAMetalDrawable> _Nonnull drawable_;
+	id<MTLCommandBuffer> _Nonnull deferredCommandBuffer_;
 
 	CBFrameAlloc frame_[ShaderStructures::FrameCount];
 #endif

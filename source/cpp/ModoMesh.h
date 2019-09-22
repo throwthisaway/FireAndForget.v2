@@ -1,5 +1,5 @@
 #pragma once
-#include "ModoMeshLoader.h"
+#include "../../ModoMeshLoader/ModoMeshLoader.h"
 struct ModoMesh {
 	std::string name;
 	BufferIndex vb = InvalidBuffer, ib = InvalidBuffer;

@@ -9,11 +9,6 @@
 @implementation ViewController
 {
 	id <MTLDevice> device;
-	//id <MTLBuffer> vertices, colors;
-	//id <MTLLibrary> library;
-	//id <MTLFunction> vert, frag;
-	//id <MTLRenderPipelineState> pipeline;
-	//id <MTLCommandQueue> commandQueue;
 
 	MTLPixelFormat pixelformat_;
 	MetalView* metalView;
@@ -26,9 +21,6 @@
 	[super viewDidLoad];
 	pixelformat_ = MTLPixelFormatBGRA8Unorm;
 	[self setupLayer];
-	//[self setupVBO];
-	//[self setupShader];
-	//[self setupPipeline];
 }
 -(void)setupLayer {
 	device = MTLCreateSystemDefaultDevice();
@@ -39,64 +31,13 @@
 	metalLayer.device = device;
 	metalLayer.pixelFormat = pixelformat_;
 	renderer_.Init(device, pixelformat_);
+	renderer_.OnResize( metalLayer.bounds.size.width, metalLayer.bounds.size.height);
 	scene_.Init(&renderer_, metalLayer.bounds.size.width, metalLayer.bounds.size.height);
 	////[metalLayer setNeedsDisplay];
 	//commandQueue = [[metalView getMetalLayer].device newCommandQueue];
 }
 
--(void)setupVBO {
-//	static const float positions[] =
-//	{
-//		0.0,  0.5, 0, 1,
-//		-0.5, -0.5, 0, 1,
-//		0.5, -0.5, 0, 1,
-//	};
-//
-//	static const float col[] =
-//	{
-//		1, 0, 0, 1,
-//		0, 1, 0, 1,
-//		0, 0, 1, 1,
-//	};
-
-	//vertices = [device newBufferWithBytes:positions length:sizeof(positions) options: MTLResourceOptionCPUCacheModeDefault];
-	//colors = [device newBufferWithBytes:col length:sizeof(col) options:MTLResourceOptionCPUCacheModeDefault];
-}
-
--(void)setupShader {
-	//library = [device newDefaultLibrary];
-	//vert = [library newFunctionWithName:@"vertex_main"];
-	//frag = [library newFunctionWithName:@"fragment_main"];
-}
-
--(void)setupPipeline {
-	//MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
-	//pipelineDescriptor.vertexFunction = vert;
-	//pipelineDescriptor.fragmentFunction = frag;
-	//pipelineDescriptor.colorAttachments[0].pixelFormat = [metalView getMetalLayer].pixelFormat;
-	//pipeline = [device newRenderPipelineStateWithDescriptor: pipelineDescriptor error: NULL];
-}
-
 - (void) render {
-	/*id<CAMetalDrawable> drawable = [[metalView getMetalLayer] nextDrawable];
-	id<MTLTexture> texture = drawable.texture;
-
-	MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
-	passDescriptor.colorAttachments[0].texture = texture;
-	passDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-	passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-	passDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(.5, .5, .5, 1.);
-
-	id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-
-	id<MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor: passDescriptor];
-	[commandEncoder setRenderPipelineState: pipeline];
-	[commandEncoder setVertexBuffer: vertices offset: 0 atIndex: 0];
-	[commandEncoder setVertexBuffer: colors offset: 0 atIndex: 1];
-	[commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
-	[commandEncoder endEncoding];
-	[commandBuffer presentDrawable: drawable];
-	[commandBuffer commit];*/
 	timer_.Tick();
 	scene_.Update(timer_.FrameMs(), timer_.TotalMs());
 	@autoreleasepool {
@@ -105,6 +46,9 @@
 		renderer_.SetDrawable(drawable);
 		scene_.Render();
 	}
+}
+- (void)viewWillTransitionToSize:(NSSize)newSize {
+	renderer_.OnResize((int)newSize.width, (int)newSize.height);
 }
 
 - (void)setRepresentedObject:(id)representedObject {

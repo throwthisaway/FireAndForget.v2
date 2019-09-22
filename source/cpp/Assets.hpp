@@ -15,7 +15,7 @@
 #include "../Renderer.h"
 #endif
 #include "ModoMesh.h"
-#include "ModoMeshLoader.h"
+#include "../../ModoMeshLoader/ModoMeshLoader.h"
 
 namespace assets {
 	struct Assets {

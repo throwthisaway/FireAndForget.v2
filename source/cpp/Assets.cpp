@@ -214,8 +214,8 @@ namespace assets {
 		auto res = ModoMeshLoader::Load(data);
 		for (auto& s : res.submeshes)
 			for (int i = 0; i < sizeof(s.textures)/sizeof(s.textures[0]); ++i) {
-				auto& tex = s.textures[i];
 				if (!(s.textureMask & (1 << i)))  continue;
+				auto& tex = s.textures[i];
 				auto& str = res.images[tex.id];
 				auto result = loadContextModo.imageMap.insert(make_pair(str, loadContextModo.images.size()));
 				if (result.second) {
@@ -225,7 +225,7 @@ namespace assets {
 					tex.id = (uint32_t)result.first->second;
 				}
 			}
-		ModoMesh mesh = { renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
+		ModoMesh mesh = { ws2s(fname), renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
 			renderer->CreateBuffer(res.indices.data(), res.indices.size()),
 			std::move(res.submeshes) };
 		if (id == INVALID) loadContextModo.meshes.push_back(mesh);
@@ -291,12 +291,12 @@ namespace assets {
 		renderer->EndUploadResources();
 		loadContext = LoadContext{};
 		loadContextModo.meshes.resize(STATIC_MODEL_COUNT);
-		LoadModoMesh(renderer, L"light_modo.mesh", LIGHT);
-		LoadModoMesh(renderer, L"box_modo.mesh", PLACEHOLDER);
-		LoadModoMesh(renderer, L"checkerboard_modo.mesh", CHECKERBOARD);
-		LoadModoMesh(renderer, L"BEETHOVE_object_modo.mesh", BEETHOVEN);
-		LoadModoMesh(renderer, L"sphere_modo.mesh", SPHERE);
 		LoadModoMesh(renderer, L"textured_unit_cube_modo.mesh", UNITCUBE);
+//		LoadModoMesh(renderer, L"light_modo.mesh", LIGHT);
+//		LoadModoMesh(renderer, L"box_modo.mesh", PLACEHOLDER);
+//		LoadModoMesh(renderer, L"checkerboard_modo.mesh", CHECKERBOARD);
+//		LoadModoMesh(renderer, L"BEETHOVE_object_modo.mesh", BEETHOVEN);
+//		LoadModoMesh(renderer, L"sphere_modo.mesh", SPHERE);
 		LoadModoMesh(renderer, L"test_torus.mesh");
 		LoadModoMesh(renderer, L"checkerboard_modo.mesh");
 

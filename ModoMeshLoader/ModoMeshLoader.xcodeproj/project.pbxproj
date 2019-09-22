@@ -235,11 +235,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../3rdparty/glm\"",
+					"\"$(SRCROOT)/../../3rdparty/glm\"",
 					"\"$(SRCROOT)/../Shared\"",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				VALID_ARCHS = x86_64;
 			};
 			name = Debug;
 		};
@@ -250,11 +251,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../3rdparty/glm\"",
+					"\"$(SRCROOT)/../../3rdparty/glm\"",
 					"\"$(SRCROOT)/../Shared\"",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				VALID_ARCHS = x86_64;
 			};
 			name = Release;
 		};
