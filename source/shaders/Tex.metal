@@ -13,7 +13,7 @@ struct FSIn {
 	float3 n [[user(normal)]];
 	float2 uv0;
 };
-vertex FSIn tex_vs_main(const device VertexPNT* input [[buffer(0)]],
+vertex FSIn tex_vs_main(const device VertexPNUV* input [[buffer(0)]],
 						constant uObject& obj [[buffer(1)]],
 						uint id [[vertex_id]]) {
 	FSIn output;

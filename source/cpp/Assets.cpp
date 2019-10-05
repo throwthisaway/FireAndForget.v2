@@ -298,7 +298,7 @@ namespace assets {
 //		LoadModoMesh(renderer, L"BEETHOVE_object_modo.mesh", BEETHOVEN);
 //		LoadModoMesh(renderer, L"sphere_modo.mesh", SPHERE);
 		LoadModoMesh(renderer, L"test_torus.mesh");
-		LoadModoMesh(renderer, L"checkerboard_modo.mesh");
+		//LoadModoMesh(renderer, L"checkerboard_modo.mesh");
 
 		// generate textures
 		auto offset = textures.size();
@@ -469,7 +469,7 @@ namespace assets {
 					memcpy(ib.data() + iOffset, pn.indices.data(), iSize);
 				}
 				else if (l.submeshes.back().vertexType == VertexType::PNT) {
-					MeshGen<VertexPNT> pnt;
+					MeshGen<VertexPNUV> pnt;
 					l.submeshes.back().stride = sizeof(decltype(pnt)::VertexType);
 					const auto& uv = mesh.uvs.uvmaps[surfaceIndex][colLayers->uvmap];
 					for (MeshLoader::index_t i = section.offset, j = 0, end = section.offset + section.count; i < end; ++i) {

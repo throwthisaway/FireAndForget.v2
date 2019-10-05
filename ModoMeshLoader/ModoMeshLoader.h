@@ -19,19 +19,16 @@ namespace ModoMeshLoader {
 	enum class VertexFields{kPos, kNormal, kTangent, UV0, UV1, UV2, UV3};
 	const uint8_t VertexComponentCount[] = { 3, 3, 3, 2, 2, 2, 2 };
 	struct Texture {
-		unsigned id, uv;
+		uint32_t id, uv;
 	};
 	struct Submesh {
 		//string name;
 		uint32_t indexByteOffset, vertexByteOffset, stride;
-		uint32_t pad0;
 		Material material;
-		uint32_t pad1, pad2;
-		unsigned textureMask;
-		unsigned uvCount;
+		uint32_t textureMask;
+		uint32_t uvCount;
 		Texture textures[(int)TextureTypes::kCount];
 		uint32_t count;
-		uint32_t pad3;
 	};
 
 	constexpr tag_t Tag(const char* t) {

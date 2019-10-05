@@ -28,7 +28,7 @@ static float3 CalcTangent(float3 n) {
 	return t;
 
 }
-vertex FSIn modo_dn_vs_main(const device VertexPNT* input [[buffer(0)]],
+vertex FSIn modo_dn_vs_main(const device VertexPNTUV* input [[buffer(0)]],
 							  constant uObject& obj [[buffer(1)]],
 							  uint id [[vertex_id]]) {
 	FSIn output;

@@ -54,13 +54,10 @@
 		BDE817032191F8EB00B091F1 /* libmeshoptimizer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BDE817022191F8EB00B091F1 /* libmeshoptimizer.a */; };
 		BDE817042192216F00B091F1 /* Tex.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD0E83621FF010FA005A2F8A /* Tex.metal */; };
 		E7325D7322EF6393007FDF43 /* ModoDNMR.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7325D7222EF6393007FDF43 /* ModoDNMR.metal */; };
-		E751F9C823086D4B008A9E89 /* BEETHOVE_object_modo.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E751F9C223086D4B008A9E89 /* BEETHOVE_object_modo.mesh */; };
-		E758133A2337C449005985E7 /* BEETHOVE_high_modo.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E758132E2337C449005985E7 /* BEETHOVE_high_modo.mesh */; };
 		E758133B2337C449005985E7 /* 14031-normal.jpg in Resources */ = {isa = PBXBuildFile; fileRef = E75813342337C449005985E7 /* 14031-normal.jpg */; };
 		E758133C2337C449005985E7 /* BEETHOVE_merged_subdivided_twice.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E75813352337C449005985E7 /* BEETHOVE_merged_subdivided_twice.mesh */; };
 		E758133D2337C449005985E7 /* box_normal_map_test.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E75813362337C449005985E7 /* box_normal_map_test.mesh */; };
 		E758133E2337C449005985E7 /* modo_ball_test.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E75813372337C449005985E7 /* modo_ball_test.mesh */; };
-		E758133F2337C449005985E7 /* BEETHOVE_subdivided_twice.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E75813382337C449005985E7 /* BEETHOVE_subdivided_twice.mesh */; };
 		E75813402337C449005985E7 /* TestNormalMap.png in Resources */ = {isa = PBXBuildFile; fileRef = E75813392337C449005985E7 /* TestNormalMap.png */; };
 		E79B3F4D22EDD601008A34A7 /* rusted metal color.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4422EDD600008A34A7 /* rusted metal color.png */; };
 		E79B3F4E22EDD601008A34A7 /* rusted metal normal.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4922EDD600008A34A7 /* rusted metal normal.png */; };
@@ -188,13 +185,10 @@
 		E72D361122EDFD0B00B373EF /* DeferredBindings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DeferredBindings.h; path = cpp/DeferredBindings.h; sourceTree = "<group>"; };
 		E72D361722EDFD0B00B373EF /* Mesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Mesh.h; path = cpp/Mesh.h; sourceTree = "<group>"; };
 		E7325D7222EF6393007FDF43 /* ModoDNMR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ModoDNMR.metal; path = shaders/ModoDNMR.metal; sourceTree = "<group>"; };
-		E751F9C223086D4B008A9E89 /* BEETHOVE_object_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = BEETHOVE_object_modo.mesh; path = assets/BEETHOVE_object_modo.mesh; sourceTree = "<group>"; };
-		E758132E2337C449005985E7 /* BEETHOVE_high_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = BEETHOVE_high_modo.mesh; path = assets/BEETHOVE_high_modo.mesh; sourceTree = "<group>"; };
 		E75813342337C449005985E7 /* 14031-normal.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = "14031-normal.jpg"; path = "assets/14031-normal.jpg"; sourceTree = "<group>"; };
 		E75813352337C449005985E7 /* BEETHOVE_merged_subdivided_twice.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = BEETHOVE_merged_subdivided_twice.mesh; path = assets/BEETHOVE_merged_subdivided_twice.mesh; sourceTree = "<group>"; };
 		E75813362337C449005985E7 /* box_normal_map_test.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = box_normal_map_test.mesh; path = assets/box_normal_map_test.mesh; sourceTree = "<group>"; };
 		E75813372337C449005985E7 /* modo_ball_test.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = modo_ball_test.mesh; path = assets/modo_ball_test.mesh; sourceTree = "<group>"; };
-		E75813382337C449005985E7 /* BEETHOVE_subdivided_twice.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = BEETHOVE_subdivided_twice.mesh; path = assets/BEETHOVE_subdivided_twice.mesh; sourceTree = "<group>"; };
 		E75813392337C449005985E7 /* TestNormalMap.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = TestNormalMap.png; path = assets/TestNormalMap.png; sourceTree = "<group>"; };
 		E79B3F4422EDD600008A34A7 /* rusted metal color.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal color.png"; path = "assets/rusted metal color.png"; sourceTree = "<group>"; };
 		E79B3F4922EDD600008A34A7 /* rusted metal normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal normal.png"; path = "assets/rusted metal normal.png"; sourceTree = "<group>"; };
@@ -395,13 +389,10 @@
 			isa = PBXGroup;
 			children = (
 				E75813342337C449005985E7 /* 14031-normal.jpg */,
-				E758132E2337C449005985E7 /* BEETHOVE_high_modo.mesh */,
 				E75813352337C449005985E7 /* BEETHOVE_merged_subdivided_twice.mesh */,
-				E75813382337C449005985E7 /* BEETHOVE_subdivided_twice.mesh */,
 				E75813362337C449005985E7 /* box_normal_map_test.mesh */,
 				E75813372337C449005985E7 /* modo_ball_test.mesh */,
 				E75813392337C449005985E7 /* TestNormalMap.png */,
-				E751F9C223086D4B008A9E89 /* BEETHOVE_object_modo.mesh */,
 				E7AF512922F6048000A98E6F /* light_modo.mesh */,
 				E7AF512A22F6048000A98E6F /* textured_unit_cube_modo.mesh */,
 				E7AF512222F6042F00A98E6F /* 7582-normal.png */,
@@ -574,14 +565,11 @@
 				E758133B2337C449005985E7 /* 14031-normal.jpg in Resources */,
 				E7AF512822F6042F00A98E6F /* sphere_modo.mesh in Resources */,
 				BD45E01721CFA23800ABBD5B /* Serpentine_Valley_3k.hdr in Resources */,
-				E751F9C823086D4B008A9E89 /* BEETHOVE_object_modo.mesh in Resources */,
-				E758133F2337C449005985E7 /* BEETHOVE_subdivided_twice.mesh in Resources */,
 				E79B3F5022EDD601008A34A7 /* rusted metal metallic.png in Resources */,
 				E79B3F4F22EDD601008A34A7 /* test_torus.mesh in Resources */,
 				BD9FA6BF1F2E2CBE00978F61 /* checkerboard.tga in Resources */,
 				E7AF512622F6042F00A98E6F /* 7582-normal.png in Resources */,
 				BDE0F10B227DACC200CD85D9 /* random.png in Resources */,
-				E758133A2337C449005985E7 /* BEETHOVE_high_modo.mesh in Resources */,
 				E758133E2337C449005985E7 /* modo_ball_test.mesh in Resources */,
 				E79B3F4E22EDD601008A34A7 /* rusted metal normal.png in Resources */,
 				BD1DA54C20724065004EF62A /* light.mesh in Resources */,
