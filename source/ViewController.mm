@@ -5,6 +5,7 @@
 #include "cpp/Scene.hpp"
 #include "cpp/Timer.hpp"
 #include <Carbon/Carbon.h>
+#include "UI.h"
 
 @implementation ViewController
 {
@@ -71,7 +72,7 @@
 	scene_.input.Start(event.locationInWindow.x, -event.locationInWindow.y);
 }
 - (void)mouseMoved:(NSEvent *)event {
-	//NSLog(@"mouse moved %ld", (long)event.buttonNumber);
+	NSLog(@"mouse moved %ld", (long)event.buttonNumber);
 	// TODO:: not fired
 }
 - (void)mouseDragged:(NSEvent *)event {

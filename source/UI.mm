@@ -6,6 +6,7 @@
 namespace ui {
 	namespace {
 		bool show_demo_window = true, show_another_window = true;
+		ImGuiMouseCursor g_LastMouseCursor = ImGuiMouseCursor_Arrow;
 	}
 bool Init(id<MTLDevice> device) {
 	IMGUI_CHECKVERSION();
@@ -139,4 +140,80 @@ void OnResize(int width, int height) {
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize.x = width; io.DisplaySize.y = height;
 }
+bool UpdateMousePos(int x, int y) {
+	if (!ImGui::GetCurrentContext()) return false;
+	ImGuiIO& io = ImGui::GetIO();
+	io.MousePos = ImVec2((float)x, (float)y);
+	return io.WantCaptureMouse;
+}
+bool UpdateMouseButton(bool l, bool r, bool m) {
+	if (!ImGui::GetCurrentContext()) return false;
+	ImGuiIO& io = ImGui::GetIO();
+	int button = 0;
+	io.MouseDown[0] = l;
+	io.MouseDown[1] = r;
+	io.MouseDown[2] = m;
+	return io.WantCaptureMouse;
+}
+bool UpdateMouseWheel(int delta, bool horizontal) {
+	if (!ImGui::GetCurrentContext()) return false;
+	ImGuiIO& io = ImGui::GetIO();
+	// TODO:: delta /= WHEEL_DELTA;
+	if (horizontal) io.MouseWheelH += delta;
+	else io.MouseWheel += (float)delta;
+	return true;
+}
+bool UpdateKeyboard(int key, bool down) {
+	if (!ImGui::GetCurrentContext()) return false;
+	ImGuiIO& io = ImGui::GetIO();
+	io.KeysDown[key] = down;
+	return io.WantCaptureKeyboard;
+}
+bool UpdateKeyboardInput(int key) {
+	if (!ImGui::GetCurrentContext()) return false;
+	ImGuiIO& io = ImGui::GetIO();
+	io.AddInputCharacter(key);
+	return io.WantCaptureKeyboard;
+}
+void UpdateKeyboardModifiers(bool ctrl, bool alt, bool shift) {
+	if (!ImGui::GetCurrentContext()) return;
+	ImGuiIO& io = ImGui::GetIO();
+	io.KeyCtrl = ctrl;
+	io.KeyShift = shift;
+	io.KeyAlt = alt;
+	io.KeySuper = false;
+}
+//bool UpdateMouseCursor(Windows::UI::Core::CoreWindow^ window) {
+//	if (!ImGui::GetCurrentContext()) return false;
+//	ImGuiIO& io = ImGui::GetIO();
+//	// Update OS mouse cursor with the cursor requested by imgui
+//	//ImGuiMouseCursor mouse_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();
+//	if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) return false;
+//	ImGuiMouseCursor imgui_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();
+//	if (g_LastMouseCursor == imgui_cursor) {
+//		return false;
+//	}
+//	g_LastMouseCursor = imgui_cursor;
+//	if (imgui_cursor == ImGuiMouseCursor_None) {
+//		// Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
+//		window->PointerCursor = nullptr;
+//	}
+//	else {
+//		// Show OS mouse cursor
+//		Windows::UI::Core::CoreCursorType cursor = Windows::UI::Core::CoreCursorType::Arrow;
+//		switch (imgui_cursor)
+//		{
+//		case ImGuiMouseCursor_Arrow:        cursor = Windows::UI::Core::CoreCursorType::Arrow; break;
+//		case ImGuiMouseCursor_TextInput:    cursor = Windows::UI::Core::CoreCursorType::IBeam; break;
+//		case ImGuiMouseCursor_ResizeAll:    cursor = Windows::UI::Core::CoreCursorType::SizeAll; break;
+//		case ImGuiMouseCursor_ResizeEW:     cursor = Windows::UI::Core::CoreCursorType::SizeWestEast; break;
+//		case ImGuiMouseCursor_ResizeNS:     cursor = Windows::UI::Core::CoreCursorType::SizeNorthSouth; break;
+//		case ImGuiMouseCursor_ResizeNESW:   cursor = Windows::UI::Core::CoreCursorType::SizeNortheastSouthwest; break;
+//		case ImGuiMouseCursor_ResizeNWSE:   cursor = Windows::UI::Core::CoreCursorType::SizeNorthwestSoutheast; break;
+//		case ImGuiMouseCursor_Hand:         cursor = Windows::UI::Core::CoreCursorType::Hand; break;
+//		}
+//		window->PointerCursor = ref new Windows::UI::Core::CoreCursor(cursor, 0);
+//	}
+//	return true;
+//}
 }

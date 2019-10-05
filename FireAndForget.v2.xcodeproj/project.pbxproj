@@ -59,6 +59,7 @@
 		E758133D2337C449005985E7 /* box_normal_map_test.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E75813362337C449005985E7 /* box_normal_map_test.mesh */; };
 		E758133E2337C449005985E7 /* modo_ball_test.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E75813372337C449005985E7 /* modo_ball_test.mesh */; };
 		E75813402337C449005985E7 /* TestNormalMap.png in Resources */ = {isa = PBXBuildFile; fileRef = E75813392337C449005985E7 /* TestNormalMap.png */; };
+		E7908B972349131400E180FD /* MainWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = E7908B962349131400E180FD /* MainWindow.m */; };
 		E79B3F4D22EDD601008A34A7 /* rusted metal color.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4422EDD600008A34A7 /* rusted metal color.png */; };
 		E79B3F4E22EDD601008A34A7 /* rusted metal normal.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4922EDD600008A34A7 /* rusted metal normal.png */; };
 		E79B3F4F22EDD601008A34A7 /* test_torus.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4A22EDD600008A34A7 /* test_torus.mesh */; };
@@ -190,6 +191,7 @@
 		E75813362337C449005985E7 /* box_normal_map_test.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = box_normal_map_test.mesh; path = assets/box_normal_map_test.mesh; sourceTree = "<group>"; };
 		E75813372337C449005985E7 /* modo_ball_test.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = modo_ball_test.mesh; path = assets/modo_ball_test.mesh; sourceTree = "<group>"; };
 		E75813392337C449005985E7 /* TestNormalMap.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = TestNormalMap.png; path = assets/TestNormalMap.png; sourceTree = "<group>"; };
+		E7908B962349131400E180FD /* MainWindow.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainWindow.m; sourceTree = "<group>"; };
 		E79B3F4422EDD600008A34A7 /* rusted metal color.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal color.png"; path = "assets/rusted metal color.png"; sourceTree = "<group>"; };
 		E79B3F4922EDD600008A34A7 /* rusted metal normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal normal.png"; path = "assets/rusted metal normal.png"; sourceTree = "<group>"; };
 		E79B3F4A22EDD600008A34A7 /* test_torus.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = test_torus.mesh; path = assets/test_torus.mesh; sourceTree = "<group>"; };
@@ -361,6 +363,7 @@
 				BD28F7011F0A5F5100B07CBD /* Shaders.h */,
 				BDE816F32191B11C00B091F1 /* CBFrameAlloc.mm */,
 				BDE816F42191B11C00B091F1 /* CBFrameAlloc.hpp */,
+				E7908B962349131400E180FD /* MainWindow.m */,
 			);
 			path = source;
 			sourceTree = "<group>";
@@ -608,6 +611,7 @@
 				BD2E31DE21DA3DD20085F6DA /* VertexTypes.h.metal in Sources */,
 				BDE817042192216F00B091F1 /* Tex.metal in Sources */,
 				E7E1A7CD2337CE3D00911ED0 /* imgui_widgets.cpp in Sources */,
+				E7908B972349131400E180FD /* MainWindow.m in Sources */,
 				BD1B64252233E1BA00B7D806 /* PreFilterAndIntegrateBRDF.metal in Sources */,
 				E7E1A7CE2337CE3D00911ED0 /* imgui.cpp in Sources */,
 				E7E1A7CC2337CE3D00911ED0 /* imgui_draw.cpp in Sources */,
