@@ -6,6 +6,7 @@
 #include "cpp/Timer.hpp"
 #include <Carbon/Carbon.h>
 #include "UI.h"
+#include "cpp/DebugUI.h"
 
 @implementation ViewController
 {
@@ -17,10 +18,12 @@
 	Timer timer_;
 	Scene scene_;
 	bool keys[512];
+	bool l,r;
 }
 - (void)viewDidLoad {
 	[super viewDidLoad];
 	pixelformat_ = MTLPixelFormatBGRA8Unorm;
+	l = r = false;
 	[self setupLayer];
 }
 -(void)setupLayer {
@@ -65,15 +68,29 @@
 - (void)mouseExited:(NSEvent *)event {
 	//NSLog(@"mouse exited");
 }
+- (void) mouseUp:(NSEvent *)event {
+	l = false;
+	DEBUGUI_PROCESSINPUT(ui::UpdateMouseButton(l, r, false));
+}
 - (void)mouseDown:(NSEvent *)event {
-	scene_.input.Start(event.locationInWindow.x, -event.locationInWindow.y);
+	l = true;
+	if (!DEBUGUI_PROCESSINPUT(ui::UpdateMouseButton(l, r, false)))
+		scene_.input.Start(event.locationInWindow.x, -event.locationInWindow.y);
+}
+- (void)rightMouseUp:(NSEvent *)event {
+	r = false;
+	DEBUGUI_PROCESSINPUT(ui::UpdateMouseButton(l, r, false));
 }
 - (void)rightMouseDown:(NSEvent *)event {
-	scene_.input.Start(event.locationInWindow.x, -event.locationInWindow.y);
+	r = true;
+	if (!DEBUGUI_PROCESSINPUT(ui::UpdateMouseButton(false, true, false)))
+		scene_.input.Start(event.locationInWindow.x, -event.locationInWindow.y);
 }
 - (void)mouseMoved:(NSEvent *)event {
-	NSLog(@"mouse moved %ld", (long)event.buttonNumber);
-	// TODO:: not fired
+	NSPoint pos = [event locationInWindow];
+	NSPoint local_point = [metalView convertPoint:pos fromView:nil];
+
+	DEBUGUI(ui::UpdateMousePos(local_point.x, metalView.bounds.size.height - local_point.y));
 }
 - (void)mouseDragged:(NSEvent *)event {
 	//NSLog(@"mouse dragged %f %f", event.locationInWindow.x, event.locationInWindow.y);
