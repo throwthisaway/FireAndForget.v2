@@ -39,7 +39,9 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 	NSAssert((kCVReturnSuccess == error), @"Setting Display Link callback error %d", error);
 	CVDisplayLinkStart(displayLink);
 }
-
+-(void)render {
+	[delegate render];
+}
 -(void)renderForTime: (CVTimeStamp)time {
 	// TODO:: causes choppy framerate,  but main thread checker doesn't complain
 //	dispatch_async(dispatch_get_main_queue(), ^{
@@ -56,7 +58,11 @@ CVReturn displayCallback(CVDisplayLinkRef displayLink,
 //		//[self engineUpdate];
 //		[self performSelectorOnMainThread: @selector(engineUpdate) withObject: nil waitUntilDone: TRUE];
 //	}
-	[delegate render];
+
+
+	//[delegate render];
+	[self performSelectorOnMainThread: @selector(render) withObject: nil waitUntilDone: TRUE];
+
 }
 - (BOOL) wantsLayer {
 	return YES;
