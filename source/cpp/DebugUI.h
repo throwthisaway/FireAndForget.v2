@@ -4,5 +4,5 @@
 #define DEBUGUI_PROCESSINPUT(x) x
 #else
 #define DEBUGUI(x)
-#define DEBUGUI_PROCESSINPUT(x) true
+#define DEBUGUI_PROCESSINPUT(x) false
 #endif

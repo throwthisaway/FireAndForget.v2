@@ -149,7 +149,6 @@ bool UpdateMousePos(int x, int y) {
 bool UpdateMouseButton(bool l, bool r, bool m) {
 	if (!ImGui::GetCurrentContext()) return false;
 	ImGuiIO& io = ImGui::GetIO();
-	int button = 0;
 	io.MouseDown[0] = l;
 	io.MouseDown[1] = r;
 	io.MouseDown[2] = m;

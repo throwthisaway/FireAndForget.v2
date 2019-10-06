@@ -74,8 +74,13 @@
 }
 - (void)mouseDown:(NSEvent *)event {
 	l = true;
-	if (!DEBUGUI_PROCESSINPUT(ui::UpdateMouseButton(l, r, false)))
-		scene_.input.Start(event.locationInWindow.x, -event.locationInWindow.y);
+	DEBUGUI(ui::UpdateKeyboardModifiers((event.modifierFlags & NSEventModifierFlagControl) == NSEventModifierFlagControl, (event.modifierFlags & NSEventModifierFlagOption) == NSEventModifierFlagOption, (event.modifierFlags & NSEventModifierFlagShift) == NSEventModifierFlagShift));
+	if (!DEBUGUI_PROCESSINPUT(ui::UpdateMouseButton(l, r, false))) {
+		NSPoint pos = [event locationInWindow];
+		NSPoint local_point = [metalView convertPoint:pos fromView:nil];
+		local_point.y = metalView.bounds.size.height - local_point.y;
+		scene_.input.Start(local_point.x, local_point.y);
+	}
 }
 - (void)rightMouseUp:(NSEvent *)event {
 	r = false;
@@ -83,22 +88,35 @@
 }
 - (void)rightMouseDown:(NSEvent *)event {
 	r = true;
-	if (!DEBUGUI_PROCESSINPUT(ui::UpdateMouseButton(false, true, false)))
-		scene_.input.Start(event.locationInWindow.x, -event.locationInWindow.y);
+	DEBUGUI(ui::UpdateKeyboardModifiers((event.modifierFlags & NSEventModifierFlagControl) == NSEventModifierFlagControl, (event.modifierFlags & NSEventModifierFlagOption) == NSEventModifierFlagOption, (event.modifierFlags & NSEventModifierFlagShift) == NSEventModifierFlagShift));
+	if (!DEBUGUI_PROCESSINPUT(ui::UpdateMouseButton(l, r, false))) {
+		NSPoint pos = [event locationInWindow];
+		NSPoint local_point = [metalView convertPoint:pos fromView:nil];
+		local_point.y = metalView.bounds.size.height - local_point.y;
+		scene_.input.Start(local_point.x, local_point.y);
+	}
 }
 - (void)mouseMoved:(NSEvent *)event {
 	NSPoint pos = [event locationInWindow];
 	NSPoint local_point = [metalView convertPoint:pos fromView:nil];
-
-	DEBUGUI(ui::UpdateMousePos(local_point.x, metalView.bounds.size.height - local_point.y));
+	local_point.y = metalView.bounds.size.height - local_point.y;
+	if (DEBUGUI_PROCESSINPUT(ui::UpdateMousePos(local_point.x, local_point.y))) {
+	}
 }
 - (void)mouseDragged:(NSEvent *)event {
 	//NSLog(@"mouse dragged %f %f", event.locationInWindow.x, event.locationInWindow.y);
-
+	NSPoint pos = [event locationInWindow];
+	NSPoint local_point = [metalView convertPoint:pos fromView:nil];
+	local_point.y = metalView.bounds.size.height - local_point.y;
+	if (DEBUGUI_PROCESSINPUT(ui::UpdateMousePos(local_point.x, local_point.y))) {
+		ui::UpdateKeyboardModifiers((event.modifierFlags & NSEventModifierFlagControl) == NSEventModifierFlagControl, (event.modifierFlags & NSEventModifierFlagOption) == NSEventModifierFlagOption, (event.modifierFlags & NSEventModifierFlagShift) == NSEventModifierFlagShift);
+		ui::UpdateMouseButton(true, false, false);
+		return;
+	}
 	if (event.modifierFlags & NSEventModifierFlagCommand)
-		scene_.input.TranslateXZ(event.locationInWindow.x, -event.locationInWindow.y);
+		scene_.input.TranslateXZ(local_point.x, local_point.y);
 	else
-		scene_.input.Rotate(event.locationInWindow.x, -event.locationInWindow.y);
+		scene_.input.Rotate(local_point.x, local_point.y);
 	if (event.modifierFlags & NSEventModifierFlagControl)
 		scene_.UpdateSceneTransform();
 	else
@@ -106,19 +124,54 @@
 }
 - (void)rightMouseDragged:(NSEvent *)event {
 	//NSLog(@"mouse dragged %f %f", event.locationInWindow.x, event.locationInWindow.y);
-	scene_.input.TranslateY(-event.locationInWindow.y);
+	NSPoint pos = [event locationInWindow];
+	NSPoint local_point = [metalView convertPoint:pos fromView:nil];
+	local_point.y = metalView.bounds.size.height - local_point.y;
+	if (DEBUGUI_PROCESSINPUT(ui::UpdateMousePos(local_point.x, local_point.y))) {
+		ui::UpdateKeyboardModifiers((event.modifierFlags & NSEventModifierFlagControl) == NSEventModifierFlagControl, (event.modifierFlags & NSEventModifierFlagOption) == NSEventModifierFlagOption, (event.modifierFlags & NSEventModifierFlagShift) == NSEventModifierFlagShift);
+		ui::UpdateMouseButton(false, true, false);
+		return;
+	}
+	scene_.input.TranslateY(local_point.y);
+	if (event.modifierFlags & NSEventModifierFlagControl)
+		scene_.UpdateSceneTransform();
+	else
+		scene_.UpdateCameraTransform();
 }
 - (void)keyDown:(NSEvent *)event {
 	if (event.keyCode == kVK_Escape) {
 		[[[self view] window] close];
 		return;
 	}
-	assert(event.keyCode < sizeof(keys) / sizeof(keys[0]));
-	keys[event.keyCode] = true;
+	DEBUGUI(ui::UpdateKeyboardModifiers((event.modifierFlags & NSEventModifierFlagControl) == NSEventModifierFlagControl, (event.modifierFlags & NSEventModifierFlagOption) == NSEventModifierFlagOption, (event.modifierFlags & NSEventModifierFlagShift) == NSEventModifierFlagShift));
+	NSString* chars = [event characters];
+	DEBUGUI_PROCESSINPUT(ui::UpdateKeyboardInput([chars characterAtIndex:0]));
+	if (!DEBUGUI_PROCESSINPUT(ui::UpdateKeyboard([chars characterAtIndex:0], true))) {
+		assert([chars characterAtIndex:0] < sizeof(keys) / sizeof(keys[0]));
+		keys[[chars characterAtIndex:0]] = true;
+	}
 }
 - (void)keyUp:(NSEvent *) event {
-	assert(event.keyCode < sizeof(keys) / sizeof(keys[0]));
-	keys[event.keyCode] = false;
+	DEBUGUI(ui::UpdateKeyboardModifiers((event.modifierFlags & NSEventModifierFlagControl) == NSEventModifierFlagControl, (event.modifierFlags & NSEventModifierFlagOption) == NSEventModifierFlagOption, (event.modifierFlags & NSEventModifierFlagShift) == NSEventModifierFlagShift));
+	NSString* chars = [event characters];
+	if (!DEBUGUI_PROCESSINPUT(ui::UpdateKeyboard([chars characterAtIndex:0], false))) {
+		assert([chars characterAtIndex:0] < sizeof(keys) / sizeof(keys[0]));
+		keys[[chars characterAtIndex:0]] = false;
+	}
 }
-
+- (void)scrollWheel:(NSEvent *)event {
+	if (!DEBUGUI_PROCESSINPUT(ui::UpdateMouseWheel(event.deltaY, false)) && !DEBUGUI_PROCESSINPUT(ui::UpdateMouseWheel(event.deltaX, true))) {
+		
+	}
+}
+- (void)cursorUpdate:(NSEvent *)event {
+//   switch(type) {
+//		case prezi::platform::CursorType::kArrow:
+//			[[NSCursor arrowCursor] set];
+//			break;
+//		case prezi::platform::CursorType::kPointingHand:
+//			[[NSCursor pointingHandCursor] set];
+//			break;
+//	}
+}
 @end
