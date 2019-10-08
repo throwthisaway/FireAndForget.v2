@@ -2,6 +2,7 @@
 #include <metal_math>
 #include "Common.h.metal"
 #include "PBR.h.metal"
+#include "ShaderStructs.h.metal"
 
 struct FSIn {
 	float4 pos [[position]];
@@ -37,8 +38,8 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	float4 albedo = albedoTx.sample(deferredsmp, input.uv);
 	float3 v = normalize(scene.eyePos - worldPos);
 
-	const float roughness = material.r;
-	const float metallic = material.g;
+	const float metallic = material.r;
+	const float roughness = material.g;
 	float3 f0 = float3(.04f);
 	f0 = mix(f0, albedo.rgb, metallic);
 	float r1 = roughness + 1.f;

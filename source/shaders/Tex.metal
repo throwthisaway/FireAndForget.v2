@@ -1,12 +1,6 @@
 #include "Common.h.metal"
 #include "VertexTypes.h.metal"
-#include "ShaderStructs.h"
-
-// TODO:: declare sampler and texture
-struct uObject {
-	float4x4 mvp;
-	float4x4 m;
-};
+#include "ShaderStructs.h.metal"
 
 struct FSIn {
 	float4 pos [[position]];
@@ -14,7 +8,7 @@ struct FSIn {
 	float2 uv0;
 };
 vertex FSIn tex_vs_main(const device VertexPNUV* input [[buffer(0)]],
-						constant uObject& obj [[buffer(1)]],
+						constant Object& obj [[buffer(1)]],
 						uint id [[vertex_id]]) {
 	FSIn output;
 	float4 pos = float4(input[id].pos, 1.f);

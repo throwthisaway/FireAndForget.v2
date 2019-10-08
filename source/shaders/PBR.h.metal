@@ -1,6 +1,5 @@
 #include <metal_stdlib>
 using namespace metal;
-#include "ShaderStructs.h"
 
 float NDF_GGXTR(float3 n, float3 h, float roughness);
 float NDF_GGXTR_a2(float ndoth, float a2);
@@ -13,4 +12,3 @@ struct PBRMaterial {
 	float roughness;
 	float ao;
 };
-float3 ComputePointLight_PBR(PointLight l, float3 p, float3 n, PBRMaterial material);

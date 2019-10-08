@@ -1,41 +1,40 @@
 #ifndef __SHADERSTRUCTS___
 #define __SHADERSTRUCTS___
 
-struct Object {
+struct ALIGN16 Object {
 	// https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-per-component-math?redirectedfrom=MSDN#Matrix_Ordering
 	// or use #pragmapack_matrix directive in shader
-	row_major float4x4 mvp, m, mv;
+	ALIGN16 row_major float4x4 mvp, m, mv;
 };
 struct Material {
-	float3 diffuse;
-	uint32_t pad0;
-	float2 metallic_roughness;
+	ALIGN16 float3 diffuse;
+	ALIGN16 float2 metallic_roughness;
 };
 struct PointLight {
-	float3 diffuse;
-	float3 ambient;
-	float3 specular;
-	float3 pos;
-	float4 att_range;
+	ALIGN16 float3 diffuse;
+	ALIGN16 float3 ambient;
+	ALIGN16 float3 specular;
+	ALIGN16 float3 pos;
+	ALIGN16 float4 att_range;
 };
 #define MAX_LIGHTS 2
 struct SceneCB {
-	float4x4 ip, ivp;
-	PointLight light[MAX_LIGHTS];
-	float3 eyePos;
-	float2 nf;
-	float2 viewport;
+	ALIGN16 float4x4 ip, ivp;
+	ALIGN16 PointLight light[MAX_LIGHTS];
+	ALIGN16 float3 eyePos;
+	ALIGN16 float2 nf;
+	ALIGN16 float2 viewport;
 };
-struct SSAOScene {
-	row_major float4x4 proj, ivp, ip, view;
-	float2 viewport;
+struct ALIGN16 SSAOScene {
+	ALIGN16 row_major float4x4 proj, ivp, ip, view;
+	ALIGN16 float2 viewport;
 };
-struct AO {
-	float2 randomFactor;
-	float rad;
-	float scale;
-	float intensity;
-	float fadeStart, fadeEnd;
-	float bias;
+struct ALIGN16 AO {
+	ALIGN16 float2 randomFactor;
+	ALIGN16 float rad;
+	ALIGN16 float scale;
+	ALIGN16 float intensity;
+	ALIGN16 float fadeStart, fadeEnd;
+	ALIGN16 float bias;
 };
 #endif

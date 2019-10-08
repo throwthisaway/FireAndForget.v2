@@ -1,15 +1,15 @@
 #pragma once
 #ifdef _MSC_VER
 #define MSVC_ALIGN16 _declspec(align(16))
-#define row_major
-#define column_major
 #define CLANG_ALIGN16
 #else /* if CLANG */
 #define CLANG_ALIGN16 __attribute__((aligned(16)))
 #define MSVC_ALIGN16
+#endif
 #define row_major
 #define column_major
-#endif
+// TODO:: replace everything if it works
+#define ALIGN16 __attribute__((aligned(16)))
 // TODO:: #define GLM_DEPTH_ZERO_TO_ONE
 // TODO:: #define GLM_LEFT_HANDED
 // TODO:: set GLM_CONFIG_CLIP_CONTROL to GLM_CLIP_CONTROL_LH_ZO

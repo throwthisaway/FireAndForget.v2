@@ -62,7 +62,7 @@ void Scene::PrepareScene() {
 			auto model = assets_.models[assets::Assets::SPHERE];
 			assets_.models.push_back(model);
 			objects_.push_back({ pos, {}, index_t(assets_.models.size() - 1) });
-			assets_.materials.push_back({ { .5f, .0f, .0f },0/*pad*/,
+			assets_.materials.push_back({ { .5f, .0f, .0f },
 				{glm::clamp((float)j / count, .05f, 1.f), (float)i / count } });
 			pos.x += incX;
 			auto& submesh = assets_.models[objects_.back().mesh].layers.front().submeshes.front();

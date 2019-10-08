@@ -1,6 +1,6 @@
 #include "Common.h.metal"
 #include "VertexTypes.h.metal"
-#include "ShaderStructs.h"
+#include "ShaderStructs.h.metal"
 
 struct PSIn {
 	float4 pos [[position]];

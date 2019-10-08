@@ -178,7 +178,6 @@
 		BDE816F32191B11C00B091F1 /* CBFrameAlloc.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CBFrameAlloc.mm; sourceTree = "<group>"; };
 		BDE816F42191B11C00B091F1 /* CBFrameAlloc.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CBFrameAlloc.hpp; sourceTree = "<group>"; };
 		BDE816F72191BDF900B091F1 /* Transform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Transform.h; path = cpp/Transform.h; sourceTree = "<group>"; };
-		BDE816F82191BDF900B091F1 /* ShaderStructs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ShaderStructs.h; path = cpp/ShaderStructs.h; sourceTree = "<group>"; };
 		BDE816F92191BDF900B091F1 /* ShaderTypeAliases.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ShaderTypeAliases.h; path = cpp/ShaderTypeAliases.h; sourceTree = "<group>"; };
 		BDE816FA2191E8D800B091F1 /* meshoptimizer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = meshoptimizer.xcodeproj; path = ../3rdparty/meshoptimizer/meshoptimizer.xcodeproj; sourceTree = "<group>"; };
 		BDE817022191F8EB00B091F1 /* libmeshoptimizer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmeshoptimizer.a; path = ../3rdparty/meshoptimizer/Debug/libmeshoptimizer.a; sourceTree = "<group>"; };
@@ -197,6 +196,7 @@
 		E79B3F4A22EDD600008A34A7 /* test_torus.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = test_torus.mesh; path = assets/test_torus.mesh; sourceTree = "<group>"; };
 		E79B3F4B22EDD600008A34A7 /* rusted metal metallic.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal metallic.png"; path = "assets/rusted metal metallic.png"; sourceTree = "<group>"; };
 		E79B3F4C22EDD600008A34A7 /* rusted metal roughness.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal roughness.png"; path = "assets/rusted metal roughness.png"; sourceTree = "<group>"; };
+		E7A5B172234D262F00D28E9B /* ShaderStructs.h.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ShaderStructs.h.metal; path = shaders/ShaderStructs.h.metal; sourceTree = "<group>"; };
 		E7AF511C22F6042F00A98E6F /* checkerboard_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = checkerboard_modo.mesh; path = assets/checkerboard_modo.mesh; sourceTree = "<group>"; };
 		E7AF512222F6042F00A98E6F /* 7582-normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "7582-normal.png"; path = "assets/7582-normal.png"; sourceTree = "<group>"; };
 		E7AF512322F6042F00A98E6F /* box_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = box_modo.mesh; path = assets/box_modo.mesh; sourceTree = "<group>"; };
@@ -264,6 +264,7 @@
 				BDE7ECBB224FC8A300BB9171 /* Downsample_half.metal */,
 				E7325D7222EF6393007FDF43 /* ModoDNMR.metal */,
 				E7AF512D22F6053300A98E6F /* ModoDN.metal */,
+				E7A5B172234D262F00D28E9B /* ShaderStructs.h.metal */,
 			);
 			name = shaders;
 			sourceTree = "<group>";
@@ -283,7 +284,6 @@
 				E7E1A7B52337C65500911ED0 /* ui */,
 				E72D361122EDFD0B00B373EF /* DeferredBindings.h */,
 				E72D361722EDFD0B00B373EF /* Mesh.h */,
-				BDE816F82191BDF900B091F1 /* ShaderStructs.h */,
 				BDE816F92191BDF900B091F1 /* ShaderTypeAliases.h */,
 				BDE816F72191BDF900B091F1 /* Transform.h */,
 				BD0E83541FEFF7D8005A2F8A /* CreateShaderParams.h */,
@@ -711,7 +711,7 @@
 				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../3rdparty/meshoptimizer/Debug\"";
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MTL_ENABLE_DEBUG_INFO = YES;
-				MTL_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../Shared\"";
+				MTL_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Shared\"";
 				ONLY_ACTIVE_ARCH = YES;
 				PRELINK_LIBS = "";
 				SDKROOT = macosx;
@@ -764,7 +764,7 @@
 				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../3rdparty/meshoptimizer/Debug\"";
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../Shared\"";
+				MTL_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Shared\"";
 				PRELINK_LIBS = "";
 				SDKROOT = macosx;
 			};
@@ -791,7 +791,7 @@
 				INFOPLIST_FILE = source/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MTL_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../Shared\" \"$(SRCROOT)/../ModoMeshLoader";
+				MTL_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Shared\"";
 				PRODUCT_BUNDLE_IDENTIFIER = org.FireAndForget.v2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYSTEM_HEADER_SEARCH_PATHS = ../3rdparty/glm;
@@ -815,7 +815,7 @@
 				INFOPLIST_FILE = source/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MTL_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../Shared\" \"$(SRCROOT)/../ModoMeshLoader";
+				MTL_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Shared\"";
 				PRODUCT_BUNDLE_IDENTIFIER = org.FireAndForget.v2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYSTEM_HEADER_SEARCH_PATHS = ../3rdparty/glm;
