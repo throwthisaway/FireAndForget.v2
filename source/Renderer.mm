@@ -484,9 +484,15 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	[deferredEncoder setRenderPipelineState: [shaders_ selectPipeline: DeferredPBR].pipeline];
 	[deferredEncoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
 	NSUInteger fsTexIndex = 0;
-	for (; fsTexIndex < RenderTargetCount; ++fsTexIndex) {
-		[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][fsTexIndex] atIndex:fsTexIndex];
-	}
+	// albedo
+	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][0] atIndex:fsTexIndex++];
+	// normalWS
+	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][1] atIndex:fsTexIndex++];
+	// material
+	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][3] atIndex:fsTexIndex++];
+	// debug
+	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][4] atIndex:fsTexIndex++];
+
 	[deferredEncoder setFragmentTexture: depthTextures_[currentFrameIndex_] atIndex:fsTexIndex++];
 	assert(cmd.irradiance != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[cmd.irradiance].texture atIndex:fsTexIndex++];
@@ -494,8 +500,8 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	[deferredEncoder setFragmentTexture: textures_[cmd.prefilteredEnvMap].texture atIndex:fsTexIndex++];
 	assert(cmd.BRDFLUT != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[cmd.BRDFLUT].texture atIndex:fsTexIndex++];
+	// TODO:: SSAO
 	[deferredEncoder setFragmentTexture: halfResDepthTextures_[currentFrameIndex_] atIndex:fsTexIndex++];
-	[deferredEncoder setFragmentTexture: textures_[cmd.random].texture atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentSamplerState:deferredSamplerState_ atIndex:0];
 	[deferredEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:1];
 	[deferredEncoder setFragmentSamplerState:mipmapSamplerState_ atIndex:2];
@@ -614,6 +620,7 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 				auto cb = frame.Alloc(sizeof(Object));
 				((Object*)cb.address)->m = cmd.o.m;
 				((Object*)cb.address)->mvp = cmd.o.mvp;
+				((Object*)cb.address)->mv = cmd.o.mv;
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			{
@@ -629,6 +636,7 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 				auto cb = frame.Alloc(sizeof(Object));
 				((Object*)cb.address)->m = cmd.o.m;
 				((Object*)cb.address)->mvp = cmd.o.mvp;
+				((Object*)cb.address)->mv = cmd.o.mv;
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			for (int i = 0; i < sizeof(cmd.submesh.textures) / sizeof(cmd.submesh.textures[0]); ++i) {
@@ -644,6 +652,7 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 				auto cb = frame.Alloc(sizeof(Object));
 				((Object*)cb.address)->m = cmd.o.m;
 				((Object*)cb.address)->mvp = cmd.o.mvp;
+				((Object*)cb.address)->mv = cmd.o.mv;
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			{

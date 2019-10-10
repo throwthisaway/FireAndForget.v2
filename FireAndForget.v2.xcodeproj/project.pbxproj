@@ -122,7 +122,6 @@
 		BD1DA54A20724064004EF62A /* light.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = light.mesh; path = assets/light.mesh; sourceTree = "<group>"; };
 		BD25F9DE1ECD9B4200ACD738 /* Renderer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = Renderer.mm; sourceTree = "<group>"; };
 		BD25F9E01ECD9B5C00ACD738 /* Renderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Renderer.h; sourceTree = "<group>"; };
-		BD25F9E41ECDEB4E00ACD738 /* RendererWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RendererWrapper.h; path = cpp/RendererWrapper.h; sourceTree = "<group>"; };
 		BD28F6FC1F09753300B07CBD /* Input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Input.cpp; path = cpp/input/Input.cpp; sourceTree = "<group>"; };
 		BD28F6FD1F09753300B07CBD /* Input.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Input.hpp; path = cpp/input/Input.hpp; sourceTree = "<group>"; };
 		BD28F6FF1F0A5E9B00B07CBD /* Shaders.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = Shaders.mm; sourceTree = "<group>"; };
@@ -182,7 +181,6 @@
 		BDE816FA2191E8D800B091F1 /* meshoptimizer.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = meshoptimizer.xcodeproj; path = ../3rdparty/meshoptimizer/meshoptimizer.xcodeproj; sourceTree = "<group>"; };
 		BDE817022191F8EB00B091F1 /* libmeshoptimizer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmeshoptimizer.a; path = ../3rdparty/meshoptimizer/Debug/libmeshoptimizer.a; sourceTree = "<group>"; };
 		E70E46FE23006C040052B710 /* ModoMesh.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ModoMesh.h; path = cpp/ModoMesh.h; sourceTree = "<group>"; };
-		E72D361122EDFD0B00B373EF /* DeferredBindings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DeferredBindings.h; path = cpp/DeferredBindings.h; sourceTree = "<group>"; };
 		E72D361722EDFD0B00B373EF /* Mesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Mesh.h; path = cpp/Mesh.h; sourceTree = "<group>"; };
 		E7325D7222EF6393007FDF43 /* ModoDNMR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ModoDNMR.metal; path = shaders/ModoDNMR.metal; sourceTree = "<group>"; };
 		E75813342337C449005985E7 /* 14031-normal.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = "14031-normal.jpg"; path = "assets/14031-normal.jpg"; sourceTree = "<group>"; };
@@ -282,7 +280,6 @@
 			isa = PBXGroup;
 			children = (
 				E7E1A7B52337C65500911ED0 /* ui */,
-				E72D361122EDFD0B00B373EF /* DeferredBindings.h */,
 				E72D361722EDFD0B00B373EF /* Mesh.h */,
 				BDE816F92191BDF900B091F1 /* ShaderTypeAliases.h */,
 				BDE816F72191BDF900B091F1 /* Transform.h */,
@@ -292,7 +289,6 @@
 				BD9FA6C01F31E8B100978F61 /* Camera.cpp */,
 				BD9FA6C11F31E8B100978F61 /* Camera.hpp */,
 				BD28F6F81F0974D800B07CBD /* input */,
-				BD25F9E41ECDEB4E00ACD738 /* RendererWrapper.h */,
 				BD2BB2A21EB4A9F600B82284 /* Sphere.cpp */,
 				BD2BB2A31EB4A9F600B82284 /* Sphere.hpp */,
 				BD7B0ED81ECB544300B983E9 /* Scene.cpp */,

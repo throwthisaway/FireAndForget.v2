@@ -27,7 +27,7 @@ float3 ImportanceSampleGGX(float2 xi, float3x3 mat/*spherical to cartesian*/, co
 	return normalize(mat * h);
 }
 
-fragment float4 prefilter_fs_main(FragP input [[stage_in]],
+fragment float4 prefilter_fs_main(FS_P input [[stage_in]],
 								  constant float& roughness [[buffer(0)]],
 								  constant float& resolution [[buffer(1)]],
 								  texturecube<float> env [[texture(0)]],
@@ -110,6 +110,6 @@ float2 IntegrateBRDF(float ndotv, float roughness) {
 	}
 	return res / sampleCount;
 }
-fragment float2 integratebrdf_fs_main(FragT input [[stage_in]]) {
+fragment float2 integratebrdf_fs_main(FS_UV input [[stage_in]]) {
 	return IntegrateBRDF(input.uv.x, input.uv.y);
 }

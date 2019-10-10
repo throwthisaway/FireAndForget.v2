@@ -4,6 +4,20 @@
 #include "imgui.h"
 #include "DebugUI.h"
 
+// TODO::
+// consolidate sampler names
+// investigate moire pattern on light specular
+// WIN: test if all meshes are serialised again, with different layout
+// WIN: conform alignment in SIMDTypeAliases and ShaderStructs
+// WIN: handle tangent from mesh data instead of GS
+// WIN: remove texSSAODebug
+// MAC: test tangents are calculated well
+// MAC: integrate normal mapping
+// MAC: integrate SSAO, add SSAO pass
+// MAC: render fsquad via vertex id
+// MAC: adapt other worldposfromdepth
+// MAC: colorAttachmentTextures_/depthTextures_ don't need framecount
+// MAC: framealloc cb copy
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
 }

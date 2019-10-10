@@ -18,9 +18,10 @@ using namespace ShaderStructures;
 		device_ = device;
 		pixelFormat_ = pixelFormat;
 		colorAttachmentFormats_[0] = MTLPixelFormatRGBA8Unorm;	// color
-		colorAttachmentFormats_[1] = MTLPixelFormatRG16Unorm;	// normal
-		colorAttachmentFormats_[2] = MTLPixelFormatRGBA8Unorm;	// material
-		colorAttachmentFormats_[3] = MTLPixelFormatRGBA32Float;	// debug
+		colorAttachmentFormats_[1] = MTLPixelFormatRGBA16Float;	// normalWS
+		colorAttachmentFormats_[2] = MTLPixelFormatRGBA16Float;	// normalVS
+		colorAttachmentFormats_[3] = MTLPixelFormatRGBA8Unorm;	// material
+		colorAttachmentFormats_[4] = MTLPixelFormatRGBA32Float;	// debug
 		[self setupShaders];
 		[self setupPipeline: pixelFormat];
 	}
@@ -313,7 +314,7 @@ using namespace ShaderStructures;
 		vertexDesc.layouts[0].stride = 3 * sizeof(float) /*pos*/+ 3 * sizeof(float)/*normal*/ + 3 * sizeof(float)/*tangent*/ + 2 * sizeof(float) /*uv*/;
 		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
 		pipelineDescriptor.vertexDescriptor = vertexDesc;
-		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"modo_dnmr_vs_main"];
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"modo_dn_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"modo_dnmr_fs_main"];
 		for (int i = 0; i < RenderTargetCount; ++i)
 			pipelineDescriptor.colorAttachments[i].pixelFormat = colorAttachmentFormats_[i];

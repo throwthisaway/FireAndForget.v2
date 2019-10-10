@@ -18,22 +18,21 @@ struct DeferredOut {
 fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 									  constant SceneCB& scene [[buffer(0)]],
 									  texture2d<float> albedoTx [[texture(0)]],
-									  texture2d<float> normal [[texture(1)]],
+									  texture2d<float> normalTx [[texture(1)]],
 									  texture2d<float> materialTx [[texture(2)]],
-									  texture2d<float> debug [[texture(3)]],
-									  texture2d<float> depth [[texture(4)]],
+									  texture2d<float> debugTx [[texture(3)]],
+									  texture2d<float> depthTx [[texture(4)]],
 									  texturecube<float> irradianceTx [[texture(5)]],
 									  texturecube<float> prefilteredEnvTx [[texture(6)]],
-									  texture2d<float> BRDFLUT [[texture(7)]],
-									  texture2d<float> halfResDepth [[texture(8)]],
-									  texture2d<float> random [[texture(9)]],
+									  texture2d<float> BRDFLUTTx [[texture(7)]],
+									  texture2d<float> SSAOTx [[texture(8)]],
 									  sampler deferredsmp [[sampler(0)]],
 									  sampler linearsmp [[sampler(1)]],
 									  sampler mipmapsmp [[sampler(2)]],
 									  sampler clampsmp [[sampler(3)]]) {
-	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depth.sample(deferredsmp, input.uv).x);
+	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depthTx.sample(deferredsmp, input.uv).x);
 	//float3 worldPos = debug.sample(deferredsmp, input.uv).xyz;
-	float3 n = Decode(normal.sample(deferredsmp, input.uv).xy);
+	float3 n = normalTx.sample(deferredsmp, input.uv).xyz;
 	float4 material = materialTx.sample(deferredsmp, input.uv);
 	float4 albedo = albedoTx.sample(deferredsmp, input.uv);
 	float3 v = normalize(scene.eyePos - worldPos);
@@ -86,7 +85,7 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	const float max_ref_lod = 4.f;	// TODO:: pass it as constant buffer
 	float3 prefilerColor = prefilteredEnvTx.sample(mipmapsmp, r, level(roughness * max_ref_lod)).rgb;
 
-	float2 envBRDF = BRDFLUT.sample(clampsmp, float2(ndotv, roughness)).rg;
+	float2 envBRDF = BRDFLUTTx.sample(clampsmp, float2(ndotv, roughness)).rg;
 	float3 specular = prefilerColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnek Shlick
 	float3 ambient = (kd * diffuse + specular) * (1.f - aoResult); // * aoResult;
 	//

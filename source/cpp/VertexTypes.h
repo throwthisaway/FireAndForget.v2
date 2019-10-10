@@ -8,14 +8,14 @@ struct VertexPN {
 };
 struct VertexPNUV {
 	packed_float3 pos, n;
-	packed_float2 uv0;
+	packed_float2 uv;
 };
 struct VertexPNTUV {
 	packed_float3 pos, n, t;
-	packed_float2 uv0;
+	packed_float2 uv;
 };
 struct VertexPT {
 	packed_float3 pos;
-	packed_float2 uv0;
+	packed_float2 uv;
 };
 #endif /* VertexTypes_h */

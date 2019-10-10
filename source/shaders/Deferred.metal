@@ -4,9 +4,9 @@
 #include "VertexTypes.h.metal"
 #include "FragInput.h.metal"
 
-vertex FragT fsquad_vs_main(constant VertexFSQuad* input [[buffer(0)]],
+vertex FS_UV fsquad_vs_main(constant VertexFSQuad* input [[buffer(0)]],
 							 uint id [[vertex_id]]) {
-	FragT res;
+	FS_UV res;
 	res.pos = float4(input[id].pos, 0.f, 1.f);
 	res.uv = input[id].uv;
 	return res;
@@ -17,7 +17,7 @@ struct DeferredOut {
 	float4 debug [[color(1)]];
 };
 
-fragment DeferredOut deferred_fs_main(FragT input [[stage_in]],
+fragment DeferredOut deferred_fs_main(FS_UV input [[stage_in]],
 							  constant SceneCB& scene [[buffer(0)]],
 							  texture2d<float> color [[texture(0)]],
 							  texture2d<float> normal [[texture(1)]],
@@ -26,7 +26,7 @@ fragment DeferredOut deferred_fs_main(FragT input [[stage_in]],
 							  texture2d<float> depth [[texture(4)]],
 							  sampler smp [[sampler(0)]]) {
 	float3 diffuseColor = color.sample(smp, input.uv).rgb;
-	float3 n = Decode(normal.sample(smp, input.uv).xy);
+	float3 n = normal.sample(smp, input.uv).xyz;
 	float4 mat = material.sample(smp, input.uv);
 	float3 world_pos = WorldPosFormDepth(input.uv, scene.ip, depth.sample(smp, input.uv).x);
 

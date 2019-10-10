@@ -8,12 +8,11 @@ vertex float4 debug_vs_main(const device VertexPN* input [[buffer(0)]],
 	return mvp * float4(input[vid].pos, 1.f);
 }
 
-fragment FragOut debug_fs_main(float4 vert_in [[stage_in]],
+fragment MRTOut debug_fs_main(float4 vert_in [[stage_in]],
 							constant float4& col [[buffer(0)]]) {
-	FragOut output;
+	MRTOut output;
 	output.albedo = col;
-	output.normal = normalize(float2(1.f, 1.f));
-	output.material = float4(0.f, 0.f, 0.f, 1.f);
-	output.debug = float4(0.f);//vert_in;
+	output.normalVS = output.normalWS = normalize(float4(1.f, 1.f, 1.f, 0.f));
+	output.material = float4(0.f, 0.f, 0.f, 0.f);
 	return output;
 }
