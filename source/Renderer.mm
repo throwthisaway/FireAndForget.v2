@@ -283,20 +283,20 @@ TextureIndex Renderer::GenBRDFLUT(uint32_t dim, ShaderId shader, const char* lab
 	return (TextureIndex)textures_.size() - 1;
 }
 void Renderer::MakeColorAttachmentTextures(NSUInteger width, NSUInteger height) {
-	if (!colorAttachmentTextures_[0][0] || [colorAttachmentTextures_[0][0] width] != width ||
-		[colorAttachmentTextures_[0][0] height] != height) {
+	if (!colorAttachmentTextures_[0] || [colorAttachmentTextures_[0] width] != width ||
+		[colorAttachmentTextures_[0] height] != height) {
+		for (int j = 0; j < RenderTargetCount; ++j) {
+			MTLTextureDescriptor *desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:[shaders_ getColorAttachmentFormats][j]
+																							width:width
+																						   height:height
+																						mipmapped:NO];
+			desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+			desc.resourceOptions = MTLResourceStorageModePrivate;
+			colorAttachmentTextures_[j] = [device_ newTextureWithDescriptor:desc];
+			[colorAttachmentTextures_[j] setLabel:@"Color Attachment"];
+		}
+		// debug...
 		for (int i = 0; i < FrameCount; ++i) {
-			for (int j = 0; j < RenderTargetCount; ++j) {
-				MTLTextureDescriptor *desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:[shaders_ getColorAttachmentFormats][j]
-																								width:width
-																							   height:height
-																							mipmapped:NO];
-				desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
-				desc.resourceOptions = MTLResourceStorageModePrivate;
-				colorAttachmentTextures_[i][j] = [device_ newTextureWithDescriptor:desc];
-				[colorAttachmentTextures_[i][j] setLabel:@"Color Attachment"];
-			}
-			// debug...
 			MTLTextureDescriptor *desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat: MTLPixelFormatRGBA32Float
 																							width:width
 																						   height:height
@@ -309,8 +309,8 @@ void Renderer::MakeColorAttachmentTextures(NSUInteger width, NSUInteger height) 
 	}
 }
 void Renderer::MakeDepthTexture(NSUInteger width, NSUInteger height) {
-	if (!depthTextures_[0] || [depthTextures_[0] width] != width ||
-		[depthTextures_[0] height] != height) {
+	if (!depthTextures_ || [depthTextures_ width] != width ||
+		[depthTextures_ height] != height) {
 		MTLPixelFormat pf = MTLPixelFormatDepth32Float;
 		MTLTextureDescriptor *desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:pf
 																						width:width
@@ -328,11 +328,11 @@ void Renderer::MakeDepthTexture(NSUInteger width, NSUInteger height) {
 		for (int i = 0; i < FrameCount; ++i) {
 			id<MTLTexture> texture = [device_ newTextureWithDescriptor:desc];
 			[texture setLabel: [NSString stringWithFormat: @"Depth Texture %d", i]];
-			depthTextures_[i] = texture;
+			depthTextures_ = texture;
 
 			texture = [device_ newTextureWithDescriptor:descHalfRes];
 			[texture setLabel: [NSString stringWithFormat: @"HalfResDepth Texture %d", i]];
-			halfResDepthTextures_[i] = texture;
+			halfResDepthTextures_ = texture;
 		}
 	}
 }
@@ -356,23 +356,23 @@ void Renderer::StartGeometryPass() {
 
 	MTLRenderPassDescriptor *firstPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 	for (int i = 0; i < RenderTargetCount; ++i) {
-		firstPassDescriptor.colorAttachments[i].texture = colorAttachmentTextures_[currentFrameIndex_][i];
+		firstPassDescriptor.colorAttachments[i].texture = colorAttachmentTextures_[i];
 		firstPassDescriptor.colorAttachments[i].loadAction = MTLLoadActionClear;
 		firstPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
 		firstPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(0.f, 0., 0., 0.f);
 	}
-	firstPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
+	firstPassDescriptor.depthAttachment.texture = depthTextures_;
 	firstPassDescriptor.depthAttachment.clearDepth = 1.f;
 	firstPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
 	firstPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 
 	MTLRenderPassDescriptor *followingPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 	for (int i = 0; i < RenderTargetCount; ++i) {
-		followingPassDescriptor.colorAttachments[i].texture = colorAttachmentTextures_[currentFrameIndex_][i];
+		followingPassDescriptor.colorAttachments[i].texture = colorAttachmentTextures_[i];
 		followingPassDescriptor.colorAttachments[i].loadAction = MTLLoadActionDontCare;
 		followingPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
 	}
-	followingPassDescriptor.depthAttachment.texture = depthTextures_[currentFrameIndex_];
+	followingPassDescriptor.depthAttachment.texture = depthTextures_;
 	followingPassDescriptor.depthAttachment.clearDepth = 1.f;
 	followingPassDescriptor.depthAttachment.loadAction = MTLLoadActionDontCare;
 	followingPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
@@ -467,8 +467,8 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	deferredCommandBuffer_ = [commandQueue_ commandBuffer];
 
 	Downsample(deferredCommandBuffer_, [shaders_ selectPipeline: ShaderStructures::Downsample].pipeline,
-				depthTextures_[currentFrameIndex_],
-				halfResDepthTextures_[currentFrameIndex_]);
+				depthTextures_,
+				halfResDepthTextures_);
 
 	MTLRenderPassDescriptor *deferredPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 	deferredPassDescriptor.colorAttachments[0].texture = drawable_.texture;
@@ -485,15 +485,15 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	[deferredEncoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
 	NSUInteger fsTexIndex = 0;
 	// albedo
-	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][0] atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[0] atIndex:fsTexIndex++];
 	// normalWS
-	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][1] atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[1] atIndex:fsTexIndex++];
 	// material
-	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][3] atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[3] atIndex:fsTexIndex++];
 	// debug
-	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[currentFrameIndex_][4] atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[4] atIndex:fsTexIndex++];
 
-	[deferredEncoder setFragmentTexture: depthTextures_[currentFrameIndex_] atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: depthTextures_ atIndex:fsTexIndex++];
 	assert(cmd.irradiance != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[cmd.irradiance].texture atIndex:fsTexIndex++];
 	assert(cmd.prefilteredEnvMap != InvalidTexture);
@@ -501,7 +501,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	assert(cmd.BRDFLUT != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[cmd.BRDFLUT].texture atIndex:fsTexIndex++];
 	// TODO:: SSAO
-	[deferredEncoder setFragmentTexture: halfResDepthTextures_[currentFrameIndex_] atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: halfResDepthTextures_ atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentSamplerState:deferredSamplerState_ atIndex:0];
 	[deferredEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:1];
 	[deferredEncoder setFragmentSamplerState:mipmapSamplerState_ atIndex:2];

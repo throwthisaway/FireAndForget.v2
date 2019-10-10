@@ -17,7 +17,6 @@
 // MAC: integrate SSAO, add SSAO pass
 // MAC: render fsquad via vertex id
 // MAC: adapt other worldposfromdepth
-// MAC: colorAttachmentTextures_/depthTextures_ don't need framecount
 // MAC: framealloc cb copy
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update

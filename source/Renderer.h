@@ -58,8 +58,8 @@ private:
 				 id<MTLTexture> _Nonnull dstTex);
 	id<MTLDevice> _Nonnull device_;
 	id<MTLCommandQueue> _Nonnull commandQueue_;
-	id<MTLTexture> _Nonnull depthTextures_[ShaderStructures::FrameCount], halfResDepthTextures_[ShaderStructures::FrameCount];
-	id<MTLTexture> _Nonnull colorAttachmentTextures_[ShaderStructures::FrameCount][ShaderStructures::RenderTargetCount];
+	id<MTLTexture> _Nonnull depthTextures_, halfResDepthTextures_;
+	id<MTLTexture> _Nonnull colorAttachmentTextures_[ShaderStructures::RenderTargetCount];
 	std::vector<id<MTLBuffer>> buffers_;
 	struct Texture {
 		id<MTLTexture> _Nonnull texture;
