@@ -14,7 +14,7 @@ fragment MRTOut modo_dnmr_fs_main(FS_UVNT input [[stage_in]],
 	float3 t = normalize(input.tWS - dot(input.tWS, nWS)*nWS);
 	float3 b = cross(nWS, t);
 	float3x3 tbn = float3x3(t, b, nWS);
-	nWS = tbn * nTx;
+	nWS = normalize(tbn * nTx);
 	output.normalWS = float4(nWS, 0.f);
 	float metallic = textures[2].sample(smp, input.uv).x;
 	float roughness = textures[3].sample(smp, input.uv).x;

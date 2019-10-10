@@ -7,12 +7,13 @@
 // TODO::
 // consolidate sampler names
 // investigate moire pattern on light specular
+// fix modo export rh->lh, uv bottom-left->top left orientation
+// generate and sample mips
+// WIN: nWS = normalize(tbn * nTex);
 // WIN: test if all meshes are serialised again, with different layout
 // WIN: conform alignment in SIMDTypeAliases and ShaderStructs
 // WIN: handle tangent from mesh data instead of GS
 // WIN: remove texSSAODebug
-// MAC: test tangents are calculated well
-// MAC: integrate normal mapping
 // MAC: integrate SSAO, add SSAO pass
 // MAC: render fsquad via vertex id
 // MAC: adapt other worldposfromdepth

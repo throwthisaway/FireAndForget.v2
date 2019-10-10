@@ -787,6 +787,7 @@
 				INFOPLIST_FILE = source/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/Shared\"";
 				PRODUCT_BUNDLE_IDENTIFIER = org.FireAndForget.v2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
