@@ -6,6 +6,7 @@
 //#import <MetalPerformanceShaders/MetalPerformanceShaders.h>
 #include "UI.h"
 #include "cpp/DebugUI.h"
+#include "cpp/GenSSAOKernel.hpp"
 
 using namespace ShaderStructures;
 namespace {
@@ -50,7 +51,7 @@ void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 		samplerDesc.minFilter = MTLSamplerMinMagFilterLinear;
 		samplerDesc.magFilter = MTLSamplerMinMagFilterLinear;
 		samplerDesc.mipFilter = MTLSamplerMipFilterNotMipmapped;
-		defaultSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
+		linearWrapSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
 	}
 	{
 		// create deferred sampler state
@@ -60,7 +61,7 @@ void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 		samplerDesc.minFilter = MTLSamplerMinMagFilterNearest;
 		samplerDesc.magFilter = MTLSamplerMinMagFilterNearest;
 		samplerDesc.mipFilter = MTLSamplerMipFilterNotMipmapped;
-		deferredSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
+		nearestClampSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
 	}
 	{
 		// create mimpapped sampler state
@@ -83,7 +84,7 @@ void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 		samplerDesc.minFilter = MTLSamplerMinMagFilterLinear;
 		samplerDesc.magFilter = MTLSamplerMinMagFilterLinear;
 		samplerDesc.mipFilter = MTLSamplerMipFilterNotMipmapped;
-		clampSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
+		linearClampSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
 	}
 
 	struct PosUV {
@@ -107,6 +108,10 @@ void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 		memcpy(ptr, &v, sizeof(v));
 		ptr += cubeViewBufInc_;
 	}
+
+	auto kernel = GenSSAOKernel();
+	auto size = kernel.size() * sizeof(kernel.front());
+	ssaoKernelBufferIndex_ = CreateBuffer(kernel.data(), size);
 }
 BufferIndex Renderer::CreateBuffer(size_t length) {
 	id<MTLBuffer> mtlBuffer = [device_ newBufferWithLength: length options: MTLResourceCPUCacheModeWriteCombined];
@@ -173,7 +178,7 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 		[encoder setVertexBuffer: buffers_[vb] offset: 0 atIndex: 0];
 		[encoder setVertexBuffer: cubeViews_ offset: cubeViewsBuffOffset atIndex: 1];
 		[encoder setFragmentTexture: textures_[tex].texture atIndex:0];
-		[encoder setFragmentSamplerState: defaultSamplerState_ atIndex:0];
+		[encoder setFragmentSamplerState: linearWrapSamplerState_ atIndex:0];
 
 		[encoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[ib] indexBufferOffset: 0 instanceCount: 1 baseVertex: 0 baseInstance: 0];
 		[encoder endEncoding];
@@ -309,8 +314,8 @@ void Renderer::MakeColorAttachmentTextures(NSUInteger width, NSUInteger height) 
 	}
 }
 void Renderer::MakeDepthTexture(NSUInteger width, NSUInteger height) {
-	if (!depthTextures_ || [depthTextures_ width] != width ||
-		[depthTextures_ height] != height) {
+	if (!depthTexture_ || [depthTexture_ width] != width ||
+		[depthTexture_ height] != height) {
 		MTLPixelFormat pf = MTLPixelFormatDepth32Float;
 		MTLTextureDescriptor *desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:pf
 																						width:width
@@ -319,21 +324,24 @@ void Renderer::MakeDepthTexture(NSUInteger width, NSUInteger height) {
 		desc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 		desc.resourceOptions = MTLResourceStorageModePrivate;
 
+		id<MTLTexture> texture = [device_ newTextureWithDescriptor:desc];
+		[texture setLabel: @"Depth Texture"];
+		depthTexture_ = texture;
+
 		MTLTextureDescriptor *descHalfRes = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatR32Float
 																							   width:width>>1
 																							  height:height>>1
 																						   mipmapped:NO];
 		descHalfRes.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 		descHalfRes.resourceOptions = MTLResourceStorageModePrivate;
-		for (int i = 0; i < FrameCount; ++i) {
-			id<MTLTexture> texture = [device_ newTextureWithDescriptor:desc];
-			[texture setLabel: [NSString stringWithFormat: @"Depth Texture %d", i]];
-			depthTextures_ = texture;
 
-			texture = [device_ newTextureWithDescriptor:descHalfRes];
-			[texture setLabel: [NSString stringWithFormat: @"HalfResDepth Texture %d", i]];
-			halfResDepthTextures_ = texture;
-		}
+		texture = [device_ newTextureWithDescriptor:descHalfRes];
+		[texture setLabel: @"HalfResDepth Texture"];
+		halfResDepthTexture_ = texture;
+
+		texture = [device_ newTextureWithDescriptor:descHalfRes];
+		[texture setLabel: @"SSAO Texture"];
+		ssaoTexture_ = texture;
 	}
 }
 void Renderer::BeginRender() {
@@ -361,7 +369,7 @@ void Renderer::StartGeometryPass() {
 		firstPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
 		firstPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(0.f, 0., 0., 0.f);
 	}
-	firstPassDescriptor.depthAttachment.texture = depthTextures_;
+	firstPassDescriptor.depthAttachment.texture = depthTexture_;
 	firstPassDescriptor.depthAttachment.clearDepth = 1.f;
 	firstPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
 	firstPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
@@ -372,7 +380,7 @@ void Renderer::StartGeometryPass() {
 		followingPassDescriptor.colorAttachments[i].loadAction = MTLLoadActionDontCare;
 		followingPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
 	}
-	followingPassDescriptor.depthAttachment.texture = depthTextures_;
+	followingPassDescriptor.depthAttachment.texture = depthTexture_;
 	followingPassDescriptor.depthAttachment.clearDepth = 1.f;
 	followingPassDescriptor.depthAttachment.loadAction = MTLLoadActionDontCare;
 	followingPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
@@ -390,6 +398,7 @@ void Renderer::StartGeometryPass() {
 			first = false;
 		}
 	};
+	deferredCommandBuffer_ = [commandQueue_ commandBuffer];
 }
 void Renderer::StartForwardPass() {
 	id<MTLTexture> surface = drawable_.texture;
@@ -461,14 +470,52 @@ void Renderer::Downsample(id<MTLCommandBuffer> _Nonnull commandBuffer,
 	[encoder endEncoding];
 }
 void Renderer::SSAOPass(const ShaderStructures::SSAOCmd& cmd) {
-	// TODO::
+	Downsample(deferredCommandBuffer_, [shaders_ selectPipeline: ShaderStructures::Downsample].pipeline,
+			depthTexture_,
+			halfResDepthTexture_);
+	MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+	passDescriptor.colorAttachments[0].texture = ssaoTexture_;
+	passDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+	passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+
+	id<MTLRenderCommandEncoder> encoder = [deferredCommandBuffer_ renderCommandEncoderWithDescriptor: passDescriptor];
+	[encoder setCullMode: MTLCullModeBack];
+	[encoder setRenderPipelineState: [shaders_ selectPipeline: SSAOShader].pipeline];
+
+	CBFrameAlloc& frame = frame_[currentFrameIndex_];
+	{
+		auto cb = frame.Alloc(sizeof(cmd.ip));
+		memcpy(cb.address, &cmd.ip, sizeof(cmd.ip));
+		[encoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: 0];
+	}
+	int fsIndex = 0;
+	{
+		auto cb = frame.Alloc(sizeof(cmd.scene));
+		memcpy(cb.address, &cmd.scene, sizeof(cmd.scene));
+		[encoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsIndex++];
+	}
+	{
+		auto cb = frame.Alloc(sizeof(cmd.ao));
+		memcpy(cb.address, &cmd.ao, sizeof(cmd.ao));
+		[encoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsIndex++];
+	}
+	[encoder setFragmentBuffer: buffers_[ssaoKernelBufferIndex_] offset: 0 atIndex: fsIndex++];
+
+	NSUInteger fsTexIndex = 0;
+	// half-res depth
+	[encoder setFragmentTexture: halfResDepthTexture_ atIndex:fsTexIndex++];
+	// normalVS
+	[encoder setFragmentTexture: colorAttachmentTextures_[2] atIndex:fsTexIndex++];
+	// random
+	[encoder setFragmentTexture: textures_[cmd.random].texture atIndex:fsTexIndex++];
+
+	[encoder setFragmentSamplerState: linearClampSamplerState_ atIndex:0];
+	[encoder setFragmentSamplerState: linearWrapSamplerState_ atIndex:1];
+
+	[encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
+	[encoder endEncoding];
 }
 void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
-	deferredCommandBuffer_ = [commandQueue_ commandBuffer];
-
-	Downsample(deferredCommandBuffer_, [shaders_ selectPipeline: ShaderStructures::Downsample].pipeline,
-				depthTextures_,
-				halfResDepthTextures_);
 
 	MTLRenderPassDescriptor *deferredPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
 	deferredPassDescriptor.colorAttachments[0].texture = drawable_.texture;
@@ -493,19 +540,19 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	// debug
 	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[4] atIndex:fsTexIndex++];
 
-	[deferredEncoder setFragmentTexture: depthTextures_ atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: depthTexture_ atIndex:fsTexIndex++];
 	assert(cmd.irradiance != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[cmd.irradiance].texture atIndex:fsTexIndex++];
 	assert(cmd.prefilteredEnvMap != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[cmd.prefilteredEnvMap].texture atIndex:fsTexIndex++];
 	assert(cmd.BRDFLUT != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[cmd.BRDFLUT].texture atIndex:fsTexIndex++];
-	// TODO:: SSAO
-	[deferredEncoder setFragmentTexture: halfResDepthTextures_ atIndex:fsTexIndex++];
-	[deferredEncoder setFragmentSamplerState:deferredSamplerState_ atIndex:0];
-	[deferredEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:1];
+
+	[deferredEncoder setFragmentTexture: ssaoTexture_ atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentSamplerState:nearestClampSamplerState_ atIndex:0];
+	[deferredEncoder setFragmentSamplerState:linearWrapSamplerState_ atIndex:1];
 	[deferredEncoder setFragmentSamplerState:mipmapSamplerState_ atIndex:2];
-	[deferredEncoder setFragmentSamplerState:clampSamplerState_ atIndex:3];
+	[deferredEncoder setFragmentSamplerState:linearClampSamplerState_ atIndex:3];
 
 	CBFrameAlloc& frame = frame_[currentFrameIndex_];
 	int fsIndex = 0;
@@ -602,7 +649,7 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 	{
 		auto& texture = textures_[cmd.cubeEnv];
 		[commandEncoder setFragmentTexture: texture.texture atIndex:0];
-		[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
+		[commandEncoder setFragmentSamplerState:linearWrapSamplerState_ atIndex:0];
 	}
 	[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.submesh.indexByteOffset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 }
@@ -643,7 +690,7 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 				if (!(cmd.submesh.textureMask & (1 << i))) continue;
 				auto& texture = textures_[cmd.submesh.textures[i].id];
 				[commandEncoder setFragmentTexture: texture.texture atIndex: textureIndex++];
-				[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
+				[commandEncoder setFragmentSamplerState:linearWrapSamplerState_ atIndex:0];
 			}
 			break;
 		}
@@ -666,7 +713,7 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 				if (!(cmd.submesh.textureMask & (1 << i))) continue;
 				auto& texture = textures_[cmd.submesh.textures[i].id];
 				[commandEncoder setFragmentTexture: texture.texture atIndex: textureIndex++];
-				[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
+				[commandEncoder setFragmentSamplerState:linearWrapSamplerState_ atIndex:0];
 			}
 			break;
 		}
@@ -722,7 +769,7 @@ void Renderer::Submit(const ShaderStructures::DrawCmd& cmd) {
 			{
 				auto& texture = textures_[cmd.submesh.texAlbedo];
 				[commandEncoder setFragmentTexture: texture.texture atIndex:textureIndex++];
-				[commandEncoder setFragmentSamplerState:defaultSamplerState_ atIndex:0];
+				[commandEncoder setFragmentSamplerState:linearWrapSamplerState_ atIndex:0];
 			}
 			{
 				auto cb = frame.Alloc(sizeof(Material));

@@ -10,7 +10,11 @@ struct FS_P {
 	float4 pos [[position]];
 	float3 p [[user(position)]]; // localpos
 };
-
+struct FS_PUV {
+	float4 pos [[position]];
+	float3 p [[user(position)]];
+	float2 uv;
+};
 struct FS_PN {
 	float4 pos [[position]];
 	float4 pWS [[user(position)]];

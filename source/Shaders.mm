@@ -352,6 +352,32 @@ using namespace ShaderStructures;
 		pipelines_[ShaderStructures::ModoDN] = {pipeline, RenderPass::Geometry};
 		if (error) NSLog(@"ModoDN %@", [error localizedDescription]);
 	}
+
+	{
+		// SSAO
+		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"fsquad_viewpos_vs_main"];
+		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"ssao_fs_main"];
+		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatR32Float;
+		pipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
+
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
+		pipelines_[ShaderStructures::SSAOShader] = {pipeline, RenderPass::Post};
+		if (error) NSLog(@"SSAO %@", [error localizedDescription]);
+	}
+
+	{
+		// Blur4x4R32
+		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"fsquad_viewpos_vs_main"];
+		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"blur4x4r32_fs_main"];
+		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatR32Float;
+		pipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
+
+		id <MTLRenderPipelineState> pipeline = [device_ newRenderPipelineStateWithDescriptor: pipelineDescriptor error: &error];
+		pipelines_[ShaderStructures::Blur4x4R32] = {pipeline, RenderPass::Post};
+		if (error) NSLog(@"Blur4x4R32 %@", [error localizedDescription]);
+	}
 }
 
 - (const PipelineState&) selectPipeline: (size_t) index {

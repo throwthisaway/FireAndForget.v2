@@ -30,11 +30,12 @@ struct ALIGN16 SSAOScene {
 	ALIGN16 float2 viewport;
 };
 struct ALIGN16 AO {
-	ALIGN16 float2 randomFactor;
-	ALIGN16 float rad;
-	ALIGN16 float scale;
-	ALIGN16 float intensity;
-	ALIGN16 float fadeStart, fadeEnd;
-	ALIGN16 float bias;
+	float2 randomFactor;
+	float rad;
+	float scale;
+	float intensity;
+	float fadeStart, fadeEnd;
+	float bias;
+	float power;
 };
 #endif

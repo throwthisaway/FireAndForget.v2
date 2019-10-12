@@ -53,7 +53,7 @@
 		BDE816F52191B11C00B091F1 /* CBFrameAlloc.mm in Sources */ = {isa = PBXBuildFile; fileRef = BDE816F32191B11C00B091F1 /* CBFrameAlloc.mm */; };
 		BDE817032191F8EB00B091F1 /* libmeshoptimizer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BDE817022191F8EB00B091F1 /* libmeshoptimizer.a */; };
 		BDE817042192216F00B091F1 /* Tex.metal in Sources */ = {isa = PBXBuildFile; fileRef = BD0E83621FF010FA005A2F8A /* Tex.metal */; };
-		E7325D7322EF6393007FDF43 /* ModoDNMR.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7325D7222EF6393007FDF43 /* ModoDNMR.metal */; };
+		E7325D7322EF6393007FDF43 /* ModoDNMRFS.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7325D7222EF6393007FDF43 /* ModoDNMRFS.metal */; };
 		E758133B2337C449005985E7 /* 14031-normal.jpg in Resources */ = {isa = PBXBuildFile; fileRef = E75813342337C449005985E7 /* 14031-normal.jpg */; };
 		E758133C2337C449005985E7 /* BEETHOVE_merged_subdivided_twice.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E75813352337C449005985E7 /* BEETHOVE_merged_subdivided_twice.mesh */; };
 		E758133D2337C449005985E7 /* box_normal_map_test.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E75813362337C449005985E7 /* box_normal_map_test.mesh */; };
@@ -65,6 +65,12 @@
 		E79B3F4F22EDD601008A34A7 /* test_torus.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4A22EDD600008A34A7 /* test_torus.mesh */; };
 		E79B3F5022EDD601008A34A7 /* rusted metal metallic.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4B22EDD600008A34A7 /* rusted metal metallic.png */; };
 		E79B3F5122EDD601008A34A7 /* rusted metal roughness.png in Resources */ = {isa = PBXBuildFile; fileRef = E79B3F4C22EDD600008A34A7 /* rusted metal roughness.png */; };
+		E7A5B1792351087600D28E9B /* FSQuadViewPosVS.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7A5B1782351087600D28E9B /* FSQuadViewPosVS.metal */; };
+		E7A5B17B235109C300D28E9B /* FSQuad.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7A5B17A235109C300D28E9B /* FSQuad.metal */; };
+		E7A5B17D23510A0500D28E9B /* SSAOFS.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7A5B17C23510A0500D28E9B /* SSAOFS.metal */; };
+		E7A5B17F23510AAF00D28E9B /* ViewPosFromDepth.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7A5B17E23510AAF00D28E9B /* ViewPosFromDepth.metal */; };
+		E7A5B18223510EA000D28E9B /* Blur4x4R32FS.metal in Sources */ = {isa = PBXBuildFile; fileRef = E7A5B18123510EA000D28E9B /* Blur4x4R32FS.metal */; };
+		E7A5B1852351196600D28E9B /* GenSSAOKernel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E7A5B1832351196600D28E9B /* GenSSAOKernel.cpp */; };
 		E7AF512522F6042F00A98E6F /* checkerboard_modo.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E7AF511C22F6042F00A98E6F /* checkerboard_modo.mesh */; };
 		E7AF512622F6042F00A98E6F /* 7582-normal.png in Resources */ = {isa = PBXBuildFile; fileRef = E7AF512222F6042F00A98E6F /* 7582-normal.png */; };
 		E7AF512722F6042F00A98E6F /* box_modo.mesh in Resources */ = {isa = PBXBuildFile; fileRef = E7AF512322F6042F00A98E6F /* box_modo.mesh */; };
@@ -182,7 +188,7 @@
 		BDE817022191F8EB00B091F1 /* libmeshoptimizer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmeshoptimizer.a; path = ../3rdparty/meshoptimizer/Debug/libmeshoptimizer.a; sourceTree = "<group>"; };
 		E70E46FE23006C040052B710 /* ModoMesh.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ModoMesh.h; path = cpp/ModoMesh.h; sourceTree = "<group>"; };
 		E72D361722EDFD0B00B373EF /* Mesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Mesh.h; path = cpp/Mesh.h; sourceTree = "<group>"; };
-		E7325D7222EF6393007FDF43 /* ModoDNMR.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ModoDNMR.metal; path = shaders/ModoDNMR.metal; sourceTree = "<group>"; };
+		E7325D7222EF6393007FDF43 /* ModoDNMRFS.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ModoDNMRFS.metal; path = shaders/ModoDNMRFS.metal; sourceTree = "<group>"; };
 		E75813342337C449005985E7 /* 14031-normal.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = "14031-normal.jpg"; path = "assets/14031-normal.jpg"; sourceTree = "<group>"; };
 		E75813352337C449005985E7 /* BEETHOVE_merged_subdivided_twice.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = BEETHOVE_merged_subdivided_twice.mesh; path = assets/BEETHOVE_merged_subdivided_twice.mesh; sourceTree = "<group>"; };
 		E75813362337C449005985E7 /* box_normal_map_test.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = box_normal_map_test.mesh; path = assets/box_normal_map_test.mesh; sourceTree = "<group>"; };
@@ -195,6 +201,14 @@
 		E79B3F4B22EDD600008A34A7 /* rusted metal metallic.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal metallic.png"; path = "assets/rusted metal metallic.png"; sourceTree = "<group>"; };
 		E79B3F4C22EDD600008A34A7 /* rusted metal roughness.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "rusted metal roughness.png"; path = "assets/rusted metal roughness.png"; sourceTree = "<group>"; };
 		E7A5B172234D262F00D28E9B /* ShaderStructs.h.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ShaderStructs.h.metal; path = shaders/ShaderStructs.h.metal; sourceTree = "<group>"; };
+		E7A5B1782351087600D28E9B /* FSQuadViewPosVS.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = FSQuadViewPosVS.metal; path = shaders/FSQuadViewPosVS.metal; sourceTree = "<group>"; };
+		E7A5B17A235109C300D28E9B /* FSQuad.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = FSQuad.metal; path = shaders/FSQuad.metal; sourceTree = "<group>"; };
+		E7A5B17C23510A0500D28E9B /* SSAOFS.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = SSAOFS.metal; path = shaders/SSAOFS.metal; sourceTree = "<group>"; };
+		E7A5B17E23510AAF00D28E9B /* ViewPosFromDepth.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ViewPosFromDepth.metal; path = shaders/ViewPosFromDepth.metal; sourceTree = "<group>"; };
+		E7A5B18023510B2600D28E9B /* ViewPosFromDepth.h.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = ViewPosFromDepth.h.metal; path = shaders/ViewPosFromDepth.h.metal; sourceTree = "<group>"; };
+		E7A5B18123510EA000D28E9B /* Blur4x4R32FS.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; name = Blur4x4R32FS.metal; path = shaders/Blur4x4R32FS.metal; sourceTree = "<group>"; };
+		E7A5B1832351196600D28E9B /* GenSSAOKernel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = GenSSAOKernel.cpp; path = cpp/GenSSAOKernel.cpp; sourceTree = "<group>"; };
+		E7A5B1842351196600D28E9B /* GenSSAOKernel.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = GenSSAOKernel.hpp; path = cpp/GenSSAOKernel.hpp; sourceTree = "<group>"; };
 		E7AF511C22F6042F00A98E6F /* checkerboard_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = checkerboard_modo.mesh; path = assets/checkerboard_modo.mesh; sourceTree = "<group>"; };
 		E7AF512222F6042F00A98E6F /* 7582-normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "7582-normal.png"; path = "assets/7582-normal.png"; sourceTree = "<group>"; };
 		E7AF512322F6042F00A98E6F /* box_modo.mesh */ = {isa = PBXFileReference; lastKnownFileType = file; name = box_modo.mesh; path = assets/box_modo.mesh; sourceTree = "<group>"; };
@@ -260,9 +274,15 @@
 				BD1B64242233E1BA00B7D806 /* PreFilterAndIntegrateBRDF.metal */,
 				BD621880223E6DA800468779 /* FragInput.h.metal */,
 				BDE7ECBB224FC8A300BB9171 /* Downsample_half.metal */,
-				E7325D7222EF6393007FDF43 /* ModoDNMR.metal */,
+				E7325D7222EF6393007FDF43 /* ModoDNMRFS.metal */,
 				E7AF512D22F6053300A98E6F /* ModoDN.metal */,
 				E7A5B172234D262F00D28E9B /* ShaderStructs.h.metal */,
+				E7A5B1782351087600D28E9B /* FSQuadViewPosVS.metal */,
+				E7A5B17A235109C300D28E9B /* FSQuad.metal */,
+				E7A5B17C23510A0500D28E9B /* SSAOFS.metal */,
+				E7A5B17E23510AAF00D28E9B /* ViewPosFromDepth.metal */,
+				E7A5B18023510B2600D28E9B /* ViewPosFromDepth.h.metal */,
+				E7A5B18123510EA000D28E9B /* Blur4x4R32FS.metal */,
 			);
 			name = shaders;
 			sourceTree = "<group>";
@@ -303,6 +323,8 @@
 				BDE7ECB4224FBBE700BB9171 /* VertexTypeAliases.h */,
 				E70E46FE23006C040052B710 /* ModoMesh.h */,
 				E7E1A7DF2337E83A00911ED0 /* DebugUI.h */,
+				E7A5B1832351196600D28E9B /* GenSSAOKernel.cpp */,
+				E7A5B1842351196600D28E9B /* GenSSAOKernel.hpp */,
 			);
 			name = cpp;
 			sourceTree = "<group>";
@@ -600,12 +622,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				BD6A4168208CE5D50027E1D7 /* Common.h.metal in Sources */,
-				E7325D7322EF6393007FDF43 /* ModoDNMR.metal in Sources */,
+				E7325D7322EF6393007FDF43 /* ModoDNMRFS.metal in Sources */,
+				E7A5B17D23510A0500D28E9B /* SSAOFS.metal in Sources */,
+				E7A5B1852351196600D28E9B /* GenSSAOKernel.cpp in Sources */,
 				E7E1A7CB2337CE3D00911ED0 /* imgui_demo.cpp in Sources */,
 				BD4992F020DE64E1009DA76D /* PBR.metal in Sources */,
 				BD9FA6C21F31E8B100978F61 /* Camera.cpp in Sources */,
 				BD2E31DE21DA3DD20085F6DA /* VertexTypes.h.metal in Sources */,
 				BDE817042192216F00B091F1 /* Tex.metal in Sources */,
+				E7A5B17F23510AAF00D28E9B /* ViewPosFromDepth.metal in Sources */,
 				E7E1A7CD2337CE3D00911ED0 /* imgui_widgets.cpp in Sources */,
 				E7908B972349131400E180FD /* MainWindow.m in Sources */,
 				BD1B64252233E1BA00B7D806 /* PreFilterAndIntegrateBRDF.metal in Sources */,
@@ -613,8 +638,10 @@
 				E7E1A7CC2337CE3D00911ED0 /* imgui_draw.cpp in Sources */,
 				BD6A40E0208230A80027E1D7 /* Phong.metal in Sources */,
 				BDCD08EE21E0CB9F00F37C01 /* Bg.metal in Sources */,
+				E7A5B18223510EA000D28E9B /* Blur4x4R32FS.metal in Sources */,
 				BDE7ECBC224FC8A300BB9171 /* Downsample_half.metal in Sources */,
 				BD2E31DC21DA3D1F0085F6DA /* CubeEnvMap.metal in Sources */,
+				E7A5B1792351087600D28E9B /* FSQuadViewPosVS.metal in Sources */,
 				BD28F6FE1F09753300B07CBD /* Input.cpp in Sources */,
 				BD4992F520DE9B12009DA76D /* DeferredPBR.metal in Sources */,
 				BD1DA545206FDABC004EF62A /* Debug.metal in Sources */,
@@ -634,6 +661,7 @@
 				BD3D1AB61E895BFC00F7311A /* ViewController.mm in Sources */,
 				BDE816F52191B11C00B091F1 /* CBFrameAlloc.mm in Sources */,
 				BD3D1AB31E895BFC00F7311A /* main.m in Sources */,
+				E7A5B17B235109C300D28E9B /* FSQuad.metal in Sources */,
 				BD7203921EEC1C5E00B2C914 /* Assets.cpp in Sources */,
 				BD25F9DF1ECD9B4200ACD738 /* Renderer.mm in Sources */,
 				BD3D1AB01E895BFC00F7311A /* AppDelegate.m in Sources */,

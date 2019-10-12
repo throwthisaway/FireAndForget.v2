@@ -297,10 +297,11 @@ namespace assets {
 //		LoadModoMesh(renderer, L"checkerboard_modo.mesh", CHECKERBOARD);
 //		LoadModoMesh(renderer, L"BEETHOVE_object_modo.mesh", BEETHOVEN);
 //		LoadModoMesh(renderer, L"sphere_modo.mesh", SPHERE);
-		LoadModoMesh(renderer, L"test_torus.mesh");
+		//LoadModoMesh(renderer, L"test_torus.mesh");
 		//LoadModoMesh(renderer, L"checkerboard_modo.mesh");
-		LoadModoMesh(renderer, L"sphere_modo.mesh");
-		LoadModoMesh(renderer, L"box_normal_map_test.mesh");
+		//LoadModoMesh(renderer, L"sphere_modo.mesh");
+		//LoadModoMesh(renderer, L"box_normal_map_test.mesh");
+		LoadModoMesh(renderer, L"BEETHOVE_merged_subdivided_twice.mesh");
 
 		// generate textures
 		auto offset = textures.size();

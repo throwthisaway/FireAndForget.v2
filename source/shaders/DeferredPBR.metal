@@ -27,9 +27,9 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 									  texture2d<float> BRDFLUTTx [[texture(7)]],
 									  texture2d<float> SSAOTx [[texture(8)]],
 									  sampler deferredsmp [[sampler(0)]],
-									  sampler linearsmp [[sampler(1)]],
+									  sampler linearWrapSmp [[sampler(1)]],
 									  sampler mipmapsmp [[sampler(2)]],
-									  sampler clampsmp [[sampler(3)]]) {
+									  sampler linearClampSmp [[sampler(3)]]) {
 	float3 worldPos = WorldPosFormDepth(input.uv, scene.ivp, depthTx.sample(deferredsmp, input.uv).x);
 	//float3 worldPos = debug.sample(deferredsmp, input.uv).xyz;
 	float3 n = normalTx.sample(deferredsmp, input.uv).xyz;
@@ -70,13 +70,13 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 		Lo += (kD * albedo.rgb / M_PI_F + specular) * radiance * ndotl;
 	}
 	DeferredOut res;
-	float aoResult = 0.f;
+	float aoResult = SSAOTx.sample(linearClampSmp, input.uv).x;
 
 	float3 f = Fresnel_Schlick_Roughness(ndotv, f0, roughness);
 	float3 ks = f;
 	float3 kd = 1.f - ks;
 	kd *= 1.f - metallic;
-	float3 irradiance = irradianceTx.sample(linearsmp, n).rgb;
+	float3 irradiance = irradianceTx.sample(linearWrapSmp, n).rgb;
 	float3 diffuse = irradiance * albedo.rgb;
 
 	float3 r = reflect(-v, n);
@@ -85,9 +85,9 @@ fragment DeferredOut deferred_pbr_fs_main(FSIn input [[stage_in]],
 	const float max_ref_lod = 4.f;	// TODO:: pass it as constant buffer
 	float3 prefilerColor = prefilteredEnvTx.sample(mipmapsmp, r, level(roughness * max_ref_lod)).rgb;
 
-	float2 envBRDF = BRDFLUTTx.sample(clampsmp, float2(ndotv, roughness)).rg;
+	float2 envBRDF = BRDFLUTTx.sample(linearClampSmp, float2(ndotv, roughness)).rg;
 	float3 specular = prefilerColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnek Shlick
-	float3 ambient = (kd * diffuse + specular) * (1.f - aoResult); // * aoResult;
+	float3 ambient = (kd * diffuse + specular) * aoResult;
 	//
 	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;

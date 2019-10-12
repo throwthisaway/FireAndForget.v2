@@ -9,11 +9,18 @@
 // investigate moire pattern on light specular
 // fix modo export rh->lh, uv bottom-left->top left orientation
 // generate and sample mips
+// merge Fraginput.h.metal with ShaderInput.hlsli
 // WIN: nWS = normalize(tbn * nTex);
 // WIN: test if all meshes are serialised again, with different layout
 // WIN: conform alignment in SIMDTypeAliases and ShaderStructs
 // WIN: handle tangent from mesh data instead of GS
 // WIN: remove texSSAODebug
+// WIN: WorldPosFromDepth replace in DeferredPBR
+// WIN: ao.bias -> power
+// WIN: sample = reflect(random, sample); is commented out
+// WIN: genkernel
+// WIN: float distZ = abs(r.z - p.z);
+// WIN: linearSmp to linearclampsmp in DeferredPBR
 // MAC: integrate SSAO, add SSAO pass
 // MAC: render fsquad via vertex id
 // MAC: adapt other worldposfromdepth
@@ -87,7 +94,7 @@ void Scene::PrepareScene() {
 		pos.x = -3 * incX;
 	}
 
-	ssaoCmd_.ao.bias = 4.f;
+	ssaoCmd_.ao.bias = ssaoCmd_.ao.power = 4.f;
 	ssaoCmd_.ao.rad = .04f;
 	ssaoCmd_.ao.scale = 1.f;
 	ssaoCmd_.ao.intensity = 1.f;
