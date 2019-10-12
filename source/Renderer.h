@@ -56,9 +56,10 @@ private:
 				 id<MTLRenderPipelineState> _Nonnull pipelineState,
 				 id<MTLTexture> _Nonnull srcTex,
 				 id<MTLTexture> _Nonnull dstTex);
+	void SSAOBlurPass();
 	id<MTLDevice> _Nonnull device_;
 	id<MTLCommandQueue> _Nonnull commandQueue_;
-	id<MTLTexture> _Nonnull depthTexture_, halfResDepthTexture_, ssaoTexture_;
+	id<MTLTexture> _Nonnull depthTexture_, halfResDepthTexture_, ssaoTexture_, ssaoBlurTexture_;
 	id<MTLTexture> _Nonnull colorAttachmentTextures_[ShaderStructures::RenderTargetCount];
 	std::vector<id<MTLBuffer>> buffers_;
 	struct Texture {
@@ -75,8 +76,8 @@ private:
 	Shaders* _Nonnull shaders_;
 	id<MTLDepthStencilState> _Nonnull depthStencilState_;
 
-	id<MTLSamplerState> _Nonnull linearWrapSamplerState_, nearestClampSamplerState_, mipmapSamplerState_, linearClampSamplerState_;
-	id<MTLBuffer> _Nonnull fullscreenTexturedQuad_, cubeViews_;
+	id<MTLSamplerState> _Nonnull linearWrapSamplerState_, nearestClampSamplerState_, linearWrapMipSamplerState_, linearClampSamplerState_;
+	id<MTLBuffer> _Nonnull cubeViews_;
 	int cubeViewBufInc_;
 	id<MTLTexture> _Nonnull deferredDebugColorAttachments_[ShaderStructures::FrameCount];
 

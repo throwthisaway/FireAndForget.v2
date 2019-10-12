@@ -1,13 +1,14 @@
 #include <metal_stdlib>
-#include "VertexTypes.h.metal"
 #include "FragInput.h.metal"
 
 using namespace metal;
 
-vertex FS_UV fsquad_vs_main(constant VertexFSQuad* input [[buffer(0)]],
-							 uint id [[vertex_id]]) {
+constant float2 uv[] = { { 0.f, 1.f }, { 0.f, 0.f }, { 1.f, 1.f }, { 1.f, 0.f } };
+
+vertex FS_UV fsquad_vs_main(uint id [[vertex_id]]) {
 	FS_UV res;
-	res.pos = float4(input[id].pos, 0.f, 1.f);
-	res.uv = input[id].uv;
+	float2 pos = uv[id] * 2.f - 1.f;
+	res.pos = float4(pos.x, -pos.y, 0.f, 1.f);
+	res.uv = uv[id];
 	return res;
 }

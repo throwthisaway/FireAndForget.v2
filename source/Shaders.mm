@@ -114,16 +114,6 @@ using namespace ShaderStructures;
 	{
 		// Deferred
 		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
-		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
-		vertexDesc.attributes[0].format = MTLVertexFormatFloat2;
-		vertexDesc.attributes[0].bufferIndex = 0;
-		vertexDesc.attributes[0].offset = 0;
-		vertexDesc.attributes[1].format = MTLVertexFormatFloat2;
-		vertexDesc.attributes[1].bufferIndex = 0;
-		vertexDesc.attributes[1].offset = 2 * sizeof(float);
-		vertexDesc.layouts[0].stride = 4 * sizeof(float);
-		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
-		pipelineDescriptor.vertexDescriptor = vertexDesc;
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"fsquad_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"deferred_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
@@ -138,16 +128,6 @@ using namespace ShaderStructures;
 	{
 		// DeferredPBR
 		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
-		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
-		vertexDesc.attributes[0].format = MTLVertexFormatFloat2;
-		vertexDesc.attributes[0].bufferIndex = 0;
-		vertexDesc.attributes[0].offset = 0;
-		vertexDesc.attributes[1].format = MTLVertexFormatFloat2;
-		vertexDesc.attributes[1].bufferIndex = 0;
-		vertexDesc.attributes[1].offset = 2 * sizeof(float);
-		vertexDesc.layouts[0].stride = 4 * sizeof(float);
-		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
-		pipelineDescriptor.vertexDescriptor = vertexDesc;
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"fsquad_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"deferred_pbr_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat;
@@ -254,16 +234,6 @@ using namespace ShaderStructures;
 	{
 		// BRDF lut
 		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
-		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
-		vertexDesc.attributes[0].format = MTLVertexFormatFloat3;
-		vertexDesc.attributes[0].bufferIndex = 0;
-		vertexDesc.attributes[0].offset = 0;
-		vertexDesc.attributes[1].format = MTLVertexFormatFloat3;
-		vertexDesc.attributes[1].bufferIndex = 0;
-		vertexDesc.attributes[1].offset = 3 * sizeof(float);
-		vertexDesc.layouts[0].stride = 3 * sizeof(float) + 3 * sizeof(float);
-		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
-		pipelineDescriptor.vertexDescriptor = vertexDesc;
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"fsquad_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"integratebrdf_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatRG16Float;
@@ -275,16 +245,6 @@ using namespace ShaderStructures;
 	{
 		// Downsample
 		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
-		MTLVertexDescriptor* vertexDesc = [MTLVertexDescriptor new];
-		vertexDesc.attributes[0].format = MTLVertexFormatFloat2;
-		vertexDesc.attributes[0].bufferIndex = 0;
-		vertexDesc.attributes[0].offset = 0;
-		vertexDesc.attributes[1].format = MTLVertexFormatFloat2;
-		vertexDesc.attributes[1].bufferIndex = 0;
-		vertexDesc.attributes[1].offset = 2 * sizeof(float);
-		vertexDesc.layouts[0].stride = 4 * sizeof(float);
-		vertexDesc.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
-		pipelineDescriptor.vertexDescriptor = vertexDesc;
 		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"fsquad_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"downsample_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatR32Float;
@@ -369,7 +329,7 @@ using namespace ShaderStructures;
 	{
 		// Blur4x4R32
 		MTLRenderPipelineDescriptor* pipelineDescriptor = [MTLRenderPipelineDescriptor new];
-		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"fsquad_viewpos_vs_main"];
+		pipelineDescriptor.vertexFunction = [library_ newFunctionWithName:@"fsquad_vs_main"];
 		pipelineDescriptor.fragmentFunction = [library_ newFunctionWithName:@"blur4x4r32_fs_main"];
 		pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatR32Float;
 		pipelineDescriptor.colorAttachments[0].blendingEnabled = NO;

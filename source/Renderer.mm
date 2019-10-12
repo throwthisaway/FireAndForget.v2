@@ -72,7 +72,7 @@ void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 		samplerDesc.minFilter = MTLSamplerMinMagFilterLinear;
 		samplerDesc.magFilter = MTLSamplerMinMagFilterLinear;
 		samplerDesc.mipFilter = MTLSamplerMipFilterLinear;
-		mipmapSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
+		linearWrapMipSamplerState_ = [device newSamplerStateWithDescriptor:samplerDesc];
 	}
 
 	{
@@ -91,9 +91,7 @@ void Renderer::Init(id<MTLDevice> device, MTLPixelFormat pixelFormat) {
 		packed_float2 pos;
 		packed_float2 uv;
 	};
-	// top: uv.y = 0
-	PosUV quad[] = {{{-1., -1.f}, {0.f, 1.f}}, {{-1., 1.f}, {0.f, 0.f}}, {{1., -1.f}, {1.f, 1.f}}, {{1., 1.f}, {1.f, 0.f}}};
-	fullscreenTexturedQuad_ = [device_ newBufferWithBytes:quad length:sizeof(quad) options: MTLResourceOptionCPUCacheModeDefault];
+
 	for (int i = 0; i < FrameCount; ++i)
 		frame_[i].Init(device, defaultCBFrameAllocSize);
 
@@ -243,7 +241,7 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 			[encoder setVertexBuffer: buffers_[vb] offset: 0 atIndex: 0];
 			[encoder setVertexBuffer: cubeViews_ offset: cubeViewsBuffOffset atIndex: 1];
 			[encoder setFragmentTexture: textures_[tex].texture atIndex:0];
-			[encoder setFragmentSamplerState: mipmapSamplerState_ atIndex:0];
+			[encoder setFragmentSamplerState: linearWrapMipSamplerState_ atIndex:0];
 			[encoder setFragmentBuffer: roughnessBuff offset:offset atIndex:0];
 			[encoder setFragmentBuffer: resolutionBuff offset:0 atIndex:1];
 
@@ -280,7 +278,6 @@ TextureIndex Renderer::GenBRDFLUT(uint32_t dim, ShaderId shader, const char* lab
 	id<MTLRenderCommandEncoder> encoder = [commandBuffer renderCommandEncoderWithDescriptor: passDescriptor];
 	[encoder setRenderPipelineState: [shaders_ selectPipeline: shader].pipeline];
 	[encoder setCullMode: MTLCullModeNone];
-	[encoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
 	[encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
 	[encoder endEncoding];
 	[commandBuffer commit];
@@ -342,6 +339,10 @@ void Renderer::MakeDepthTexture(NSUInteger width, NSUInteger height) {
 		texture = [device_ newTextureWithDescriptor:descHalfRes];
 		[texture setLabel: @"SSAO Texture"];
 		ssaoTexture_ = texture;
+
+		texture = [device_ newTextureWithDescriptor:descHalfRes];
+		[texture setLabel: @"SSAO Texture"];
+		ssaoBlurTexture_ = texture;
 	}
 }
 void Renderer::BeginRender() {
@@ -455,7 +456,6 @@ void Renderer::Downsample(id<MTLCommandBuffer> _Nonnull commandBuffer,
 
 	[encoder setCullMode: MTLCullModeBack];
 	[encoder setRenderPipelineState: pipelineState];
-	[encoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
 	[encoder setFragmentTexture: srcTex atIndex: 0];
 
 	CBFrameAlloc& frame = frame_[currentFrameIndex_];
@@ -466,6 +466,21 @@ void Renderer::Downsample(id<MTLCommandBuffer> _Nonnull commandBuffer,
 	buf.width = (unsigned int)srcTex.width; buf.height = (unsigned int)srcTex.height;
 	memcpy(cb.address, &buf, sizeof(buf));
 	[encoder setFragmentBuffer:cb.buffer  offset: cb.offset atIndex: 0];
+	[encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
+	[encoder endEncoding];
+}
+void Renderer::SSAOBlurPass() {
+	MTLRenderPassDescriptor *passDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
+	passDescriptor.colorAttachments[0].texture = ssaoBlurTexture_;
+	passDescriptor.colorAttachments[0].loadAction = MTLLoadActionDontCare;
+	passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+
+	id<MTLRenderCommandEncoder> encoder = [deferredCommandBuffer_ renderCommandEncoderWithDescriptor: passDescriptor];
+	[encoder setCullMode: MTLCullModeBack];
+	[encoder setRenderPipelineState: [shaders_ selectPipeline: Blur4x4R32].pipeline];
+
+	[encoder setFragmentTexture: ssaoTexture_ atIndex:0];
+	[encoder setFragmentSamplerState: linearClampSamplerState_ atIndex:0];
 	[encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
 	[encoder endEncoding];
 }
@@ -514,6 +529,7 @@ void Renderer::SSAOPass(const ShaderStructures::SSAOCmd& cmd) {
 
 	[encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
 	[encoder endEncoding];
+	SSAOBlurPass();
 }
 void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 
@@ -529,7 +545,6 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	id<MTLRenderCommandEncoder> deferredEncoder = [deferredCommandBuffer_ renderCommandEncoderWithDescriptor: deferredPassDescriptor];
 	[deferredEncoder setCullMode: MTLCullModeBack];
 	[deferredEncoder setRenderPipelineState: [shaders_ selectPipeline: DeferredPBR].pipeline];
-	[deferredEncoder setVertexBuffer: fullscreenTexturedQuad_ offset: 0 atIndex: 0];
 	NSUInteger fsTexIndex = 0;
 	// albedo
 	[deferredEncoder setFragmentTexture: colorAttachmentTextures_[0] atIndex:fsTexIndex++];
@@ -548,10 +563,10 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	assert(cmd.BRDFLUT != InvalidTexture);
 	[deferredEncoder setFragmentTexture: textures_[cmd.BRDFLUT].texture atIndex:fsTexIndex++];
 
-	[deferredEncoder setFragmentTexture: ssaoTexture_ atIndex:fsTexIndex++];
+	[deferredEncoder setFragmentTexture: ssaoBlurTexture_ atIndex:fsTexIndex++];
 	[deferredEncoder setFragmentSamplerState:nearestClampSamplerState_ atIndex:0];
 	[deferredEncoder setFragmentSamplerState:linearWrapSamplerState_ atIndex:1];
-	[deferredEncoder setFragmentSamplerState:mipmapSamplerState_ atIndex:2];
+	[deferredEncoder setFragmentSamplerState:linearWrapMipSamplerState_ atIndex:2];
 	[deferredEncoder setFragmentSamplerState:linearClampSamplerState_ atIndex:3];
 
 	CBFrameAlloc& frame = frame_[currentFrameIndex_];
