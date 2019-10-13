@@ -43,7 +43,7 @@ fragment float ssao_fs_main(FS_PUV input[[stage_in]],
 
 		// occlusion factor
 		float occlusionFactor =	0.f;
-		float distZ = abs(r.z - p.z);
+		float distZ = r.z - p.z;
 		if (distZ > kEpsilon) {
 			float fadeLength = ao.fadeEnd - ao.fadeStart;
 			occlusionFactor = saturate((ao.fadeEnd - distZ) / fadeLength);

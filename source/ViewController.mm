@@ -135,7 +135,7 @@
 		ui::UpdateMouseButton(false, true, false);
 		return;
 	}
-	scene_.input.TranslateY(local_point.y);
+	scene_.input.TranslateY(local_point.y * contentScale);
 	if (event.modifierFlags & NSEventModifierFlagControl)
 		scene_.UpdateSceneTransform();
 	else

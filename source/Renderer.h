@@ -57,6 +57,8 @@ private:
 				 id<MTLTexture> _Nonnull srcTex,
 				 id<MTLTexture> _Nonnull dstTex);
 	void SSAOBlurPass();
+	template<typename T>
+	CBFrameAlloc::Entry Bind(const T& data);
 	id<MTLDevice> _Nonnull device_;
 	id<MTLCommandQueue> _Nonnull commandQueue_;
 	id<MTLTexture> _Nonnull depthTexture_, halfResDepthTexture_, ssaoTexture_, ssaoBlurTexture_;

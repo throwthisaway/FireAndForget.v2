@@ -20,9 +20,8 @@
 // WIN: ao.bias -> power
 // WIN: sample = reflect(random, sample); is commented out
 // WIN: genkernel
-// WIN: float distZ = abs(r.z - p.z);
+// WIN: ??? float distZ = abs(r.z - p.z);
 // WIN: linearSmp to linearclampsmp in DeferredPBR
-// MAC: framealloc cb copy
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
 }

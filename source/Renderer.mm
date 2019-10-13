@@ -669,6 +669,13 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 	[commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount: cmd.submesh.count indexType: MTLIndexTypeUInt16 indexBuffer: buffers_[cmd.ib] indexBufferOffset: cmd.submesh.indexByteOffset instanceCount: 1 baseVertex: 0 baseInstance: 0];
 }
 
+template<typename T>
+CBFrameAlloc::Entry Renderer::Bind(const T& data) {
+	CBFrameAlloc& frame = frame_[currentFrameIndex_];
+	auto cb = frame.Alloc(sizeof(T));
+	memcpy(cb.address, &data, sizeof(T));
+	return cb;
+}
 void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 	id<MTLRenderCommandEncoder> commandEncoder = encoders_[cmd.shader];
 
@@ -679,26 +686,18 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 	switch (cmd.shader) {
 		case ShaderStructures::Pos: {
 			{
-				auto cb = frame.Alloc(sizeof(Object));
-				((Object*)cb.address)->m = cmd.o.m;
-				((Object*)cb.address)->mvp = cmd.o.mvp;
-				((Object*)cb.address)->mv = cmd.o.mv;
+				auto cb = Bind(cmd.o);
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			{
-				auto cb = frame.Alloc(sizeof(Material));
-				((Material*)cb.address)->diffuse = cmd.material.diffuse;
-				((Material*)cb.address)->metallic_roughness = cmd.material.metallic_roughness;
+				auto cb = Bind(cmd.material);
 				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
 			}
 			break;
 		}
 		case ShaderStructures::ModoDNMR: {
 			{
-				auto cb = frame.Alloc(sizeof(Object));
-				((Object*)cb.address)->m = cmd.o.m;
-				((Object*)cb.address)->mvp = cmd.o.mvp;
-				((Object*)cb.address)->mv = cmd.o.mv;
+				auto cb = Bind(cmd.o);
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			for (int i = 0; i < sizeof(cmd.submesh.textures) / sizeof(cmd.submesh.textures[0]); ++i) {
@@ -711,17 +710,11 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 		}
 		case ShaderStructures::ModoDN: {
 			{
-				auto cb = frame.Alloc(sizeof(Object));
-				((Object*)cb.address)->m = cmd.o.m;
-				((Object*)cb.address)->mvp = cmd.o.mvp;
-				((Object*)cb.address)->mv = cmd.o.mv;
+				auto cb = Bind(cmd.o);
 				[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 			}
 			{
-				auto cb = frame.Alloc(sizeof(Material));
-				auto* material = (Material*)cb.address;
-				material->diffuse = cmd.material.diffuse;
-				material->metallic_roughness = cmd.material.metallic_roughness;
+				auto cb = Bind(cmd.material);
 				[commandEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsAttribIndex++];
 			}
 			for (int i = 0; i < sizeof(cmd.submesh.textures) / sizeof(cmd.submesh.textures[0]); ++i) {
