@@ -458,13 +458,11 @@ void Renderer::Downsample(id<MTLCommandBuffer> _Nonnull commandBuffer,
 	[encoder setRenderPipelineState: pipelineState];
 	[encoder setFragmentTexture: srcTex atIndex: 0];
 
-	CBFrameAlloc& frame = frame_[currentFrameIndex_];
 	struct {
 		unsigned int width, height;
 	}buf;
-	auto cb = frame.Alloc(sizeof(buf));
 	buf.width = (unsigned int)srcTex.width; buf.height = (unsigned int)srcTex.height;
-	memcpy(cb.address, &buf, sizeof(buf));
+	auto cb = Bind(buf);
 	[encoder setFragmentBuffer:cb.buffer  offset: cb.offset atIndex: 0];
 	[encoder drawPrimitives:MTLPrimitiveTypeTriangleStrip vertexStart: 0 vertexCount: 4 instanceCount: 1 baseInstance: 0];
 	[encoder endEncoding];
@@ -497,21 +495,17 @@ void Renderer::SSAOPass(const ShaderStructures::SSAOCmd& cmd) {
 	[encoder setCullMode: MTLCullModeBack];
 	[encoder setRenderPipelineState: [shaders_ selectPipeline: SSAOShader].pipeline];
 
-	CBFrameAlloc& frame = frame_[currentFrameIndex_];
 	{
-		auto cb = frame.Alloc(sizeof(cmd.ip));
-		memcpy(cb.address, &cmd.ip, sizeof(cmd.ip));
+		auto cb = Bind(cmd.ip);
 		[encoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: 0];
 	}
 	int fsIndex = 0;
 	{
-		auto cb = frame.Alloc(sizeof(cmd.scene));
-		memcpy(cb.address, &cmd.scene, sizeof(cmd.scene));
+		auto cb = Bind(cmd.scene);
 		[encoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsIndex++];
 	}
 	{
-		auto cb = frame.Alloc(sizeof(cmd.ao));
-		memcpy(cb.address, &cmd.ao, sizeof(cmd.ao));
+		auto cb = Bind(cmd.ao);
 		[encoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsIndex++];
 	}
 	[encoder setFragmentBuffer: buffers_[ssaoKernelBufferIndex_] offset: 0 atIndex: fsIndex++];
@@ -569,11 +563,9 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	[deferredEncoder setFragmentSamplerState:linearWrapMipSamplerState_ atIndex:2];
 	[deferredEncoder setFragmentSamplerState:linearClampSamplerState_ atIndex:3];
 
-	CBFrameAlloc& frame = frame_[currentFrameIndex_];
 	int fsIndex = 0;
 	{
-		auto cb = frame.Alloc(sizeof(cmd.scene));
-		memcpy(cb.address, &cmd.scene, sizeof(cmd.scene));
+		auto cb = Bind(cmd.scene);
 		[deferredEncoder setFragmentBuffer: cb.buffer offset: cb.offset atIndex: fsIndex++];
 	}
 
@@ -655,10 +647,8 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 	NSUInteger vsAttribIndex = 0;
 	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: cmd.submesh.vertexByteOffset atIndex: vsAttribIndex++];
 
-	CBFrameAlloc& frame = frame_[currentFrameIndex_];
 	{
-		auto cb = frame.Alloc(sizeof(float4x4));
-		memcpy(cb.address, &cmd.vp, sizeof(float4x4));
+		auto cb = Bind(cmd.vp);
 		[commandEncoder setVertexBuffer: cb.buffer offset: cb.offset atIndex: vsAttribIndex++];
 	}
 	{
@@ -682,7 +672,6 @@ void Renderer::Submit(const ShaderStructures::ModoDrawCmd& cmd) {
 	NSUInteger vsAttribIndex = 0, fsAttribIndex = 0, textureIndex = 0;
 	[commandEncoder setVertexBuffer: buffers_[cmd.vb] offset: cmd.submesh.vertexByteOffset atIndex: vsAttribIndex++];
 
-	CBFrameAlloc& frame = frame_[currentFrameIndex_];
 	switch (cmd.shader) {
 		case ShaderStructures::Pos: {
 			{
