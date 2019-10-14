@@ -11,13 +11,7 @@
 // generate and sample mips
 // merge Fraginput.h.metal with ShaderInput.hlsli
 // WorldPosFromDepth->ViewPosFromDepth is possible???
-// WIN: nWS = normalize(tbn * nTex);
-// WIN: test if all meshes are serialised again, with different layout
-// WIN: conform alignment in SIMDTypeAliases and ShaderStructs
 // WIN: remove texSSAODebug
-// WIN: WorldPosFromDepth replace in DeferredPBR
-// WIN: ao.bias -> power
-// WIN: sample = reflect(random, sample); is commented out
 // WIN: genkernel
 // WIN: ??? float distZ = abs(r.z - p.z);
 // WIN: linearSmp to linearclampsmp in DeferredPBR
@@ -91,7 +85,8 @@ void Scene::PrepareScene() {
 		pos.x = -3 * incX;
 	}
 
-	ssaoCmd_.ao.bias = ssaoCmd_.ao.power = 4.f;
+	ssaoCmd_.ao.bias = .1f;
+	ssaoCmd_.ao.power = 4.f;
 	ssaoCmd_.ao.rad = .04f;
 	ssaoCmd_.ao.scale = 1.f;
 	ssaoCmd_.ao.intensity = 1.f;
@@ -226,7 +221,8 @@ void Scene::SceneWindow() {
 		ImGui::SliderFloat("Scale", &ssaoCmd_.ao.scale, 0.f, 2.f);
 		ImGui::SliderFloat("Fade start", &ssaoCmd_.ao.fadeStart, 0.f, .2f);
 		ImGui::SliderFloat("Fade end", &ssaoCmd_.ao.fadeEnd, 0.f, .2f);
-		ImGui::SliderFloat("Bias", &ssaoCmd_.ao.bias, 0.1f, 7.f);
+		ImGui::SliderFloat("Bias", &ssaoCmd_.ao.bias, 0.001f, .1f);
+		ImGui::SliderFloat("Power", &ssaoCmd_.ao.power, 0.1f, 7.f);
 	}
 	if (ImGui::CollapsingHeader("Lights", &ui.lightOpen)) {
 		for (int i = 0; i < MAX_LIGHTS; ++i) {

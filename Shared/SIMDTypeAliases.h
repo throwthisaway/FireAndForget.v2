@@ -1,8 +1,6 @@
 #pragma once
 #define row_major
 #define column_major
-// TODO:: replace everything if it works
-//#define ALIGN16 __attribute__((aligned(16)))
 #define ALIGN16 alignas(16)
 // TODO:: #define GLM_DEPTH_ZERO_TO_ONE
 // TODO:: #define GLM_LEFT_HANDED

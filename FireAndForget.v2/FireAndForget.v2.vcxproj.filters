@@ -331,6 +331,9 @@
     <None Include="Content\shaders\ShaderStructs.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
+    <None Include="..\source\assets\shadow_test.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">

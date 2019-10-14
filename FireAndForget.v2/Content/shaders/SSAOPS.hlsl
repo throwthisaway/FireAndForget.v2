@@ -65,7 +65,7 @@ MRTOut main(PS_PUV input) {
 	// https://github.com/d3dcoder/d3d12book/blob/master/Chapter%2021%20Ambient%20Occlusion/Ssao/Shaders/Ssao.hlsl
 	for (int i = 0; i < kKernelSize; ++i) {
 		float3 sample = kernel.data[i];
-		//sample = reflect(random, sample);
+		sample = reflect(random, sample);
 		float flip = sign(dot(sample, n));
 		float3 offset = flip * sample * ao.rad;
 		float3 q = p + offset * ao.scale; // q in view  space
@@ -91,7 +91,7 @@ MRTOut main(PS_PUV input) {
 	}
 	occlusion /= kKernelSize;
 	result.ao = 1.f - occlusion;
-	result.ao = pow(result.ao, ao.bias);	
+	result.ao = pow(result.ao, ao.power);	
 	//result.debug = float4(p, 1.f);
 	result.debug = float4(n, 1.f);
 	return result;

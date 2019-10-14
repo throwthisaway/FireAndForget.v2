@@ -21,7 +21,7 @@ MRTOut main(PS_UVNT input) {
 	float3 b = cross(nWS, t);
 	float3x3 tbn = float3x3(t, b, nWS);
 	output.normalVS = float4(normalize(input.nVS), 1.f);
-	nWS = mul(nTex, tbn);
+	nWS = normalize(mul(nTex, tbn));
 	output.normalWS = float4(nWS, 1.f);
 
 	float metallic = tMetallic.Sample(smp, input.uv).r;
