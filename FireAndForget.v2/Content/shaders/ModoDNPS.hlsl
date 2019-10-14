@@ -17,7 +17,7 @@ MRTOut main(PS_UVNT input) {
 	//	float3 nTex = tNormal.Sample(smp, input.uv).rgb * 255.f/127.f - 128.f/127.f;
 	float3 nTex = tNormal.Sample(smp, input.uv).rgb * 2.f - 1.f;
 	float3 nWS = normalize(input.nWS);
-	float3 t = normalize(input.t - dot(input.t, nWS)*nWS);
+	float3 t = normalize(input.tWS - dot(input.tWS, nWS)*nWS);
 	float3 b = cross(nWS, t);
 	float3x3 tbn = float3x3(t, b, nWS);
 	output.normalVS = float4(normalize(input.nVS), 1.f);

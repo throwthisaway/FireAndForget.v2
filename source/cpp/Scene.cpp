@@ -14,7 +14,6 @@
 // WIN: nWS = normalize(tbn * nTex);
 // WIN: test if all meshes are serialised again, with different layout
 // WIN: conform alignment in SIMDTypeAliases and ShaderStructs
-// WIN: handle tangent from mesh data instead of GS
 // WIN: remove texSSAODebug
 // WIN: WorldPosFromDepth replace in DeferredPBR
 // WIN: ao.bias -> power

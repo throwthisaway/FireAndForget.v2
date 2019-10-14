@@ -8,7 +8,13 @@ struct VS_PN {
 };
 struct VS_PNUV {
 	float3 pos : POSITION0;
-	float3 n : NORMAL;
+	float3 n : NORMAL0;
+	float2 uv : TEXCOORD0;
+};
+struct VS_PNTUV {
+	float3 pos : POSITION0;
+	float3 n : NORMAL0;
+	float3 t : TANGENT0;
 	float2 uv : TEXCOORD0;
 };
 struct VS_PUV {
@@ -58,5 +64,5 @@ struct PS_UVNT {
 	float2 uv : TEXCOORD0;
 	float3 nWS : NORMAL0;
 	float3 nVS : NORMAL1;
-	float3 t : TANGENT0;
+	float3 tWS : TANGENT0;
 };

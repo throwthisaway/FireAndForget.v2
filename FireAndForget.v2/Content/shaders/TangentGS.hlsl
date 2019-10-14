@@ -16,7 +16,7 @@ void main(triangle GS_PUVN input[3],
 		element.uv = input[i].uv;
 		element.nWS = input[i].nWS;
 		element.nVS = input[i].nVS;
-		element.t = t;
+		element.tWS = t;
 		output.Append(element);
 	}
 }
