@@ -1,6 +1,6 @@
 #include "Common.hlsli"
 #include "ShaderInput.hlsli"
-#include "ShaderStructs.h"
+#include "ShaderStructs.hlsli"
 #include "ModoDNRS.hlsli"
 
 ConstantBuffer<Material> mat : register(b0);

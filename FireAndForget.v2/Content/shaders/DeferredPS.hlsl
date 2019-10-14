@@ -1,4 +1,4 @@
-#include "ShaderStructs.h"
+#include "ShaderStructs.hlsli"
 #include "Phong.hlsli"
 #include "Common.hlsli"
 #include "DeferredRS.hlsli"

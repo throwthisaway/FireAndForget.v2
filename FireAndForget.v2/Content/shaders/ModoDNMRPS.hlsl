@@ -1,6 +1,6 @@
 #include "Common.hlsli"
 #include "ShaderInput.hlsli"
-#include "ShaderStructs.h"
+#include "ShaderStructs.hlsli"
 #include "ModoDNMRRS.hlsli"
 
 Texture2D<float4> tDiffuse : register(t0);

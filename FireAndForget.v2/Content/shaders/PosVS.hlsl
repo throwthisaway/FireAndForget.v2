@@ -1,4 +1,4 @@
-#include "ShaderStructs.h"
+#include "ShaderStructs.hlsli"
 #include "ShaderInput.hlsli"
 ConstantBuffer<Object> obj : register(b0);
 

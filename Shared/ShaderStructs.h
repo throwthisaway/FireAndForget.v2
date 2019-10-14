@@ -1,7 +1,7 @@
 #ifndef __SHADERSTRUCTS___
 #define __SHADERSTRUCTS___
 
-struct ALIGN16 Object {
+struct Object {
 	// https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-per-component-math?redirectedfrom=MSDN#Matrix_Ordering
 	// or use #pragmapack_matrix directive in shader
 	ALIGN16 row_major float4x4 mvp, m, mv;

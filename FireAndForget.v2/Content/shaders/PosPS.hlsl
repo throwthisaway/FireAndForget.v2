@@ -1,5 +1,5 @@
 #include "Common.hlsli"
-#include "ShaderStructs.h"
+#include "ShaderStructs.hlsli"
 #include "ShaderInput.hlsli"
 
 ConstantBuffer<Material> mat : register(b0);

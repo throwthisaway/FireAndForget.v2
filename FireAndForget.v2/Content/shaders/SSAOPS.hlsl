@@ -1,5 +1,5 @@
 #include "ShaderInput.hlsli"
-#include "ShaderStructs.h"
+#include "ShaderStructs.hlsli"
 #define RS "RootFlags(DENY_DOMAIN_SHADER_ROOT_ACCESS |" \
 			"DENY_GEOMETRY_SHADER_ROOT_ACCESS |" \
 			"DENY_HULL_SHADER_ROOT_ACCESS)," \

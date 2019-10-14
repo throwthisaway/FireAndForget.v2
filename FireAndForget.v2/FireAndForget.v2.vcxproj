@@ -354,20 +354,11 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </None>
-    <None Include="..\source\assets\BEETHOVE_high_modo.mesh">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-    </None>
     <None Include="..\source\assets\BEETHOVE_merged_subdivided_twice.mesh">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </None>
     <None Include="..\source\assets\BEETHOVE_object.mesh">
       <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="..\source\assets\BEETHOVE_object_modo.mesh">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="..\source\assets\BEETHOVE_subdivided_twice.mesh">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </None>
     <None Include="..\source\assets\box.mesh">
       <DeploymentContent>true</DeploymentContent>
@@ -431,6 +422,7 @@
     <None Include="Content\shaders\ModoDNRS.hlsli" />
     <None Include="Content\shaders\PBR.hlsli" />
     <None Include="Content\shaders\ShaderInput.hlsli" />
+    <None Include="Content\shaders\ShaderStructs.hlsli" />
     <None Include="FireAndForget.v2_TemporaryKey.pfx" />
     <None Include="packages.config" />
   </ItemGroup>

@@ -22,6 +22,7 @@
 // WIN: genkernel
 // WIN: ??? float distZ = abs(r.z - p.z);
 // WIN: linearSmp to linearclampsmp in DeferredPBR
+// MAC: is ALIGN16 macro ok for clang?
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
 }

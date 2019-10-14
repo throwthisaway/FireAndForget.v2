@@ -1,4 +1,4 @@
-#include "ShaderStructs.h"
+#include "ShaderStructs.hlsli"
 #include "ShaderInput.hlsli"
 #include "Common.hlsli"
 #include "PBR.hlsli"

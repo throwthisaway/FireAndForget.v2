@@ -1,4 +1,5 @@
 #pragma once
+#include "../source/cpp/DebugUI.h"
 namespace ui {
 	bool Init(ID3D12Device* device, IDXGISwapChain* swapchain);
 	void Update(double frame, double total);

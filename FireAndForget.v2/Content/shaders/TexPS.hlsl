@@ -1,6 +1,6 @@
 #include "Common.hlsli"
 #include "ShaderInput.hlsli"
-#include "ShaderStructs.h"
+#include "ShaderStructs.hlsli"
 
 Texture2D<float4> tColor : register(t0);
 ConstantBuffer<Material> mat : register(b0);

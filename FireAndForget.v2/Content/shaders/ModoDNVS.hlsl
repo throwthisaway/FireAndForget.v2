@@ -1,5 +1,5 @@
 #include "ShaderInput.hlsli"
-#include "ShaderStructs.h"
+#include "ShaderStructs.hlsli"
 
 ConstantBuffer<Object> obj : register(b0);
 GS_PUVN main(VS_PNUV input) {

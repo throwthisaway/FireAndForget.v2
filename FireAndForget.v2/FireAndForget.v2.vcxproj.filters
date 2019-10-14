@@ -316,9 +316,6 @@
       <Filter>Content\shaders</Filter>
     </None>
     <None Include="packages.config" />
-    <None Include="..\source\assets\BEETHOVE_object_modo.mesh">
-      <Filter>Assets</Filter>
-    </None>
     <None Include="..\source\assets\modo_ball_test.mesh">
       <Filter>Assets</Filter>
     </None>
@@ -328,14 +325,11 @@
     <None Include="..\source\assets\box_normal_map_test.mesh">
       <Filter>Assets</Filter>
     </None>
-    <None Include="..\source\assets\BEETHOVE_high_modo.mesh">
-      <Filter>Assets</Filter>
-    </None>
-    <None Include="..\source\assets\BEETHOVE_subdivided_twice.mesh">
-      <Filter>Assets</Filter>
-    </None>
     <None Include="..\source\assets\BEETHOVE_merged_subdivided_twice.mesh">
       <Filter>Assets</Filter>
+    </None>
+    <None Include="Content\shaders\ShaderStructs.hlsli">
+      <Filter>Content\shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
