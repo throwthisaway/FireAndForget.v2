@@ -223,7 +223,7 @@ void Renderer::CreateDeviceDependentResources() {
 	NAME_D3D12_OBJECT(bufferUpload_.cmdList);
 	// Buffer upload...
 
-	pipelineStates_.completionTask_.then([this]() {
+	pipelineStates_.completionTask.then([this]() {
 		loadingComplete_ = true;
 	});
 
@@ -235,7 +235,7 @@ void Renderer::CreateDeviceDependentResources() {
 	//DX::ThrowIfFailed(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, prePass_.computeCmdAllocator.Get(), nullptr, IID_PPV_ARGS(&prePass_.computeCmdList)));
 	//prePass_.computeCmdList->Close();
 
-	for (size_t i = 0; i < pipelineStates_.states_.size(); ++i) {
+	for (size_t i = 0; i < _countof(pipelineStates_.states); ++i) {
 		ID3D12CommandAllocator* firstCommandAllocator = nullptr;
 		for (UINT n = 0; n < FrameCount; n++) {
 			Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
@@ -354,7 +354,7 @@ TextureIndex Renderer::GenCubeMap(TextureIndex tex, BufferIndex vb, BufferIndex 
 	D3D12_RECT scissor = { 0, 0, (LONG)dim, (LONG)dim };
 	commandList->RSSetViewports(1, &viewport);
 	commandList->RSSetScissorRects(1, &scissor);
-	auto& state = pipelineStates_.states_[shader];
+	auto& state = pipelineStates_.states[shader];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
 	const auto descSize = prePass_.desc.GetDescriptorSize();
@@ -413,7 +413,7 @@ void Renderer::GenMips(Microsoft::WRL::ComPtr<ID3D12Resource> resource, DXGI_FOR
 			if (w & 1 && h & 1) shaderId = ShaderStructures::GenMipsOddXOddY;
 			else if (w & 1) shaderId = ShaderStructures::GenMipsOddX;
 			else if (h & 1) shaderId = ShaderStructures::GenMipsOddY;
-			auto& state = pipelineStates_.states_[shaderId];
+			auto& state = pipelineStates_.states[shaderId];
 			commandList->SetPipelineState(state.pipelineState.Get());
 			w >>= 1; h >>= 1;
 			w = std::max(1, w); h = std::max(1, h);
@@ -515,7 +515,7 @@ TextureIndex Renderer::GenPrefilteredEnvCubeMap(TextureIndex tex, BufferIndex vb
 
 	ID3D12GraphicsCommandList* commandList = prePass_.cmdList.Get();
 	PIXBeginEvent(commandList, 0, L"GenPrefilteredEnvCubeMap");
-	auto& state = pipelineStates_.states_[shader];
+	auto& state = pipelineStates_.states[shader];
 	commandList->SetPipelineState(state.pipelineState.Get());
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	D3D12_VIEWPORT viewport = { 0, 0, FLOAT(dim), FLOAT(dim) };
@@ -635,7 +635,7 @@ TextureIndex Renderer::GenBRDFLUT(uint32_t dim, ShaderId shader, LPCSTR label) {
 
 	ID3D12GraphicsCommandList* commandList = prePass_.cmdList.Get();
 	PIXBeginEvent(commandList, 0, L"GenBRDFLUT");
-	auto& state = pipelineStates_.states_[shader];
+	auto& state = pipelineStates_.states[shader];
 	commandList->SetPipelineState(state.pipelineState.Get());
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	D3D12_VIEWPORT viewport = { 0, 0, FLOAT(dim), FLOAT(dim) };
@@ -694,7 +694,7 @@ void Renderer::BeforeResize() {
 void Renderer::CreateWindowSizeDependentResources() {
 	auto device = m_deviceResources->GetD3DDevice();
 	auto size = m_deviceResources->GetOutputSize();
-	DEBUGUI(ui::OnResize(device, m_deviceResources->GetSwapChain(), size.Width, size.Height));
+	DEBUGUI(ui::OnResize(device, m_deviceResources->GetSwapChain(), (int)size.Width, (int)size.Height));
 
 	rtvDescAlloc_.Reset();
 	dsvDescAlloc_.Reset();
@@ -846,8 +846,8 @@ void Renderer::BeginRender() {
 void Renderer::StartForwardPass() {
 	if (!loadingComplete_) return;
 	bool first = true;
-	for (size_t i = 0; i < pipelineStates_.states_.size(); ++i) {
-		auto& state = pipelineStates_.states_[i];
+	for (size_t i = 0; i < _countof(pipelineStates_.states); ++i) {
+		auto& state = pipelineStates_.states[i];
 		if (state.pass != PipelineStates::State::RenderPass::Forward) continue;
 		auto* commandList = commandLists_[i].Get();
 		commandList->RSSetViewports(1, &renderTargets_.GetViewport());
@@ -875,8 +875,8 @@ void Renderer::StartGeometryPass() {
 	if (!loadingComplete_) return;
 	// assign pipelinestates with command lists
 	bool first = true;
-	for (size_t i = 0; i < pipelineStates_.states_.size(); ++i) {
-		auto& state = pipelineStates_.states_[i];
+	for (size_t i = 0; i < _countof(pipelineStates_.states); ++i) {
+		auto& state = pipelineStates_.states[i];
 		if (state.pass != PipelineStates::State::RenderPass::Geometry) continue;
 		auto* commandList = commandLists_[i].Get();
 		commandList->RSSetViewports(1, &gbuffersRT_.GetViewport());
@@ -923,7 +923,7 @@ bool Renderer::Render() {
 void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 	if (!loadingComplete_) return;
 	auto id = cmd.shader;
-	auto& state = pipelineStates_.states_[id];
+	auto& state = pipelineStates_.states[id];
 	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
 	PIXBeginEvent(commandList, 0, L"SubmitBgCmd");
 	const int descSize = frame_->desc.GetDescriptorSize();
@@ -970,7 +970,7 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 void Renderer::Submit(const DrawCmd& cmd) {
 	if (!loadingComplete_) return;
 	auto id = cmd.shader;
-	auto& state = pipelineStates_.states_[id];
+	auto& state = pipelineStates_.states[id];
 	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
 	PIXBeginEvent(commandList, 0, L"SubmitDrawCmd"); 
 	{
@@ -1082,7 +1082,7 @@ void Renderer::Submit(const DrawCmd& cmd) {
 void Renderer::Submit(const ModoDrawCmd& cmd) {
 	if (!loadingComplete_) return;
 	auto id = cmd.shader;
-	auto& state = pipelineStates_.states_[id];
+	auto& state = pipelineStates_.states[id];
 	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
 	PIXBeginEvent(commandList, 0, L"SubmitModoDrawCmd"); 
 	{
@@ -1192,7 +1192,7 @@ template<int RTCount>
 void Renderer::Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RT<RTCount>& rt, PCWSTR eventName) {
 	if (!commandList) commandList = commandLists_[shaderId].Get();
 	PIX(PIXBeginEvent(commandList, 0, eventName));
-	auto& state = pipelineStates_.states_[shaderId];
+	auto& state = pipelineStates_.states[shaderId];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
 	commandList->RSSetViewports(1, &rt.GetViewport());
@@ -1223,7 +1223,7 @@ void Renderer::SSAOPass(const SSAOCmd& cmd) {
 	frame_->BindCBV(entry.cpuHandle, cmd.ip);
 	frame_->BindCBV(entry.cpuHandle, cmd.scene);
 	frame_->BindCBV(entry.cpuHandle, cmd.ao);
-	frame_->BindCBV(entry.cpuHandle, ssao_.kernelResource->GetGPUVirtualAddress(), ssao_.size256);
+	frame_->BindCBV(entry.cpuHandle, ssao_.kernelResource->GetGPUVirtualAddress(), (UINT)ssao_.size256);
 	frame_->BindSRV(entry.cpuHandle, depth->resources[0].Get());
 	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::NormalVS].Get());
 	frame_->BindSRV(entry.cpuHandle, buffers_[cmd.random].resource.Get());
@@ -1248,7 +1248,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 
 	commandList->RSSetViewports(1, &renderTargets_.GetViewport());
 	commandList->RSSetScissorRects(1, &renderTargets_.GetScissorRect());
-	auto& state = pipelineStates_.states_[DeferredPBR];
+	auto& state = pipelineStates_.states[DeferredPBR];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	commandList->SetPipelineState(state.pipelineState.Get());
 	D3D12_CPU_DESCRIPTOR_HANDLE rtv = GetRenderTargetView();

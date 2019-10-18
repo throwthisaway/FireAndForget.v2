@@ -6,6 +6,7 @@
 #include <string>
 using namespace Microsoft::WRL;
 using namespace concurrency;
+using namespace ShaderStructures;
 
 namespace {
 	/*const D3D12_INPUT_ELEMENT_DESC debugInputLayout[] = {
@@ -28,6 +29,21 @@ namespace {
 	/*const D3D12_INPUT_ELEMENT_DESC fsQuadLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };*/
+
+	struct VSDesc {
+		D3D12_INPUT_LAYOUT_DESC il;
+		const wchar_t* vs;
+	} pos = { { pnLayout, _countof(pnLayout) }, L"PosVS.cso" },
+		tex = { { pnuvLayout, _countof(pnuvLayout) }, L"TexVS.cso" },
+		debug = { { pnLayout, _countof(pnLayout) }, L"DebugVS.cso" },
+		fsQuad = { { {}, 0 }, L"FSQuadVS.cso" },
+		cubeEnvMap = { {pnLayout, _countof(pnLayout) }, L"CubeEnvMapVS.cso" },
+		bg = { {pnLayout, _countof(pnLayout) },  L"BgVS.cso" },
+		modoDN = { { pntuvLayout, _countof(pntuvLayout) }, L"ModoDNVS.cso" },
+		fsQuadViewPos = { { {}, 0 },  L"FSQuadViewPosVS.cso" };
+
+
+
 	//PipelineStates::CBuffer SetupDescriptorHeap(ID3D12Device* d3dDevice, ID3D12DescriptorHeap* cbvHeap, ID3D12Resource* constantBuffer, size_t size, size_t numDesc, size_t repeatCount, size_t indexOffset) {
 	//	const UINT c_alignedConstantBufferSize = (size + 255) & ~255;
 	//	// Create constant buffer views to access the upload buffer.
@@ -179,7 +195,7 @@ PipelineStates::~PipelineStates() {}
 void PipelineStates::CreateDeviceDependentResources() {
 
 	rootSignatures_.resize(ROOT_SIG_COUNT);
-	states_.resize(ShaderStructures::Count);
+
 	{
 		// ROOT_VS_1CB_PS_1CB
 		CD3DX12_ROOT_PARAMETER parameter[2];
@@ -253,40 +269,40 @@ void PipelineStates::CreateDeviceDependentResources() {
 		NAME_D3D12_OBJECT(rootSignature);
 		rootSignatures_[ROOT_VS_1CB_PS_1TX_1CB] = rootSignature;
 	}
+	shaderTasks.reserve(Count);
+	shaderTasks.push_back(CreateShader(Pos, ROOT_VS_1CB_PS_1CB, pos.il, pos.vs, L"PosPS.cso", nullptr, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(Tex, ROOT_VS_1CB_PS_1TX_1CB, tex.il, tex.vs, L"TexPS.cso", nullptr, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(Debug, ROOT_VS_1CB_PS_1CB, debug.il, debug.vs, L"DebugPS.cso", nullptr, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(Deferred, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"DeferredPS.cso", nullptr,  lighting, State::RenderPass::Lighting));
+	shaderTasks.push_back(CreateShader(DeferredPBR, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"DeferredPBRPS.cso", nullptr, lighting, State::RenderPass::Lighting));
 
-	shaderTasks.push_back(CreateShader(ShaderStructures::Pos, ROOT_VS_1CB_PS_1CB, L"PosVS.cso", L"PosPS.cso", nullptr, { pnLayout, _countof(pnLayout) }, geometry, State::RenderPass::Geometry));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Tex, ROOT_VS_1CB_PS_1TX_1CB, L"TexVS.cso", L"TexPS.cso", nullptr, { pnuvLayout, _countof(pnuvLayout) }, geometry, State::RenderPass::Geometry));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Debug, ROOT_VS_1CB_PS_1CB, L"DebugVS.cso", L"DebugPS.cso", nullptr, { pnLayout, _countof(pnLayout) }, geometry, State::RenderPass::Geometry));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Deferred, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPS.cso", nullptr, { {}, 0 }, lighting, State::RenderPass::Lighting));
-	shaderTasks.push_back(CreateShader(ShaderStructures::DeferredPBR, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DeferredPBRPS.cso", nullptr, { {}, 0 }, lighting, State::RenderPass::Lighting));
-
-	shaderTasks.push_back(CreateShader(ShaderStructures::CubeEnvMap, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvMapPS.cso", nullptr, {pnLayout, _countof(pnLayout) }, pre, State::RenderPass::Pre));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Bg, ROOT_UNKNOWN, L"BgVS.cso", L"BgPS.cso", nullptr, {pnLayout, _countof(pnLayout) }, forward, State::RenderPass::Forward));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Irradiance, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvIrPS.cso", nullptr, {pnLayout, _countof(pnLayout) }, pre, State::RenderPass::Pre));
-	shaderTasks.push_back(CreateShader(ShaderStructures::PrefilterEnv, ROOT_UNKNOWN, L"CubeEnvMapVS.cso", L"CubeEnvPrefilterPS.cso", nullptr, {pnLayout, _countof(pnLayout) }, pre, State::RenderPass::Pre));
-	shaderTasks.push_back(CreateShader(ShaderStructures::BRDFLUT, ROOT_UNKNOWN, L"FSQuadVS.cso", L"BRDFLUTPS.cso", nullptr, { {}, 0 }, rg16, State::RenderPass::Pre));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Downsample, ROOT_UNKNOWN, L"FSQuadVS.cso", L"DownsampleDepthPS.cso", nullptr, { {}, 0 }, depth, State::RenderPass::Lighting));
-	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMips, ROOT_UNKNOWN, L"GenMips.cso", State::RenderPass::Pre));
-	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsOddX, ROOT_UNKNOWN, L"GenMipsOddX.cso", State::RenderPass::Pre));
-	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsOddY, ROOT_UNKNOWN, L"GenMipsOddY.cso", State::RenderPass::Pre));
-	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsOddXOddY, ROOT_UNKNOWN, L"GenMipsOddXOddY.cso", State::RenderPass::Pre));
-	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsSRGB, ROOT_UNKNOWN, L"GenMipsSRGB.cso", State::RenderPass::Pre));
-	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsOddXSRGB, ROOT_UNKNOWN, L"GenMipsOddXSRGB.cso", State::RenderPass::Pre));
-	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsOddYSRGB, ROOT_UNKNOWN, L"GenMipsOddYSRGB.cso", State::RenderPass::Pre));
-	shaderTasks.push_back(CreateComputeShader(ShaderStructures::GenMipsOddXOddYSRGB, ROOT_UNKNOWN, L"GenMipsOddXOddYSRGB.cso", State::RenderPass::Pre));
-	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDN, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNPS.cso", nullptr, { pntuvLayout, _countof(pntuvLayout) }, geometry, State::RenderPass::Geometry));
-	shaderTasks.push_back(CreateShader(ShaderStructures::ModoDNMR, ROOT_UNKNOWN, L"ModoDNVS.cso", L"ModoDNMRPS.cso", nullptr, { pntuvLayout, _countof(pntuvLayout) }, geometry, State::RenderPass::Geometry));
-	shaderTasks.push_back(CreateShader(ShaderStructures::SSAOShader, ROOT_UNKNOWN, L"FSQuadViewPosVS.cso", L"SSAOPS.cso", nullptr, { {}, 0 }, ssao, State::RenderPass::Lighting));
-	shaderTasks.push_back(CreateShader(ShaderStructures::Blur4x4R32, ROOT_UNKNOWN, L"FSQuadVS.cso", L"Blur4x4R32.cso", nullptr, { {}, 0 }, r32, State::RenderPass::Post));
-	completionTask_ = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
+	shaderTasks.push_back(CreateShader(CubeEnvMap, ROOT_UNKNOWN, cubeEnvMap.il, cubeEnvMap.vs, L"CubeEnvMapPS.cso", nullptr, pre, State::RenderPass::Pre));
+	shaderTasks.push_back(CreateShader(Bg, ROOT_UNKNOWN, bg.il, bg.vs, L"BgPS.cso", nullptr, forward, State::RenderPass::Forward));
+	shaderTasks.push_back(CreateShader(Irradiance, ROOT_UNKNOWN, cubeEnvMap.il, cubeEnvMap.vs, L"CubeEnvIrPS.cso", nullptr, pre, State::RenderPass::Pre));
+	shaderTasks.push_back(CreateShader(PrefilterEnv, ROOT_UNKNOWN, cubeEnvMap.il, cubeEnvMap.vs, L"CubeEnvPrefilterPS.cso", nullptr, pre, State::RenderPass::Pre));
+	shaderTasks.push_back(CreateShader(BRDFLUT, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"BRDFLUTPS.cso", nullptr, rg16, State::RenderPass::Pre));
+	shaderTasks.push_back(CreateShader(Downsample, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"DownsampleDepthPS.cso", nullptr, depth, State::RenderPass::Lighting));
+	shaderTasks.push_back(CreateComputeShader(GenMips, ROOT_UNKNOWN, L"GenMips.cso", State::RenderPass::Pre));
+	shaderTasks.push_back(CreateComputeShader(GenMipsOddX, ROOT_UNKNOWN, L"GenMipsOddX.cso", State::RenderPass::Pre));
+	shaderTasks.push_back(CreateComputeShader(GenMipsOddY, ROOT_UNKNOWN, L"GenMipsOddY.cso", State::RenderPass::Pre));
+	shaderTasks.push_back(CreateComputeShader(GenMipsOddXOddY, ROOT_UNKNOWN, L"GenMipsOddXOddY.cso", State::RenderPass::Pre));
+	shaderTasks.push_back(CreateComputeShader(GenMipsSRGB, ROOT_UNKNOWN, L"GenMipsSRGB.cso", State::RenderPass::Pre));
+	shaderTasks.push_back(CreateComputeShader(GenMipsOddXSRGB, ROOT_UNKNOWN, L"GenMipsOddXSRGB.cso", State::RenderPass::Pre));
+	shaderTasks.push_back(CreateComputeShader(GenMipsOddYSRGB, ROOT_UNKNOWN, L"GenMipsOddYSRGB.cso", State::RenderPass::Pre));
+	shaderTasks.push_back(CreateComputeShader(GenMipsOddXOddYSRGB, ROOT_UNKNOWN, L"GenMipsOddXOddYSRGB.cso", State::RenderPass::Pre));
+	shaderTasks.push_back(CreateShader(ModoDN, ROOT_UNKNOWN, modoDN.il, modoDN.vs, L"ModoDNPS.cso", nullptr, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(ModoDNMR, ROOT_UNKNOWN, modoDN.il, modoDN.vs, L"ModoDNMRPS.cso", nullptr, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(SSAOShader, ROOT_UNKNOWN, fsQuadViewPos.il, fsQuadViewPos.vs, L"SSAOPS.cso", nullptr, ssao, State::RenderPass::Lighting));
+	shaderTasks.push_back(CreateShader(Blur4x4R32, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"Blur4x4R32.cso", nullptr, r32, State::RenderPass::Post));
+	completionTask = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }
 
-Concurrency::task<void> PipelineStates::CreateShader(ShaderId id,
+PipelineStates::CreateShaderTask PipelineStates::CreateShader(ShaderId id,
 		size_t rootSignatureIndex,
+		const D3D12_INPUT_LAYOUT_DESC il,
 		const wchar_t* vs,
 		const wchar_t* ps,
 		const wchar_t* gs,
-		const D3D12_INPUT_LAYOUT_DESC il,
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
 		State::RenderPass pass) {
 	auto vsTask = DX::ReadDataAsync(vs).then([](std::vector<byte>& data) {
@@ -331,10 +347,10 @@ Concurrency::task<void> PipelineStates::CreateShader(ShaderId id,
 		ComPtr<ID3D12PipelineState> pipelineState;
 		DX::ThrowIfFailed(device->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(pipelineState.GetAddressOf())));
 		pipelineState->SetName(name.c_str());
-		states_[id] = { rootSignature, pipelineState, pass};
+		states[id] = { rootSignature, pipelineState, pass};
 	});
 }
-Concurrency::task<void> PipelineStates::CreateComputeShader(ShaderId id,
+PipelineStates::CreateShaderTask PipelineStates::CreateComputeShader(ShaderId id,
 	size_t rootSignatureIndex,
 	const wchar_t* cs,
 	State::RenderPass pass) {
@@ -363,6 +379,6 @@ Concurrency::task<void> PipelineStates::CreateComputeShader(ShaderId id,
 		ComPtr<ID3D12PipelineState> pipelineState;
 		DX::ThrowIfFailed(device->CreateComputePipelineState(&desc, IID_PPV_ARGS(pipelineState.GetAddressOf())));
 		pipelineState->SetName(name.c_str());
-		states_[id] = { rootSignature, pipelineState, pass};
+		states[id] = { rootSignature, pipelineState, pass};
 	});
 }
