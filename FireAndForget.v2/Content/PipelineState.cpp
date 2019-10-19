@@ -13,16 +13,16 @@ namespace {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };*/
 	const D3D12_INPUT_ELEMENT_DESC pnLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }};
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
 	const D3D12_INPUT_ELEMENT_DESC pnuvLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }};
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
 	const D3D12_INPUT_ELEMENT_DESC pntuvLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }};
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
 	const D3D12_INPUT_ELEMENT_DESC puvLayout[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } };
@@ -129,7 +129,7 @@ PipelineStates::PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferForma
 			state.RTVFormats[0] = DXGI_FORMAT_R32_FLOAT;
 			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
 			state.SampleDesc.Count = 1;
-			depth = state;
+			downsampleDepth = state;
 		}
 
 		{
@@ -187,6 +187,20 @@ PipelineStates::PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferForma
 			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
 			state.SampleDesc.Count = 1;
 			r32 = state;
+		}
+
+		{
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = {};
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 0;
+			state.RTVFormats[0] = DXGI_FORMAT_UNKNOWN; 
+			state.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+			state.SampleDesc.Count = 1;
+			shadow = state;
 		}
 }
 
@@ -269,6 +283,32 @@ void PipelineStates::CreateDeviceDependentResources() {
 		NAME_D3D12_OBJECT(rootSignature);
 		rootSignatures_[ROOT_VS_1CB_PS_1TX_1CB] = rootSignature;
 	}
+	{
+		// ROOT_VS_1CB
+		CD3DX12_ROOT_PARAMETER parameter[1];
+		CD3DX12_DESCRIPTOR_RANGE range0;
+		std::vector<UINT> ranges{ 1 };
+		range0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+		parameter[0].InitAsDescriptorTable(ranges[0], &range0, D3D12_SHADER_VISIBILITY_VERTEX);
+
+		D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+
+		CD3DX12_ROOT_SIGNATURE_DESC descRootSignature;
+		descRootSignature.Init(_ARRAYSIZE(parameter), parameter, 0, nullptr, rootSignatureFlags);
+
+		ComPtr<ID3DBlob> pSignature;
+		ComPtr<ID3DBlob> pError;
+		DX::ThrowIfFailed(D3D12SerializeRootSignature(&descRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, pSignature.GetAddressOf(), pError.GetAddressOf()));
+		ComPtr<ID3D12RootSignature>	rootSignature;
+		DX::ThrowIfFailed(device->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
+		NAME_D3D12_OBJECT(rootSignature);
+		rootSignatures_[ROOT_VS_1CB] = rootSignature;
+	}
 	shaderTasks.reserve(Count);
 	shaderTasks.push_back(CreateShader(Pos, ROOT_VS_1CB_PS_1CB, pos.il, pos.vs, L"PosPS.cso", nullptr, geometry, State::RenderPass::Geometry));
 	shaderTasks.push_back(CreateShader(Tex, ROOT_VS_1CB_PS_1TX_1CB, tex.il, tex.vs, L"TexPS.cso", nullptr, geometry, State::RenderPass::Geometry));
@@ -281,7 +321,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(Irradiance, ROOT_UNKNOWN, cubeEnvMap.il, cubeEnvMap.vs, L"CubeEnvIrPS.cso", nullptr, pre, State::RenderPass::Pre));
 	shaderTasks.push_back(CreateShader(PrefilterEnv, ROOT_UNKNOWN, cubeEnvMap.il, cubeEnvMap.vs, L"CubeEnvPrefilterPS.cso", nullptr, pre, State::RenderPass::Pre));
 	shaderTasks.push_back(CreateShader(BRDFLUT, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"BRDFLUTPS.cso", nullptr, rg16, State::RenderPass::Pre));
-	shaderTasks.push_back(CreateShader(Downsample, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"DownsampleDepthPS.cso", nullptr, depth, State::RenderPass::Lighting));
+	shaderTasks.push_back(CreateShader(Downsample, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"DownsampleDepthPS.cso", nullptr, downsampleDepth, State::RenderPass::Lighting));
 	shaderTasks.push_back(CreateComputeShader(GenMips, ROOT_UNKNOWN, L"GenMips.cso", State::RenderPass::Pre));
 	shaderTasks.push_back(CreateComputeShader(GenMipsOddX, ROOT_UNKNOWN, L"GenMipsOddX.cso", State::RenderPass::Pre));
 	shaderTasks.push_back(CreateComputeShader(GenMipsOddY, ROOT_UNKNOWN, L"GenMipsOddY.cso", State::RenderPass::Pre));
@@ -294,9 +334,49 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(ModoDNMR, ROOT_UNKNOWN, modoDN.il, modoDN.vs, L"ModoDNMRPS.cso", nullptr, geometry, State::RenderPass::Geometry));
 	shaderTasks.push_back(CreateShader(SSAOShader, ROOT_UNKNOWN, fsQuadViewPos.il, fsQuadViewPos.vs, L"SSAOPS.cso", nullptr, ssao, State::RenderPass::Lighting));
 	shaderTasks.push_back(CreateShader(Blur4x4R32, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"Blur4x4R32.cso", nullptr, r32, State::RenderPass::Post));
+	
+	shaderTasks.push_back(CreateShadowShader(ShadowPos, ROOT_VS_1CB, pos.il, pos.vs, nullptr, shadow, State::RenderPass::Shadow));
+	shaderTasks.push_back(CreateShadowShader(ShadowPos, ROOT_VS_1CB, modoDN.il, modoDN.vs, nullptr, shadow, State::RenderPass::Shadow));
+
 	completionTask = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }
 
+PipelineStates::CreateShaderTask PipelineStates::CreateShadowShader(ShaderId id,
+	size_t rootSignatureIndex,
+	const D3D12_INPUT_LAYOUT_DESC il,
+	const wchar_t* vs,
+	const wchar_t* gs,
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
+	State::RenderPass pass) {
+	std::vector<task<std::shared_ptr<std::vector<byte>>>> allTasks;
+
+	auto vsTask = DX::ReadDataAsync(vs).then([](std::vector<byte>& data) {
+		return std::make_shared<std::vector<byte>>(std::move(data));
+	});
+	allTasks.push_back(vsTask);
+	if (gs) {
+		auto gsTask = DX::ReadDataAsync(gs).then([](std::vector<byte>& data) {
+			return std::make_shared<std::vector<byte>>(std::move(data));
+			});
+		allTasks.push_back(gsTask);
+	}
+	return Concurrency::when_all(std::begin(allTasks), std::end(allTasks)).then([=](const std::vector<std::shared_ptr<std::vector<byte>>>& res) {
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC state = desc;
+		if (il.NumElements) state.InputLayout = il;
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+		auto name = (std::wstring{ vs } + std::to_wstring(id));
+		rootSignature = rootSignatures_[rootSignatureIndex];
+		state.pRootSignature = rootSignature.Get();
+		state.VS = CD3DX12_SHADER_BYTECODE(&res[0]->front(), res[0]->size());
+		if (res.size() > 1) {
+			state.GS = CD3DX12_SHADER_BYTECODE(&res[1]->front(), res[1]->size());
+		}
+		ComPtr<ID3D12PipelineState> pipelineState;
+		DX::ThrowIfFailed(device->CreateGraphicsPipelineState(&state, IID_PPV_ARGS(pipelineState.GetAddressOf())));
+		pipelineState->SetName(name.c_str());
+		states[id] = { rootSignature, pipelineState, pass};
+	});
+}
 PipelineStates::CreateShaderTask PipelineStates::CreateShader(ShaderId id,
 		size_t rootSignatureIndex,
 		const D3D12_INPUT_LAYOUT_DESC il,
@@ -305,34 +385,37 @@ PipelineStates::CreateShaderTask PipelineStates::CreateShader(ShaderId id,
 		const wchar_t* gs,
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc,
 		State::RenderPass pass) {
+	std::vector<task<std::shared_ptr<std::vector<byte>>>> allTasks;
+
 	auto vsTask = DX::ReadDataAsync(vs).then([](std::vector<byte>& data) {
 		return std::make_shared<std::vector<byte>>(std::move(data));
 	});
+	allTasks.push_back(vsTask);
 	auto psTask = DX::ReadDataAsync(ps).then([](std::vector<byte>& data) {
 		return std::make_shared<std::vector<byte>>(std::move(data));
-	});
-	concurrency::task<std::shared_ptr<std::vector<byte>>> gsTask;
-	task<std::vector<std::shared_ptr<std::vector<byte>>>> allTasks;
-	if (gs) {
-		gsTask = DX::ReadDataAsync(gs).then([](std::vector<byte>& data) {
-			return std::make_shared<std::vector<byte>>(std::move(data));
 		});
-		allTasks = (vsTask && psTask && gsTask);
-	} else allTasks = (vsTask && psTask);
+	allTasks.push_back(psTask);
+	if (gs) {
+		auto gsTask = DX::ReadDataAsync(gs).then([](std::vector<byte>& data) {
+			return std::make_shared<std::vector<byte>>(std::move(data));
+			});
+		allTasks.push_back(gsTask);
+	}
 
-	return allTasks.then([=](const std::vector<std::shared_ptr<std::vector<byte>>>& res) {
+	return Concurrency::when_all(std::begin(allTasks), std::end(allTasks)).then([=](const std::vector<std::shared_ptr<std::vector<byte>>>& res) {
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC state = desc;
 		if (il.NumElements) state.InputLayout = il;
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
 		auto name = (std::wstring{ ps } + std::to_wstring(id));
 		if (rootSignatureIndex == ROOT_UNKNOWN) {
+			assert(res.size() > 1);
 			//state.pRootSignature = nullptr;
 			ComPtr<ID3DBlob> blob;
 			// rs from ps
 			::D3DGetBlobPart(res[1]->data(), res[1]->size(), D3D_BLOB_ROOT_SIGNATURE, 0, blob.GetAddressOf());
 			DX::ThrowIfFailed(device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(rootSignature.GetAddressOf())));
 			state.pRootSignature = rootSignature.Get();
-			// TODO:: seems to be d3d somehow recognizes the same rootsignatures and returns an existing one instead of creating a new one
+			// seems to be d3d somehow recognizes the same rootsignatures and returns an existing one instead of creating a new one
 			rootSignature->SetName(name.c_str());
 			// don't store it in rootSignatures_ not thread safe
 		} else {

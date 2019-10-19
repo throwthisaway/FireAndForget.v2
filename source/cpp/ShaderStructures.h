@@ -33,7 +33,12 @@ const ShaderId ModoDNMR = 19;
 const ShaderId ModoDN = 20;
 const ShaderId SSAOShader = 21;
 const ShaderId Blur4x4R32 = 22;
-const ShaderId Count = 23;
+ 
+const ShaderId ShadowStatesStart = 23;
+const ShaderId ShadowPos = 23;
+const ShaderId ShadowModoDN = 24;
+const ShaderId ShadowStatesEnd = 25;
+const ShaderId Count = 25;
 const int RenderTargetCount = 5;
 
 // resource types
