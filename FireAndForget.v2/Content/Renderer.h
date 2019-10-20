@@ -88,8 +88,8 @@ private:
 		DescriptorFrameAlloc desc;
 	}prePass_;
 
-	std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>> commandAllocators_;
-	std::vector<Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>> commandLists_;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocators_[ShaderStructures::FrameCount];
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> deferredCommandList_;
 
 	struct Buffer {

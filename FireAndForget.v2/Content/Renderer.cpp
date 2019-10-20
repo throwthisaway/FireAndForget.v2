@@ -235,20 +235,13 @@ void Renderer::CreateDeviceDependentResources() {
 	//DX::ThrowIfFailed(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, prePass_.computeCmdAllocator.Get(), nullptr, IID_PPV_ARGS(&prePass_.computeCmdList)));
 	//prePass_.computeCmdList->Close();
 
-	for (size_t i = 0; i < _countof(pipelineStates_.states); ++i) {
-		ID3D12CommandAllocator* firstCommandAllocator = nullptr;
-		for (UINT n = 0; n < FrameCount; n++) {
-			Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
-			DX::ThrowIfFailed(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
-			commandAllocators_.push_back(commandAllocator);
-			if (!n) firstCommandAllocator = commandAllocator.Get();
-		}
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
-		DX::ThrowIfFailed(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, firstCommandAllocator, nullptr, IID_PPV_ARGS(&commandList)));
-		commandList->Close();
-		//NAME_D3D12_OBJECT(commandList);
-		commandLists_.push_back(commandList);
+	for (UINT n = 0; n < FrameCount; ++n) {
+		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
+		DX::ThrowIfFailed(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
+		commandAllocators_[n] = commandAllocator;
 	}
+	DX::ThrowIfFailed(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators_[0].Get(), nullptr, IID_PPV_ARGS(&commandList_)));
+	commandList_->Close();
 
 	//BeginUploadResources();
 	//{
@@ -825,77 +818,46 @@ void Renderer::BeginRender() {
 	frame_->desc.Reset();
 	// TODO:: is this used???
 	m_deviceResources->GetCommandAllocator()->Reset();
-	size_t i = 0;
-	for (auto& commandList : commandLists_) {
-		// TODO:: only framecount allocator is enough?
-		auto* commandAllocator = commandAllocators_[m_deviceResources->GetCurrentFrameIndex() + i * FrameCount].Get();
-		DX::ThrowIfFailed(commandAllocator->Reset());
-		DX::ThrowIfFailed(commandList->Reset(commandAllocator, nullptr));
-		++i;
-	}
+
+	auto commandAllocator = commandAllocators_[m_deviceResources->GetCurrentFrameIndex()];
+	DX::ThrowIfFailed(commandAllocator->Reset());
+	DX::ThrowIfFailed(commandList_->Reset(commandAllocator.Get(), nullptr));
 	DX::ThrowIfFailed(frame_->deferredCommandAllocator->Reset());
 	DX::ThrowIfFailed(deferredCommandList_->Reset(frame_->deferredCommandAllocator.Get(), nullptr));
-	// Initialise depth
-	// TODO:: !!! this commandlist might not be used everytime
-	auto* commandList = commandLists_[0].Get();
-	commandList->RSSetViewports(1, &renderTargets_.GetViewport());
-	commandList->RSSetScissorRects(1, &renderTargets_.GetScissorRect());
-	commandList->ClearDepthStencilView(depthStencil_.view.cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 void Renderer::StartForwardPass() {
 	if (!loadingComplete_) return;
-	bool first = true;
-	for (size_t i = 0; i < _countof(pipelineStates_.states); ++i) {
-		auto& state = pipelineStates_.states[i];
-		if (state.pass != PipelineStates::State::RenderPass::Forward) continue;
-		auto* commandList = commandLists_[i].Get();
-		commandList->RSSetViewports(1, &renderTargets_.GetViewport());
-		commandList->RSSetScissorRects(1, &renderTargets_.GetScissorRect());
-		if (first) {
-			first = false;
-
-			auto afterState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-			auto& beforeState = renderTargets_.states[GetCurrenFrameIndex()];
-			if (beforeState != afterState) {
-				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(), beforeState, afterState);
-				beforeState = afterState;
-				commandList->ResourceBarrier(1, &barrier);
-			}
-
-			commandList->ClearRenderTargetView(GetRenderTargetView(), Black, 0, nullptr);
-		}
-		commandList->OMSetRenderTargets(1, &GetRenderTargetView(), false, &depthStencil_.view.cpuHandle);
-		commandList->SetPipelineState(state.pipelineState.Get());
-		commandList->SetGraphicsRootSignature(state.rootSignature.Get());
+	auto* commandList = commandList_.Get();
+	commandList->RSSetViewports(1, &renderTargets_.GetViewport());
+	commandList->RSSetScissorRects(1, &renderTargets_.GetScissorRect());
+	commandList_->ClearDepthStencilView(depthStencil_.view.cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	auto afterState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	auto& beforeState = renderTargets_.states[GetCurrenFrameIndex()];
+	if (beforeState != afterState) {
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(GetRenderTarget(), beforeState, afterState);
+		beforeState = afterState;
+		commandList->ResourceBarrier(1, &barrier);
 	}
+	commandList->OMSetRenderTargets(1, &GetRenderTargetView(), false, &depthStencil_.view.cpuHandle);
+	commandList->ClearRenderTargetView(GetRenderTargetView(), Black, 0, nullptr);
+
 }
 
 void Renderer::StartGeometryPass() {
 	if (!loadingComplete_) return;
-	// assign pipelinestates with command lists
-	bool first = true;
-	for (size_t i = 0; i < _countof(pipelineStates_.states); ++i) {
-		auto& state = pipelineStates_.states[i];
-		if (state.pass != PipelineStates::State::RenderPass::Geometry) continue;
-		auto* commandList = commandLists_[i].Get();
-		commandList->RSSetViewports(1, &gbuffersRT_.GetViewport());
-		commandList->RSSetScissorRects(1, &gbuffersRT_.GetScissorRect());
-		if (first) {
-			first = false;
-			gbuffersRT_.ResourceTransition(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			CD3DX12_CPU_DESCRIPTOR_HANDLE handle(gbuffersRT_.view.cpuHandle);
-			// TODO:: should not clean downsampled depth RT
-			for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
-				commandList->ClearRenderTargetView(handle, Black, 0, nullptr);
-				handle.Offset(rtvDescAlloc_.GetDescriptorSize());
-			}
-		}
-		commandList->OMSetRenderTargets(_countof(PipelineStates::deferredRTFmts), &gbuffersRT_.view.cpuHandle, true, &depthStencil_.view.cpuHandle);
-		commandList->SetPipelineState(state.pipelineState.Get());
-		// Set the graphics root signature and descriptor heaps to be used by this frame.
-		commandList->SetGraphicsRootSignature(state.rootSignature.Get());
+
+	commandList_->RSSetViewports(1, &gbuffersRT_.GetViewport());
+	commandList_->RSSetScissorRects(1, &gbuffersRT_.GetScissorRect());
+	// TODO:: no need if StartForwardPass does the same
+	commandList_->ClearDepthStencilView(depthStencil_.view.cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	gbuffersRT_.ResourceTransition(commandList_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(gbuffersRT_.view.cpuHandle);
+	for (int j = 0; j < _countof(PipelineStates::deferredRTFmts); ++j) {
+		commandList_->ClearRenderTargetView(handle, Black, 0, nullptr);
+		handle.Offset(rtvDescAlloc_.GetDescriptorSize());
 	}
+	commandList_->OMSetRenderTargets(_countof(PipelineStates::deferredRTFmts), &gbuffersRT_.view.cpuHandle, true, &depthStencil_.view.cpuHandle);
 }
 
 bool Renderer::Render() {
@@ -903,8 +865,7 @@ bool Renderer::Render() {
 
 	// TODO:: fixed size array
 	std::vector<ID3D12CommandList*> ppCommandLists;
-	for (auto& commandList : commandLists_)
-		ppCommandLists.push_back(commandList.Get());
+	ppCommandLists.push_back(commandList_.Get());
 	ppCommandLists.push_back(deferredCommandList_.Get());
 
 	DEBUGUI(ppCommandLists.push_back(ui::Render(m_deviceResources->GetSwapChain()->GetCurrentBackBufferIndex())));
@@ -924,8 +885,10 @@ void Renderer::Submit(const ShaderStructures::BgCmd& cmd) {
 	if (!loadingComplete_) return;
 	auto id = cmd.shader;
 	auto& state = pipelineStates_.states[id];
-	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
+	ID3D12GraphicsCommandList* commandList = commandList_.Get();
 	PIXBeginEvent(commandList, 0, L"SubmitBgCmd");
+	commandList->SetPipelineState(state.pipelineState.Get());
+	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	const int descSize = frame_->desc.GetDescriptorSize();
 	DescriptorFrameAlloc::Entry entry = frame_->desc.Push(3);
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
@@ -971,7 +934,7 @@ void Renderer::Submit(const DrawCmd& cmd) {
 	if (!loadingComplete_) return;
 	auto id = cmd.shader;
 	auto& state = pipelineStates_.states[id];
-	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
+	ID3D12GraphicsCommandList* commandList = commandList_.Get();
 	PIXBeginEvent(commandList, 0, L"SubmitDrawCmd"); 
 	{
 		DescriptorFrameAlloc::Entry entry;
@@ -1083,8 +1046,10 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 	if (!loadingComplete_) return;
 	auto id = cmd.shader;
 	auto& state = pipelineStates_.states[id];
-	ID3D12GraphicsCommandList* commandList = commandLists_[id].Get();
+	ID3D12GraphicsCommandList* commandList = commandList_.Get();
 	PIXBeginEvent(commandList, 0, L"SubmitModoDrawCmd"); 
+	commandList->SetPipelineState(state.pipelineState.Get());
+	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
 	{
 		DescriptorFrameAlloc::Entry entry;
 		UINT index = 0;
@@ -1190,7 +1155,6 @@ void Renderer::DownsampleDepth(ID3D12GraphicsCommandList* commandList) {
 }
 template<int RTCount> 
 void Renderer::Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RT<RTCount>& rt, PCWSTR eventName) {
-	if (!commandList) commandList = commandLists_[shaderId].Get();
 	PIX(PIXBeginEvent(commandList, 0, eventName));
 	auto& state = pipelineStates_.states[shaderId];
 	commandList->SetGraphicsRootSignature(state.rootSignature.Get());
