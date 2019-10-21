@@ -52,6 +52,14 @@ private:
 		//PointLight pointLight;
 		index_t placeholder;
 	}lights_[MAX_LIGHTS];
+	float r = 0.f;
+	AABB aabb;
+	struct ShadowMap {
+		float4x4 vp;
+		float3 dir;
+		uint32_t width, height;
+		RTIndex rt;
+	}shadowMaps_[MAX_SHADOWMAPS];
 	Renderer* renderer_;
 	assets::Assets assets_;
 	std::vector<Object> objects_;

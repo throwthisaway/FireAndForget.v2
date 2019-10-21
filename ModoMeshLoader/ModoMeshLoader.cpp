@@ -20,6 +20,7 @@ namespace ModoMeshLoader {
 				submesh.material.diffuse.b = *(float*)p; p+=sizeof(float);
 				submesh.material.metallic_roughness.r = *(float*)p; p+=sizeof(float);
 				submesh.material.metallic_roughness.g = *(float*)p; p+=sizeof(float);
+				submesh.vertexType = *(uint32_t*)p; p += sizeof(uint32_t);
 				submesh.textureMask = *(uint32_t*)p; p+=sizeof(uint32_t);
 				submesh.uvCount = *(uint32_t*)p; p+=sizeof(uint32_t);
 				for (int i = 0; i < (int)TextureTypes::kCount; ++i) {
@@ -34,11 +35,24 @@ namespace ModoMeshLoader {
 		std::vector<std::string> LoadImages(const uint8_t* p, uint32_t size, uint32_t count) {
 			std::vector<std::string> result;
 			auto q = p;
-			while (q - p  < size) {
+			while (q - p < size) {
 			size_t len = strlen((const char*)q);
 				result.push_back({(const char*)q, len}); ++q;
 				q += len;
 			}
+			return result;
+		}
+
+		Header LoadHeader(const uint8_t* p, uint32_t size, uint32_t count) {
+			Header result;
+			result.version = *(uint32_t*)p; p+=sizeof(uint32_t);
+			result.r = *(float*)p; p+=sizeof(float);
+			result.aabb.min.x = *(float*)p; p+=sizeof(float);
+			result.aabb.min.y = *(float*)p; p+=sizeof(float);
+			result.aabb.min.z = *(float*)p; p+=sizeof(float);
+			result.aabb.max.x = *(float*)p; p+=sizeof(float);
+			result.aabb.max.y = *(float*)p; p+=sizeof(float);
+			result.aabb.max.z = *(float*)p; p+=sizeof(float);
 			return result;
 		}
 	}
@@ -59,6 +73,8 @@ namespace ModoMeshLoader {
 				result.submeshes = LoadSubmeshes(p, size, count);
 			else if (tag == Tag(IMAG))
 				result.images = LoadImages(p, size, count);
+			else if (tag == Tag(HEAD))
+				result.header = LoadHeader(p, size, count);
 			else
 				assert(false);
 			p+= size;

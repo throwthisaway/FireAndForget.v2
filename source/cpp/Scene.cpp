@@ -15,7 +15,7 @@
 // WIN: genkernel
 // WIN: ??? float distZ = abs(r.z - p.z);
 // WIN: linearSmp to linearclampsmp in DeferredPBR
-// MAC: is ALIGN16 macro ok for clang?
+// MAC: changed file format (Header, vertextype in submesh, only shadow test regenerated)
 void Scene::Object::Update(double frame, double total) {
 	// TODO:: currently everything is in Scene::Update
 }
@@ -44,6 +44,20 @@ namespace {
 					default: assert(false);
 				}
 			}
+		}
+		assert(false);
+		return (uint16_t)-1;
+	}
+	ShaderId SelectShadowShader(uint32_t vertexType) {
+		switch(vertexType) {
+			case 0:
+				break;
+			case (1 << (int)ModoMeshLoader::VertexFields::kNormal):
+				return ShaderStructures::ShadowPos;
+			case (1 << (int)ModoMeshLoader::VertexFields::kNormal) |
+					(1 << (int)ModoMeshLoader::VertexFields::kTangent) |
+					(1 << (int)ModoMeshLoader::VertexFields::kUV0) :
+					return ShaderStructures::ShadowModoDN;
 		}
 		assert(false);
 		return (uint16_t)-1;
@@ -85,6 +99,12 @@ void Scene::PrepareScene() {
 		pos.x = -3 * incX;
 	}
 
+	for (const auto& o : modoObjects_) {
+		const auto& mesh = assets_.meshes[o.mesh];
+		if (r < mesh.r) r = mesh.r;
+		aabb.Add(mesh.aabb);
+	}
+
 	ssaoCmd_.ao.bias = .1f;
 	ssaoCmd_.ao.power = 4.f;
 	ssaoCmd_.ao.rad = .04f;
@@ -115,6 +135,15 @@ void Scene::PrepareScene() {
 	const uint64_t brdfLUTDim = 512;
 	deferredCmd_.BRDFLUT = renderer_->GenBRDFLUT(brdfLUTDim, ShaderStructures::BRDFLUT, "BRDFLUT");
 	renderer_->EndPrePass();
+
+	{
+		const uint32_t shadowMapDim = 512;
+		shadowMaps_[0].width = shadowMaps_[0].height = shadowMapDim;
+		shadowMaps_[0].dir = glm::normalize(float3(.3, -.5f, 1.f));
+		float dim = shadowMapDim * .5f;
+		shadowMaps_[0].vp = glm::orthoLH_ZO(-dim, dim, -dim, dim, .1f, 100.f) * glm::lookAtLH(-shadowMaps_[0].dir * r, shadowMaps_[0].dir, float3(0.f, 0.f, 1.f));
+		shadowMaps_[0].rt = renderer_->CreateShadowRT(shadowMaps_[0].width, shadowMaps_[0].height);
+	}
 	state = State::Ready;
 }
 void Scene::Init(Renderer* renderer, int width, int height) {
@@ -142,7 +171,21 @@ void Scene::Render() {
 		ShaderStructures::BgCmd cmd{ camera_.vp, mesh.submeshes.front(), mesh.vb, mesh.ib, ShaderStructures::Bg, /*deferredCmd_.irradiance*/cubeEnv_};
 		renderer_->Submit(cmd);
 	}
-
+	for (int i = 0; i < MAX_SHADOWMAPS; ++i) {
+		renderer_->StartShadowPass(shadowMaps_[i].rt);
+		for (const auto& o : modoObjects_) {
+			const auto& mesh = assets_.meshes[o.mesh];
+			auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
+			//m[3] += float4(l.pivot, 0.f);
+			auto mvp = shadowMaps_[i].vp * m;
+			for (const auto& submesh : mesh.submeshes) {
+				ShaderId shader = SelectShadowShader(submesh.vertexType);
+				ShaderStructures::ShadowCmd cmd{ mvp, submesh, mesh.vb, mesh.ib, shader};
+				renderer_->ShadowPass(cmd);
+			}
+		}
+		renderer_->EndShadowPass(shadowMaps_[i].rt);
+	}
 	renderer_->StartGeometryPass();
 	//for (const auto& o : objects_) {
 	//	assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);

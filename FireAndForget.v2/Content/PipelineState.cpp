@@ -40,7 +40,9 @@ namespace {
 		cubeEnvMap = { {pnLayout, _countof(pnLayout) }, L"CubeEnvMapVS.cso" },
 		bg = { {pnLayout, _countof(pnLayout) },  L"BgVS.cso" },
 		modoDN = { { pntuvLayout, _countof(pntuvLayout) }, L"ModoDNVS.cso" },
-		fsQuadViewPos = { { {}, 0 },  L"FSQuadViewPosVS.cso" };
+		fsQuadViewPos = { { {}, 0 }, L"FSQuadViewPosVS.cso" },
+		shadowPos = { { pnLayout, _countof(pnLayout) }, L"ShadowPosVS.cso" },
+		shadowModoDN = { { pntuvLayout, _countof(pntuvLayout) }, L"ShadowModoDNVS.cso" };
 
 
 
@@ -287,9 +289,8 @@ void PipelineStates::CreateDeviceDependentResources() {
 		// ROOT_VS_1CB
 		CD3DX12_ROOT_PARAMETER parameter[1];
 		CD3DX12_DESCRIPTOR_RANGE range0;
-		std::vector<UINT> ranges{ 1 };
 		range0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		parameter[0].InitAsDescriptorTable(ranges[0], &range0, D3D12_SHADER_VISIBILITY_VERTEX);
+		parameter[0].InitAsDescriptorTable(1, &range0, D3D12_SHADER_VISIBILITY_VERTEX);
 
 		D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
@@ -335,8 +336,8 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(SSAOShader, ROOT_UNKNOWN, fsQuadViewPos.il, fsQuadViewPos.vs, L"SSAOPS.cso", nullptr, ssao, State::RenderPass::Lighting));
 	shaderTasks.push_back(CreateShader(Blur4x4R32, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"Blur4x4R32.cso", nullptr, r32, State::RenderPass::Post));
 	
-	shaderTasks.push_back(CreateShadowShader(ShadowPos, ROOT_VS_1CB, pos.il, pos.vs, nullptr, shadow, State::RenderPass::Shadow));
-	shaderTasks.push_back(CreateShadowShader(ShadowPos, ROOT_VS_1CB, modoDN.il, modoDN.vs, nullptr, shadow, State::RenderPass::Shadow));
+	shaderTasks.push_back(CreateShadowShader(ShadowPos, ROOT_VS_1CB, shadowPos.il, shadowPos.vs, nullptr, shadow, State::RenderPass::Shadow));
+	shaderTasks.push_back(CreateShadowShader(ShadowModoDN, ROOT_VS_1CB, shadowModoDN.il, shadowModoDN.vs, nullptr, shadow, State::RenderPass::Shadow));
 
 	completionTask = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }

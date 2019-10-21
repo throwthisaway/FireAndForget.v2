@@ -39,6 +39,7 @@ public:
 	void BeginUploadResources();
 	BufferIndex CreateBuffer(const void* buffer, size_t sizeInBytes);
 	TextureIndex CreateTexture(const void* buffer, uint64_t width, uint32_t height, Img::PixelFormat format, LPCSTR label = nullptr);
+	RTIndex CreateShadowRT(UINT width, UINT height);
 	Dim GetDimensions(TextureIndex);
 	void EndUploadResources();
 
@@ -54,6 +55,9 @@ public:
 	void Submit(const ShaderStructures::DrawCmd& cmd);
 	void Submit(const ShaderStructures::ModoDrawCmd&);
 	void SSAOPass(const ShaderStructures::SSAOCmd& cmd);
+	void StartShadowPass(RTIndex rtIndex);
+	void ShadowPass(const ShaderStructures::ShadowCmd&);
+	void EndShadowPass(RTIndex rtIndex);
 	void DoLightingPass(const ShaderStructures::DeferredCmd& cmd);
 
 	std::shared_ptr<DX::DeviceResources> m_deviceResources;
@@ -135,13 +139,14 @@ private:
 	RT<1> halfResDepthRT_, depthStencil_, ssaoBlurRT_;
 	RT<2> ssaoRT_;
 	RT<_countof(PipelineStates::deferredRTFmts)> gbuffersRT_;
-	RT<ShaderStructures::FrameCount> renderTargets_;
+	RT<ShaderStructures::FrameCount> backBufferRTs_;
+	std::vector<RT<1>> renderTargets_;
 	template<int RTCount> void Setup(ID3D12GraphicsCommandList* commandList, ShaderId shaderId, const RT<RTCount>& rt, PCWSTR eventName = nullptr);
-
+	RT<1> CreateDepthRT(UINT width, UINT height);
 	// helper for retrieving the currently active final rendertarget
-	ID3D12Resource* GetRenderTarget() { return renderTargets_.resources[GetCurrenFrameIndex()].Get(); }
-	CD3DX12_CPU_DESCRIPTOR_HANDLE GetRenderTargetView() {
-		return CD3DX12_CPU_DESCRIPTOR_HANDLE(renderTargets_.view.cpuHandle, GetCurrenFrameIndex(), rtvDescAlloc_.GetDescriptorSize());
+	ID3D12Resource* GetBackBuffer() { return backBufferRTs_.resources[GetCurrenFrameIndex()].Get(); }
+	CD3DX12_CPU_DESCRIPTOR_HANDLE GetBackBufferView() {
+		return CD3DX12_CPU_DESCRIPTOR_HANDLE(backBufferRTs_.view.cpuHandle, GetCurrenFrameIndex(), rtvDescAlloc_.GetDescriptorSize());
 	}
 
 	// for per frame dynamic data

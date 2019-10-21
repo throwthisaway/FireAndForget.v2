@@ -36,6 +36,9 @@
     <ClInclude Include="..\..\Shared\SIMDTypeAliases.h">
       <Filter>Header Files\Shared</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Shared\AABB.h">
+      <Filter>Header Files\Shared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

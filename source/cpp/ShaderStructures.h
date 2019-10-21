@@ -127,4 +127,11 @@ struct SSAOCmd {
 	AO ao;
 	TextureIndex random = InvalidTexture;
 };
+
+struct ShadowCmd {
+	float4x4 mvp;
+	const ModoMeshLoader::Submesh& submesh;
+	BufferIndex vb, ib;
+	ShaderId shader;
+};
 }

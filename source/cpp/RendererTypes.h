@@ -18,6 +18,9 @@ const MaterialIndex InvalidMaterial = std::numeric_limits<MaterialIndex>::max();
 using ImageIndex = uint32_t;
 const ImageIndex InvalidImage = std::numeric_limits<ImageIndex>::max();
 
+using RTIndex = uint32_t;
+const RTIndex InvalidRT = std::numeric_limits<RTIndex>::max();
+
 using ShaderId = uint16_t;
 const ShaderId InvalidShader = std::numeric_limits<ShaderId>::max();
 

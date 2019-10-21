@@ -225,7 +225,7 @@ namespace assets {
 					tex.id = (uint32_t)result.first->second;
 				}
 			}
-		ModoMesh mesh = { ws2s(fname), renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
+		ModoMesh mesh = { ws2s(fname), res.header.r, res.header.aabb, renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
 			renderer->CreateBuffer(res.indices.data(), res.indices.size()),
 			std::move(res.submeshes) };
 		if (id == INVALID) loadContextModo.meshes.push_back(mesh);
@@ -355,7 +355,7 @@ namespace assets {
 			for (int id = 0; id < (int)loadContextModo.createModelResults.size(); ++id) {
 				auto& res = loadContextModo.createModelResults[id];
 				if (res.submeshes.empty()) continue;
-				loadContextModo.meshes[id] = { std::move(res.name), renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
+				loadContextModo.meshes[id] = { std::move(res.name), res.header.r, res.header.aabb, renderer->CreateBuffer(res.vertices.data(), res.vertices.size()),
 					renderer->CreateBuffer(res.indices.data(), res.indices.size()),
 					std::move(res.submeshes) };
 			}

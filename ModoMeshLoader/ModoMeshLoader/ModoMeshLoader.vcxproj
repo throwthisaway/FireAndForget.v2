@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Shared\AABB.h" />
     <ClInclude Include="..\..\Shared\Platform.h" />
     <ClInclude Include="..\..\Shared\ShaderStructs.h" />
     <ClInclude Include="..\..\Shared\SIMDTypeAliases.h" />

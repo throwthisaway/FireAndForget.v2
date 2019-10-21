@@ -231,6 +231,9 @@
     <ClInclude Include="..\Shared\SIMDTypeAliases.h">
       <Filter>Shared</Filter>
     </ClInclude>
+    <ClInclude Include="..\Shared\AABB.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -459,6 +462,12 @@
       <Filter>Content\shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\shaders\Blur4x4R32.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\ShadowModoDNVS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\ShadowPosVS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
   </ItemGroup>
