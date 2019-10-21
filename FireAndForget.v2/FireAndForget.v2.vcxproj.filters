@@ -470,5 +470,8 @@
     <FxCompile Include="Content\shaders\ShadowPosVS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Content\shaders\ShadowPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

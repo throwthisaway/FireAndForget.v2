@@ -140,7 +140,7 @@ void Scene::PrepareScene() {
 		const uint32_t shadowMapDim = 512;
 		shadowMaps_[0].width = shadowMaps_[0].height = shadowMapDim;
 		shadowMaps_[0].dir = glm::normalize(float3(.3, -.5f, 1.f));
-		float dim = shadowMapDim * .5f;
+		float dim = r;
 		shadowMaps_[0].vp = glm::orthoLH_ZO(-dim, dim, -dim, dim, .1f, 100.f) * glm::lookAtLH(-shadowMaps_[0].dir * r, shadowMaps_[0].dir, float3(0.f, 0.f, 1.f));
 		shadowMaps_[0].rt = renderer_->CreateShadowRT(shadowMaps_[0].width, shadowMaps_[0].height);
 	}

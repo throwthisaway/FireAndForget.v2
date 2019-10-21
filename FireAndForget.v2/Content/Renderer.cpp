@@ -1152,6 +1152,7 @@ void Renderer::StartShadowPass(RTIndex rtIndex) {
 	rt.ResourceTransition(commandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 	commandList->RSSetViewports(1, &rt.GetViewport());
 	commandList->RSSetScissorRects(1, &rt.GetScissorRect());
+	commandList->ClearDepthStencilView(rt.view.cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	commandList->OMSetRenderTargets(0, nullptr, false, &rt.view.cpuHandle);
 }
 
@@ -1168,6 +1169,10 @@ void Renderer::ShadowPass(const ShaderStructures::ShadowCmd& cmd) {
 	commandList->SetPipelineState(state.pipelineState.Get());
 	auto entry = frame_->desc.Push(1);
 	frame_->BindCBV(entry.cpuHandle, cmd.mvp);
+
+	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
 
 	assert(cmd.vb != InvalidBuffer);
 	assert(cmd.ib != InvalidBuffer);
