@@ -4,7 +4,7 @@
 
 struct Camera {
 	const float fovy = 45.f, n = .1f, f = 100.f;
-	const float3 defaultPos{0.f, 0.f, -1.5f};
+	const float3 defaultPos{0.f, 0.f, -4.775f};
 	glm::mat4 view{1.f}, proj, vp, ivp, ip;
 	float3 pos = defaultPos, at, rot, eyePos;
 	void Translate(const float3& d);

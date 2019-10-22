@@ -196,7 +196,7 @@ PipelineStates::PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferForma
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-			state.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+			state.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 			state.SampleMask = UINT_MAX;
 			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			state.NumRenderTargets = 0;
