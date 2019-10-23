@@ -8,9 +8,7 @@ ConstantBuffer<SceneCB> scene: register(b0);
 Texture2D<float4> texAlbedo : register(t0);
 Texture2D<float4> texNormal : register(t1);
 Texture2D<float4> texMaterial : register(t2);
-#ifdef DEBUG_RT
-Texture2D<float4> texDebug : register(t3);
-#endif
+Texture2D<float4> texPositionWS : register(t3);
 Texture2D<float> texDepth : register(t4);
 TextureCube<float4> texIrradiance : register(t5);
 TextureCube<float4> texPrefilteredEnv : register(t6);
@@ -31,7 +29,7 @@ float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 [RootSignature(DeferredRS)]
 float4 main(PS_UV input) : SV_TARGET{
 	float4 albedo = texAlbedo.Sample(smp, input.uv);
-	float4 debug = texDebug.Sample(smp, input.uv);
+	float4 posWS = texPositionWS.Sample(smp, input.uv);
 	float3 n = normalize(texNormal.Sample(smp, input.uv).rgb);
 	float4 material = texMaterial.Sample(smp, input.uv);
 	float depth = texDepth.Sample(smp, input.uv).r;

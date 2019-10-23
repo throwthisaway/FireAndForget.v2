@@ -5,9 +5,7 @@ struct MRTOut {
 	float4 normalWS : SV_TARGET1;
 	float4 normalVS : SV_TARGET2;
 	float4 material : SV_TARGET3;
-#ifdef DEBUG_RT
-	float4 debug : SV_TARGET4;
-#endif
+	float4 positionWS : SV_TARGET4;
 };
 
 // as seen on https://aras-p.info/texts/CompactNormalStorage.html

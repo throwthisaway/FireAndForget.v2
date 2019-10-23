@@ -11,7 +11,7 @@ Texture2D<float4> tNormal : register(t1);
 SamplerState smp : register(s0);
 
 [RootSignature(ModoDNRS)]
-MRTOut main(PS_UVNT input) {
+MRTOut main(PS_PUVNT input) {
 	MRTOut output;
 	output.albedo = tDiffuse.Sample(smp, input.uv);
 	//	float3 nTex = tNormal.Sample(smp, input.uv).rgb * 255.f/127.f - 128.f/127.f;
@@ -25,6 +25,6 @@ MRTOut main(PS_UVNT input) {
 	output.normalWS = float4(nWS, 1.f);
 
 	output.material = float4(mat.metallic_roughness, 0.f, 1.f);
-	//output.debug = float4(n, 1.f);
+	output.positionWS = float4(input.pWS, 1.f);
 	return output;
 }

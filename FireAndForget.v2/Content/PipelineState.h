@@ -15,9 +15,7 @@ public:
 		DXGI_FORMAT_R16G16B16A16_FLOAT,	// normalsWS
 		DXGI_FORMAT_R16G16B16A16_FLOAT,	// normalsVS view space normals without normalmaps for SSAO
 		DXGI_FORMAT_R8G8B8A8_UNORM, // material properties
-#ifdef DEBUG_RT
-		DXGI_FORMAT_R32G32B32A32_FLOAT, // debug
-#endif
+		DXGI_FORMAT_R32G32B32A32_FLOAT, // world position
 	};
 	PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferFormat, DXGI_FORMAT depthbufferFormat);
 	~PipelineStates();

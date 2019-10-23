@@ -452,9 +452,6 @@
     <FxCompile Include="Content\shaders\ModoDNMRPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\shaders\TangentGS.hlsl">
-      <Filter>Content\shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\shaders\FSQuadViewPosVS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>

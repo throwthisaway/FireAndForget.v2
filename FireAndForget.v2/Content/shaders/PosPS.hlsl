@@ -11,6 +11,6 @@ MRTOut main(PS_PN input) {
 	output.normalWS = float4(nWS, 1.f);
 	output.normalVS = float4(normalize(input.nVS), 1.f);
 	output.material = float4(mat.metallic_roughness, 0.f, 1.f);
-	output.debug = input.pos;
+	output.positionWS = float4(input.pWS, 1.f);
 	return output;
 }

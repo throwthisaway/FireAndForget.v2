@@ -15,7 +15,7 @@ PS_PUV main(uint id : SV_VertexID) {
 	// https://github.com/d3dcoder/d3d12book/blob/master/Chapter%2021%20Ambient%20Occlusion/Ssao/Shaders/Ssao.hlsl
 	// to view space near-plane
 	float4 p = mul(res.pos, ip);
-	res.p = p.xyz / p.w; // near clip plane viewpos
+	res.pWS = p.xyz / p.w; // near clip plane viewpos
 	res.uv = uv[id];
 	return res;
 }

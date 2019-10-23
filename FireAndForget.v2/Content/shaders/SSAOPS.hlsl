@@ -60,7 +60,7 @@ MRTOut main(PS_PUV input) {
 	float d = tDepth.Sample(smpLinearClamp, input.uv).x;
 	float3 n = normalize(tNormal.Sample(smpLinearClamp, input.uv).xyz);	// f16 no need to transform
 	float3 random = tRandom.Sample(smpLinearWrap, input.uv * ao.randomFactor).rgb * 2.f - 1.f;
-	float3 p = ViewPosFromDepth(d, input.p/*near clip plane viewpos*/);
+	float3 p = ViewPosFromDepth(d, input.pWS/*near clip plane viewpos*/);
 	float occlusion = 0;
 	// https://github.com/d3dcoder/d3d12book/blob/master/Chapter%2021%20Ambient%20Occlusion/Ssao/Shaders/Ssao.hlsl
 	for (int i = 0; i < kKernelSize; ++i) {

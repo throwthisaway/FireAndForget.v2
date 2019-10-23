@@ -8,6 +8,6 @@ PS_PN main(VS_PN input) {
 	output.pos = mul(pos, obj.mvp);
 	output.nWS = normalize(mul(input.n, obj.m));
 	output.nVS = normalize(mul(input.n, obj.mv));
-	output.p = mul(pos, obj.m);
+	output.pWS = mul(pos, obj.m).xyz;
 	return output;
 }
