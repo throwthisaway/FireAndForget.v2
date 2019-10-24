@@ -120,6 +120,7 @@ struct DeferredCmd {
 		prefilteredEnvMap = InvalidTexture,
 		BRDFLUT = InvalidTexture,
 		random = InvalidTexture;
+	RTIndex shadowMaps[MAX_SHADOWMAPS];
 };
 struct SSAOCmd {
 	float4x4 ip;

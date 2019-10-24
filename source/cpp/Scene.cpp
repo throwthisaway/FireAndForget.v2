@@ -329,11 +329,19 @@ void Scene::Update(double frame, double total) {
 
 	// need to determine it from view because of ScreenSpaceRotator...
 	deferredCmd_.scene.eyePos = camera_.eyePos;
-	// TODO:: WTF?
 	deferredCmd_.scene.ip = camera_.ip;
 	deferredCmd_.scene.ivp = camera_.ivp;
 	deferredCmd_.scene.nf.x = camera_.n; deferredCmd_.scene.nf.y = camera_.f;
 	deferredCmd_.scene.viewport = { (float)viewport_.width, (float)viewport_.height };
+	for (int i = 0; i < MAX_SHADOWMAPS; ++i) {
+		deferredCmd_.shadowMaps[i] = shadowMaps_[i].rt;
+		float4x4 t;
+		t[0] = float4(.5f, 0.f, 0.f, 0.f);
+		t[1] = float4(0.f, -.5f, 0.f, 0.f);
+		t[2] = float4(0., 0.f, 1.f, 0.f);
+		t[3] = float4(.5f, .5f, 0.f, 1.f);
+		deferredCmd_.scene.shadowMaps[i].vpt = t * shadowMaps_[i].vp;
+	}
 	for (auto& o : objects_) {
 		o.Update(frame, total);
 	}

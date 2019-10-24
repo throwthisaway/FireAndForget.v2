@@ -1281,7 +1281,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 #else
 	#define BINDING_COUNT 9
 #endif
-	auto entry = frame_->desc.Push(1 + BINDING_COUNT);
+	auto entry = frame_->desc.Push(1 + BINDING_COUNT + MAX_SHADOWMAPS);
 	// Scene
 	frame_->BindCBV(entry.cpuHandle, cmd.scene);
 	// RTs
@@ -1289,9 +1289,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::Albedo].Get());
 	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::NormalWS].Get());
 	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::Material].Get());
-#ifdef DEBUG_RT
-	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::Debug].Get());
-#endif
+	frame_->BindSRV(entry.cpuHandle, gbuffersRT_.resources[(int)PipelineStates::RTTs::PositionWS].Get());
 	// Depth
 	frame_->BindSRV(entry.cpuHandle, depthStencil_.resources->Get());
 	// Irradiance
@@ -1304,7 +1302,10 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	frame_->BindSRV(entry.cpuHandle, ssaoBlurRT_.resources->Get());
 	// SSAO debug
 	frame_->BindSRV(entry.cpuHandle, ssaoRT_.resources[1].Get());
-
+	// Shadow maps
+	for (int i = 0; i < MAX_SHADOWMAPS; ++i) {
+		frame_->BindSRV(entry.cpuHandle, renderTargets_[cmd.shadowMaps[i]].resources->Get());
+	}
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);

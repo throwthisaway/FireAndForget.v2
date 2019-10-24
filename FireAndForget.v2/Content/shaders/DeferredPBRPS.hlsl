@@ -15,9 +15,11 @@ TextureCube<float4> texPrefilteredEnv : register(t6);
 Texture2D<float2> texBRDFLUT : register(t7);
 Texture2D<float> texSSAO : register(t8);
 Texture2D<float4> texSSAODebug : register(t9);
+Texture2D<float> texShadowMaps[MAX_SHADOWMAPS] : register(t10);
 SamplerState smp : register(s0);
 SamplerState linearSmp : register(s1);
 SamplerState linearClampSmp : register(s2);
+SamplerState nearestBorderSmp : register(s3);
 
 float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 	float4 projected_pos = float4(uv * 2.f - 1.f, depth, 1.f);
@@ -29,7 +31,6 @@ float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 [RootSignature(DeferredRS)]
 float4 main(PS_UV input) : SV_TARGET{
 	float4 albedo = texAlbedo.Sample(smp, input.uv);
-	float4 posWS = texPositionWS.Sample(smp, input.uv);
 	float3 n = normalize(texNormal.Sample(smp, input.uv).rgb);
 	float4 material = texMaterial.Sample(smp, input.uv);
 	float depth = texDepth.Sample(smp, input.uv).r;
@@ -89,17 +90,24 @@ float4 main(PS_UV input) : SV_TARGET{
 	float3 specular = prefilterColor * (f * envBRDF.x + envBRDF.y); // arleady multiplied by ks in Fresnel Shlick
 	float3 ambient = (kd * diffuse + specular) * ao;
 	Lo *= ao;
-	//
-	//float3 ambient = albedo.rgb * ao * .03f;
 	float3 color = ambient + Lo;
+
+	//float ds = texShadowMaps[0].Sample(linearClampSmp, input.uv).x;
+	//float z = (ds * (100.f - .1f)) / 100.f + .1f;
+	//return float4(z, 0.f, 0.f, 1.f);
+	// TODO:: remove float4 posWS = texPositionWS.Sample(smp, input.uv);
+	for (int j = 0; j < MAX_SHADOWMAPS; ++j) {
+		float4 clipP = mul(float4(worldPos, 1.f), scene.shadowMaps[j].vpt);
+		float3 dp = clipP.xyz / clipP.w;
+		float ds = texShadowMaps[j].Sample(nearestBorderSmp, dp.xy).x;
+		//float z = (ds * (100.f - .1f)) / 100.f + .1f;
+		//return float4(z, z, z, 1.f);
+		if (ds < dp.z) color *= .1f;
+		//color *= float4(ds*100.f,ds*100.f,ds*100.f, 1.f);
+		//if (ds == 0.f) color = float4(1.f, 0.f, 0.f, 1.f);
+	}
 	return float4(GammaCorrection(color), albedo.a);
+
 	//return float4(ao, ao, ao, 1.f);
 	//float4 ssaoDebug = texSSAODebug.Sample(linearClampSmp, input.uv);
-	//return float4(ssaoDebug.xyz, 1.f);
-	//return float4(n, 1.f);
-	//float4 vp = mul(scene.ip, debug);
-	//return float4(vp.xyz, 1.f);
-	/*float3 l = normalize(scene.light[0].pos - worldPos);
-	float d = max(0.f, dot(debug.rgb, l));
-	return float4(d, d, d, albedo.a);*/
 }

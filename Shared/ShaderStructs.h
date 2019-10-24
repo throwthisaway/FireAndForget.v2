@@ -17,11 +17,15 @@ struct PointLight {
 	ALIGN16 float3 pos;
 	ALIGN16 float4 att_range;
 };
+struct ShadowMap {
+	ALIGN16 row_major float4x4 vpt;
+};
 #define MAX_LIGHTS 2
 #define MAX_SHADOWMAPS 1
 struct SceneCB {
 	ALIGN16 float4x4 ip, ivp;
 	ALIGN16 PointLight light[MAX_LIGHTS];
+	ALIGN16 ShadowMap shadowMaps[MAX_SHADOWMAPS];
 	ALIGN16 float3 eyePos;
 	ALIGN16 float2 nf;
 	ALIGN16 float2 viewport;
