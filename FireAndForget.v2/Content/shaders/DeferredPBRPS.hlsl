@@ -19,7 +19,7 @@ Texture2D<float> texShadowMaps[MAX_SHADOWMAPS] : register(t10);
 SamplerState smp : register(s0);
 SamplerState linearSmp : register(s1);
 SamplerState linearClampSmp : register(s2);
-SamplerState nearestBorderSmp : register(s3);
+SamplerComparisonState shadowComparisonSmp : register(s3);
 
 float3 WorldPosFormDepth(float2 uv, float4x4 ip, float depth) {
 	float4 projected_pos = float4(uv * 2.f - 1.f, depth, 1.f);
@@ -92,20 +92,31 @@ float4 main(PS_UV input) : SV_TARGET{
 	Lo *= ao;
 	float3 color = ambient + Lo;
 
-	//float ds = texShadowMaps[0].Sample(linearClampSmp, input.uv).x;
-	//float z = (ds * (100.f - .1f)) / 100.f + .1f;
-	//return float4(z, 0.f, 0.f, 1.f);
 	// TODO:: remove float4 posWS = texPositionWS.Sample(smp, input.uv);
+
 	for (int j = 0; j < MAX_SHADOWMAPS; ++j) {
 		float4 clipP = mul(float4(worldPos, 1.f), scene.shadowMaps[j].vpt);
 		float3 dp = clipP.xyz / clipP.w;
-		float ds = texShadowMaps[j].Sample(nearestBorderSmp, dp.xy).x;
-		//float z = (ds * (100.f - .1f)) / 100.f + .1f;
-		//return float4(z, z, z, 1.f);
-		if (ds < dp.z) color *= .1f;
-		//color *= float4(ds*100.f,ds*100.f,ds*100.f, 1.f);
-		//if (ds == 0.f) color = float4(1.f, 0.f, 0.f, 1.f);
+		
+		/*float width, height;
+		texShadowMaps[j].GetDimensions(width, height);
+		float dx = 1.f / width, dy = 1.f / height;
+		const float2 kernel[] = { float2(-dx, -dy), float2(0.f, -dy), float2(dx, -dy),
+								 float2(-dx, 0.f), float2(0.f, 0.f), float2(dx, 0.f),
+								 float2(-dx, dy), float2(0.f, dy), float2(dx, dy) };*/
+		const int2 kernel[] = { int2(-1, -1), float2(0.f, -1), float2(1, -1),
+								 float2(-1, 0.f), float2(0.f, 0.f), float2(1, 0.f),
+								 float2(-1, 1), float2(0.f, 1), float2(1, 1) };
+		float ds = 0.f;
+		for (int k = 0; k < 9; ++k) {
+			 ds += texShadowMaps[j].SampleCmpLevelZero(shadowComparisonSmp, dp.xy, dp.z, kernel[k]);
+		}
+		ds /= 9.f;
+		color = lerp(color, color * scene.shadowMaps[j].factor, 1.f - ds);
 	}
+	//float3 p = texShadowMaps[0].Sample(linearClampSmp, input.uv).xxx;
+	//p = (p * (100.f - .1f)) / 100.f + .1f;
+	//return float4(p.xxx, 1.f);
 	return float4(GammaCorrection(color), albedo.a);
 
 	//return float4(ao, ao, ao, 1.f);

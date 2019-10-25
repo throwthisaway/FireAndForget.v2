@@ -27,6 +27,7 @@
 			"addressU = TEXTURE_ADDRESS_BORDER," \
 			"addressV = TEXTURE_ADDRESS_BORDER," \
 			"addressW = TEXTURE_ADDRESS_BORDER," \
-			"filter = FILTER_MIN_MAG_MIP_POINT," \
+			"filter = FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT," \
+			"comparisonFunc = COMPARISON_LESS_EQUAL," \
 			"borderColor = STATIC_BORDER_COLOR_OPAQUE_BLACK," \
 			"visibility = SHADER_VISIBILITY_PIXEL)"

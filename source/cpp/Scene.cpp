@@ -140,9 +140,11 @@ void Scene::PrepareScene() {
 		const uint32_t shadowMapDim = 512;
 		shadowMaps_[0].width = shadowMaps_[0].height = shadowMapDim;
 		shadowMaps_[0].dir = glm::normalize(float3(.3, -.5f, 1.f));
-		float dim = r;
-		shadowMaps_[0].vp = glm::orthoLH_ZO(-dim, dim, -dim, dim, .1f, 100.f) * glm::lookAtLH(-shadowMaps_[0].dir * r, float3(0.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
+		float dim = r * 1.4f;
+		float f = dim * 2.f;
+		shadowMaps_[0].vp = glm::orthoLH_ZO(-dim, dim, -dim, dim, .1f, f) * glm::lookAtLH(-shadowMaps_[0].dir * dim, float3(0.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
 		shadowMaps_[0].rt = renderer_->CreateShadowRT(shadowMaps_[0].width, shadowMaps_[0].height);
+		shadowMaps_[0].factor = .1f;
 	}
 	state = State::Ready;
 }
@@ -341,6 +343,7 @@ void Scene::Update(double frame, double total) {
 		t[2] = float4(0., 0.f, 1.f, 0.f);
 		t[3] = float4(.5f, .5f, 0.f, 1.f);
 		deferredCmd_.scene.shadowMaps[i].vpt = t * shadowMaps_[i].vp;
+		deferredCmd_.scene.shadowMaps[i].factor = shadowMaps_[i].factor;
 	}
 	for (auto& o : objects_) {
 		o.Update(frame, total);

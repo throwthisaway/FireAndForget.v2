@@ -59,6 +59,7 @@ private:
 		float3 dir;
 		uint32_t width, height;
 		RTIndex rt;
+		float factor;
 	}shadowMaps_[MAX_SHADOWMAPS];
 	Renderer* renderer_;
 	assets::Assets assets_;

@@ -194,6 +194,8 @@ PipelineStates::PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferForma
 		{
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.RasterizerState.DepthBias = 1000000;
+			state.RasterizerState.SlopeScaledDepthBias = 1.f;
 			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 			state.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;

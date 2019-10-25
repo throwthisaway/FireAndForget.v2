@@ -19,6 +19,7 @@ struct PointLight {
 };
 struct ShadowMap {
 	ALIGN16 row_major float4x4 vpt;
+	float factor;
 };
 #define MAX_LIGHTS 2
 #define MAX_SHADOWMAPS 1
