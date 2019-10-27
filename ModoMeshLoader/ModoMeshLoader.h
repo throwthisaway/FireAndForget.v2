@@ -17,7 +17,7 @@ namespace ModoMeshLoader {
 	using tag_t = uint32_t;
 	using index_t = uint16_t;	// Index buffer element type
 	inline const int kVertPerPoly = 3;
-	enum class TextureTypes{kAlbedo, kNormal, kMetallic, kRoughness, kCount};
+	enum class TextureTypes{kAlbedo, kNormal, kMetallic, kRoughness, kBump, kCount};
 	enum class VertexFields{kPos, kNormal, kTangent, kUV0, kUV1, kUV2, kUV3};
 	const uint8_t VertexComponentCount[] = { 3, 3, 3, 2, 2, 2, 2 };
 	struct Texture {

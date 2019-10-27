@@ -342,6 +342,8 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(ShadowPos, ROOT_VS_1CB, shadowPos.il, shadowPos.vs, L"ShadowPS.cso", nullptr, shadow, State::RenderPass::Shadow));
 	shaderTasks.push_back(CreateShader(ShadowModoDN, ROOT_VS_1CB, shadowModoDN.il, shadowModoDN.vs, L"ShadowPS.cso", nullptr, shadow, State::RenderPass::Shadow));
 
+	shaderTasks.push_back(CreateShader(ModoDNB, ROOT_UNKNOWN, modoDN.il, modoDN.vs, L"ModoDNBPS.cso", nullptr, geometry, State::RenderPass::Geometry));
+	
 	completionTask = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }
 

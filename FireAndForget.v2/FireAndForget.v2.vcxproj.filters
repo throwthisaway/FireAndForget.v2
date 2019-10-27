@@ -337,6 +337,9 @@
     <None Include="..\source\assets\shadow_test.mesh">
       <Filter>Assets</Filter>
     </None>
+    <None Include="..\source\assets\parallax_test.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">
@@ -364,6 +367,15 @@
       <Filter>Assets</Filter>
     </Image>
     <Image Include="..\source\assets\TestNormalMap.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\wood.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\toy_box_disp.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\toy_box_normal.png">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>
@@ -468,6 +480,9 @@
       <Filter>Content\shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\shaders\ShadowPS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\shaders\ModoDNBPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
   </ItemGroup>

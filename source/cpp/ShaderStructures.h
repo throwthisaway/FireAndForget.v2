@@ -38,7 +38,9 @@ const ShaderId ShadowStatesStart = 23;
 const ShaderId ShadowPos = 23;
 const ShaderId ShadowModoDN = 24;
 const ShaderId ShadowStatesEnd = 25;
-const ShaderId Count = 25;
+
+const ShaderId ModoDNB = 26;
+const ShaderId Count = 27;
 const int RenderTargetCount = 5;
 
 // resource types
