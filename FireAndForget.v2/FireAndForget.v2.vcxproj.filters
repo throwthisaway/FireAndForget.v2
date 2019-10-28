@@ -485,5 +485,8 @@
     <FxCompile Include="Content\shaders\ModoDNBPS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Content\shaders\ModoDNBVS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

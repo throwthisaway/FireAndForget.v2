@@ -41,6 +41,8 @@ namespace {
 						return ShaderStructures::ModoDNMR;
 					case 0x3:
 						return ShaderStructures::ModoDN;
+					case 0b10011:
+						return ShaderStructures::ModoDNB;
 					default: assert(false);
 				}
 			}
@@ -213,7 +215,7 @@ void Scene::Render() {
 		auto mv = camera_.view * m;
 		for (const auto& submesh : mesh.submeshes) {
 			ShaderId shader = SelectModoShader(submesh.uvCount, submesh.textureMask);
-			ShaderStructures::ModoDrawCmd cmd{ {mvp, m, mv}, submesh, submesh.material, mesh.vb, mesh.ib, shader };
+			ShaderStructures::ModoDrawCmd cmd{ {mvp, m, mv}, deferredCmd_.scene, submesh, submesh.material, mesh.vb, mesh.ib, shader };
 			renderer_->Submit(cmd);
 		}
 	}

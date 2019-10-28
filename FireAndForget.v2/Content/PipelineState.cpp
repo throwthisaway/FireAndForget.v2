@@ -42,7 +42,8 @@ namespace {
 		modoDN = { { pntuvLayout, _countof(pntuvLayout) }, L"ModoDNVS.cso" },
 		fsQuadViewPos = { { {}, 0 }, L"FSQuadViewPosVS.cso" },
 		shadowPos = { { pnLayout, _countof(pnLayout) }, L"ShadowPosVS.cso" },
-		shadowModoDN = { { pntuvLayout, _countof(pntuvLayout) }, L"ShadowModoDNVS.cso" };
+		shadowModoDN = { { pntuvLayout, _countof(pntuvLayout) }, L"ShadowModoDNVS.cso" },
+		modoDNB = { { pntuvLayout, _countof(pntuvLayout) }, L"ModoDNBVS.cso" };
 
 
 
@@ -342,7 +343,7 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(ShadowPos, ROOT_VS_1CB, shadowPos.il, shadowPos.vs, L"ShadowPS.cso", nullptr, shadow, State::RenderPass::Shadow));
 	shaderTasks.push_back(CreateShader(ShadowModoDN, ROOT_VS_1CB, shadowModoDN.il, shadowModoDN.vs, L"ShadowPS.cso", nullptr, shadow, State::RenderPass::Shadow));
 
-	shaderTasks.push_back(CreateShader(ModoDNB, ROOT_UNKNOWN, modoDN.il, modoDN.vs, L"ModoDNBPS.cso", nullptr, geometry, State::RenderPass::Geometry));
+	shaderTasks.push_back(CreateShader(ModoDNB, ROOT_UNKNOWN, modoDNB.il, modoDNB.vs, L"ModoDNBPS.cso", nullptr, geometry, State::RenderPass::Geometry));
 	
 	completionTask = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }

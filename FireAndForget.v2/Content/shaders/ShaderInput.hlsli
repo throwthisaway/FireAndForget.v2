@@ -60,3 +60,14 @@ struct PS_PUVNT {
 	float3 nVS : NORMAL1;
 	float3 tWS : TANGENT0;
 };
+
+struct PS_PUVNTVP {
+	float4 pos : SV_POSITION;
+	float3 pWS : POSITION0;
+	float2 uv : TEXCOORD0;
+	float3 nWS : NORMAL0;
+	float3 nVS : NORMAL1;
+	float3 tWS : TANGENT0;
+	float3 vTS : VIEWTANGENT0;
+	float3 pTS : POSTANGENT0;
+};

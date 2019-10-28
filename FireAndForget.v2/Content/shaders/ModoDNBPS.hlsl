@@ -7,7 +7,7 @@
 			"DENY_DOMAIN_SHADER_ROOT_ACCESS |" \
 			"DENY_GEOMETRY_SHADER_ROOT_ACCESS |" \
 			"DENY_HULL_SHADER_ROOT_ACCESS)," \
-    "DescriptorTable(CBV(b0), visibility = SHADER_VISIBILITY_VERTEX)," \
+    "DescriptorTable(CBV(b0, numDescriptors = 2), visibility = SHADER_VISIBILITY_VERTEX)," \
     "DescriptorTable(SRV(t0, numDescriptors = 3), CBV(b0),visibility = SHADER_VISIBILITY_PIXEL)," \
     "StaticSampler(s0, visibility = SHADER_VISIBILITY_PIXEL," \
         "addressU = TEXTURE_ADDRESS_WRAP," \
@@ -23,12 +23,20 @@ Texture2D<float4> tBump : register(t2);
 
 SamplerState smp : register(s0);
 
+float2 Parallax(float2 uv, float3 viewDirTS) {
+	float d = tBump.Sample(smp, uv).x;
+	float offset = viewDirTS.xy / viewDirTS.z * d * .1;
+	return uv - offset;
+}
 [RootSignature(ModoDNBRS)]
-MRTOut main(PS_PUVNT input) {
+MRTOut main(PS_PUVNTVP input) {
 	MRTOut output;
-	output.albedo = tDiffuse.Sample(smp, input.uv);
+
+	float3 viewDirTS = input.vTS - input.pTS;
+	float2 uv = Parallax(input.uv, viewDirTS);
+	output.albedo = tDiffuse.Sample(smp, uv);
 	//	float3 nTex = tNormal.Sample(smp, input.uv).rgb * 255.f/127.f - 128.f/127.f;
-	float3 nTex = tNormal.Sample(smp, input.uv).rgb * 2.f - 1.f;
+	float3 nTex = tNormal.Sample(smp, uv).rgb * 2.f - 1.f;
 	float3 nWS = normalize(input.nWS);
 	float3 t = normalize(input.tWS - dot(input.tWS, nWS) * nWS);
 	float3 b = cross(nWS, t);

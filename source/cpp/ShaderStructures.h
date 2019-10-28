@@ -102,6 +102,7 @@ struct DrawCmd {
 
 struct ModoDrawCmd {
 	const Object& o;
+	const SceneCB& scene;
 	const ModoMeshLoader::Submesh& submesh;
 	const Material& material;
 	BufferIndex vb, ib;

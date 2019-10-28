@@ -1097,7 +1097,27 @@ void Renderer::Submit(const ModoDrawCmd& cmd) {
 			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
 			break;
 		}
-		case ShaderStructures::ModoDNMR:{
+		case ShaderStructures::ModoDNB: {
+			entry = frame_->desc.Push(3 + __popcnt(cmd.submesh.textureMask));
+			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+			frame_->BindCBV(entry.cpuHandle, cmd.o);
+			frame_->BindCBV(entry.cpuHandle, cmd.scene);
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
+			++index; entry.gpuHandle.Offset(2, descSize);
+
+			for (int i = 0; i < _countof(cmd.submesh.textures); ++i) {
+				if (cmd.submesh.textureMask & (1 << i)) {
+					auto& texture = buffers_[cmd.submesh.textures[i].id];
+					frame_->BindSRV(entry.cpuHandle, texture.resource.Get());
+				}
+			}
+			frame_->BindCBV(entry.cpuHandle, cmd.material);
+			commandList->SetGraphicsRootDescriptorTable(index, entry.gpuHandle);
+			break;
+		}
+		case ShaderStructures::ModoDNMR: {
 			entry = frame_->desc.Push(1 + __popcnt(cmd.submesh.textureMask));
 			ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 			commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
