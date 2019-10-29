@@ -25,7 +25,7 @@ SamplerState smp : register(s0);
 
 float2 Parallax(float2 uv, float3 viewDirTS) {
 	float d = tBump.Sample(smp, uv).x;
-	float offset = viewDirTS.xy / viewDirTS.z * d * .1;
+	float offset = viewDirTS.xy / viewDirTS.z * d * .02;
 	return uv - offset;
 }
 [RootSignature(ModoDNBRS)]
