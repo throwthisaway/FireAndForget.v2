@@ -117,6 +117,7 @@ float4 main(PS_UV input) : SV_TARGET{
 	//float3 p = texShadowMaps[0].Sample(linearClampSmp, input.uv).xxx;
 	//p = (p * (100.f - .1f)) / 100.f + .1f;
 	//return float4(p.xxx, 1.f);
+	//return float4(n, 1.f);
 	return float4(GammaCorrection(color), albedo.a);
 
 	//return float4(ao, ao, ao, 1.f);

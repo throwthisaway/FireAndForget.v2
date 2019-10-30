@@ -25,14 +25,14 @@ SamplerState smp : register(s0);
 
 float2 Parallax(float2 uv, float3 viewDirTS) {
 	float d = tBump.Sample(smp, uv).x;
-	float offset = viewDirTS.xy / viewDirTS.z * d * .02;
+	float2 offset = viewDirTS.xy / viewDirTS.z * (d * .1);
 	return uv - offset;
 }
 [RootSignature(ModoDNBRS)]
 MRTOut main(PS_PUVNTVP input) {
 	MRTOut output;
 
-	float3 viewDirTS = input.vTS - input.pTS;
+	float3 viewDirTS = normalize(input.vTS - input.pTS);
 	float2 uv = Parallax(input.uv, viewDirTS);
 	output.albedo = tDiffuse.Sample(smp, uv);
 	//	float3 nTex = tNormal.Sample(smp, input.uv).rgb * 255.f/127.f - 128.f/127.f;
