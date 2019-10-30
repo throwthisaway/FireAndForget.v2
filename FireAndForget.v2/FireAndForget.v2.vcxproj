@@ -217,6 +217,9 @@
   <ItemGroup>
     <Image Include="..\source\assets\14031-normal.jpg" />
     <Image Include="..\source\assets\7582-normal.png" />
+    <Image Include="..\source\assets\bricks2.jpg" />
+    <Image Include="..\source\assets\bricks2_disp.jpg" />
+    <Image Include="..\source\assets\bricks2_normal.jpg" />
     <Image Include="..\source\assets\checkerboard.tga" />
     <Image Include="..\source\assets\random.png" />
     <Image Include="..\source\assets\rusted metal color.png" />
@@ -399,6 +402,9 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </None>
+    <None Include="..\source\assets\parallax_test2.mesh">
+      <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="..\source\assets\shadow_test.mesh">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>

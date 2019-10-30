@@ -340,6 +340,9 @@
     <None Include="..\source\assets\parallax_test.mesh">
       <Filter>Assets</Filter>
     </None>
+    <None Include="..\source\assets\parallax_test2.mesh">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\source\assets\checkerboard.tga">
@@ -376,6 +379,15 @@
       <Filter>Assets</Filter>
     </Image>
     <Image Include="..\source\assets\toy_box_normal.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\bricks2_normal.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\bricks2.jpg">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="..\source\assets\bricks2_disp.jpg">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>
