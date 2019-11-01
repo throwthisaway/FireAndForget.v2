@@ -24,9 +24,33 @@ Texture2D<float4> tBump : register(t2);
 SamplerState smp : register(s0);
 
 float2 Parallax(float2 uv, float3 viewDirTS) {
-	float d = tBump.Sample(smp, uv).x;
-	float2 offset = viewDirTS.xy / viewDirTS.z * (d * .1);
-	return uv - offset;
+	//float d = tBump.Sample(smp, uv).x;
+	//float2 offset = viewDirTS.xy / viewDirTS.z * (d * .1);
+	//return uv - offset;
+	const float minLayers = 8.f, maxLayers = 32.f;
+	float numLayers = lerp(minLayers, maxLayers, dot(float3(0.f, 0.f, 1.f), viewDirTS));
+	const float layerDepth = 1.f / numLayers;
+	float2 p = viewDirTS.xy * .1f;
+
+	const float2 deltaUV = p / numLayers;
+	float2 currentUV = uv;
+	float currentDepth = tBump.Sample(smp, currentUV);
+	float currentLayerDepth = 0.f;
+	[loop]
+	while (currentLayerDepth < currentDepth) {
+		currentUV -= deltaUV;
+		currentDepth = tBump.Sample(smp, currentUV);
+		currentLayerDepth += layerDepth;
+	}
+	float2 prevUV = currentUV + deltaUV;
+	float beforeDepth = tBump.Sample(smp, prevUV).x - currentLayerDepth + layerDepth;
+	float afterDepth = currentDepth - currentLayerDepth;
+	float weight = afterDepth / (afterDepth - beforeDepth);
+	float2 result = prevUV * weight + currentUV * (1.0 - weight);
+
+	return result;
+	//return lerp(currentUV, prevUV, currentLayerDepth - currentDepth);
+	//return currentUV;
 }
 [RootSignature(ModoDNBRS)]
 MRTOut main(PS_PUVNTVP input) {
@@ -34,6 +58,7 @@ MRTOut main(PS_PUVNTVP input) {
 
 	float3 viewDirTS = normalize(input.vTS - input.pTS);
 	float2 uv = Parallax(input.uv, viewDirTS);
+	//if (uv.x < 0.f || uv.x > 1.f || uv.y < 0.f || uv.y > 1.f) clip(-1.f);
 	output.albedo = tDiffuse.Sample(smp, uv);
 	//	float3 nTex = tNormal.Sample(smp, input.uv).rgb * 255.f/127.f - 128.f/127.f;
 	float3 nTex = tNormal.Sample(smp, uv).rgb * 2.f - 1.f;
