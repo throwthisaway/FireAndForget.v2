@@ -35,7 +35,7 @@ public:
 private:
 	using CreateShaderTask = Concurrency::task<void>;
 	ID3D12Device* device;
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC pre, rg16, downsampleDepth, forward, geometry, lighting, ssao, r32, shadow;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC pre, rg16, downsampleDepth, forward, geometry, lighting, ssao, r32, shadow, rg8;
 	std::vector<CreateShaderTask> shaderTasks;
 
 	CreateShaderTask CreateShadowShader(ShaderId id,

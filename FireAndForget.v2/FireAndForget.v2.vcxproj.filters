@@ -500,5 +500,8 @@
     <FxCompile Include="Content\shaders\ModoDNBVS.hlsl">
       <Filter>Content\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Content\shaders\Depth2RelaxedConePS.hlsl">
+      <Filter>Content\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

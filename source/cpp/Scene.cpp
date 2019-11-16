@@ -101,6 +101,7 @@ void Scene::PrepareScene() {
 		pos.x = -3 * incX;
 	}
 
+	// calc scene bounds
 	for (const auto& o : modoObjects_) {
 		const auto& mesh = assets_.meshes[o.mesh];
 		if (r < mesh.r) r = mesh.r;
@@ -121,6 +122,16 @@ void Scene::PrepareScene() {
 	}
 	deferredCmd_.scene.light[0].pos.x = deferredCmd_.scene.light[0].pos.y = -4.f;
 	renderer_->BeginPrePass();
+
+	//// preprocess cone map
+	//for (auto& o : modoObjects_) {
+	//	 auto& mesh = assets_.meshes[o.mesh];
+	//	 for (auto& submesh : mesh.submeshes)
+	//		 if ((submesh.textureMask & (1 << (int)ModoMeshLoader::TextureTypes::kBump)) == (1 << (int)ModoMeshLoader::TextureTypes::kBump)) {
+	//			 submesh.textures[(int)ModoMeshLoader::TextureTypes::kBump].id = renderer_->GenConeMap(submesh.textures[(int)ModoMeshLoader::TextureTypes::kBump].id, "conemap");
+	//		 }
+	//}
+
 	ssaoCmd_.random = deferredCmd_.random = assets_.textures[assets::Assets::RANDOM];
 	Dim dim = renderer_->GetDimensions(deferredCmd_.random);
 	ssaoCmd_.ao.randomFactor.x = (float)(viewport_.width >> 1) / (float)dim.w;

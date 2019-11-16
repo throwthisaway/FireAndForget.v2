@@ -195,7 +195,7 @@ PipelineStates::PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferForma
 		{
 			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
 			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-			state.RasterizerState.DepthBias = 1000000;
+			state.RasterizerState.DepthBias = 100000;
 			state.RasterizerState.SlopeScaledDepthBias = 1.f;
 			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 			state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -207,6 +207,20 @@ PipelineStates::PipelineStates(ID3D12Device* device, DXGI_FORMAT backbufferForma
 			state.DSVFormat = depthbufferFormat;
 			state.SampleDesc.Count = 1;
 			shadow = state;
+		}
+
+		{
+			D3D12_GRAPHICS_PIPELINE_STATE_DESC state = {};
+			state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+			state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			state.DepthStencilState = {};
+			state.SampleMask = UINT_MAX;
+			state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			state.NumRenderTargets = 1;
+			state.RTVFormats[0] = DXGI_FORMAT_R8G8_UNORM;
+			state.DSVFormat = DXGI_FORMAT_UNKNOWN;
+			state.SampleDesc.Count = 1;
+			rg8 = state;
 		}
 }
 
@@ -344,7 +358,8 @@ void PipelineStates::CreateDeviceDependentResources() {
 	shaderTasks.push_back(CreateShader(ShadowModoDN, ROOT_VS_1CB, shadowModoDN.il, shadowModoDN.vs, L"ShadowPS.cso", nullptr, shadow, State::RenderPass::Shadow));
 
 	shaderTasks.push_back(CreateShader(ModoDNB, ROOT_UNKNOWN, modoDNB.il, modoDNB.vs, L"ModoDNBPS.cso", nullptr, geometry, State::RenderPass::Geometry));
-	
+	shaderTasks.push_back(CreateShader(Depth2RelaxedCone, ROOT_UNKNOWN, fsQuad.il, fsQuad.vs, L"Depth2RelaxedConePS.cso", nullptr, rg8, State::RenderPass::Pre));
+
 	completionTask = Concurrency::when_all(std::begin(shaderTasks), std::end(shaderTasks)).then([this]() { shaderTasks.clear(); });;
 }
 

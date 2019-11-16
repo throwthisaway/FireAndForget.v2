@@ -23,14 +23,15 @@ Texture2D<float4> tBump : register(t2);
 
 SamplerState smp : register(s0);
 
+// https://learnopengl.com/Advanced-Lighting/Parallax-Mapping
 float2 Parallax(float2 uv, float3 viewDirTS) {
 	//float d = tBump.Sample(smp, uv).x;
 	//float2 offset = viewDirTS.xy / viewDirTS.z * (d * .1);
 	//return uv - offset;
 	const float minLayers = 8.f, maxLayers = 32.f;
-	float numLayers = lerp(minLayers, maxLayers, dot(float3(0.f, 0.f, 1.f), viewDirTS));
+	float numLayers = lerp(maxLayers, minLayers, abs(dot(float3(0.f, 0.f, 1.f), viewDirTS)));
 	const float layerDepth = 1.f / numLayers;
-	float2 p = viewDirTS.xy * .1f;
+	float2 p = viewDirTS.xy * .3f;
 
 	const float2 deltaUV = p / numLayers;
 	float2 currentUV = uv;

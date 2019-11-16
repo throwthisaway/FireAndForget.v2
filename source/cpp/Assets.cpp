@@ -268,6 +268,7 @@ namespace assets {
 			//loadContextModo.LoadMesh(L"box_normal_map_test.mesh"),
 			//loadContextModo.LoadMesh(L"BEETHOVE_subdivided_twice.mesh"),
 			//loadContextModo.LoadMesh(L"BEETHOVE_merged_subdivided_twice.mesh"),
+			
 			//loadContextModo.LoadMesh(L"shadow_test.mesh"),
 			loadContextModo.LoadMesh(L"parallax_test.mesh"),
 		};

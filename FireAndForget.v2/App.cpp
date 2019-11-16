@@ -275,7 +275,7 @@ void App::OnPointerPressed(Windows::UI::Core::CoreWindow^ sender, Windows::UI::C
 	if(DEBUGUI_PROCESSINPUT(!ui::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed,
 		args->CurrentPoint->Properties->IsRightButtonPressed,
 		args->CurrentPoint->Properties->IsMiddleButtonPressed))) {
-		pointerdown++;
+		++pointerdown;
 		m_main->PointerPressed(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
 		unsigned int pointerId = args->CurrentPoint->PointerId;
 		Windows::UI::Input::PointerPoint^ pointerPoint = Windows::UI::Input::PointerPoint::GetCurrentPoint(pointerId);
@@ -287,7 +287,7 @@ void App::OnPointerReleased(Windows::UI::Core::CoreWindow ^sender, Windows::UI::
 	if (DEBUGUI_PROCESSINPUT(!ui::UpdateMouseButton(args->CurrentPoint->Properties->IsLeftButtonPressed, 
 		args->CurrentPoint->Properties->IsRightButtonPressed,
 		args->CurrentPoint->Properties->IsMiddleButtonPressed))) {
-		pointerdown--;
+		if (--pointerdown < 0) pointerdown = 0;	// double click on titlebar causes OnPointerReleased without OnPointerPressed
 		// TODO:: UI::UpdateKeyboardModifiers();
 		m_main->PointerReleased(args->CurrentPoint->Position.X, args->CurrentPoint->Position.Y, args->CurrentPoint->Properties->IsLeftButtonPressed, args->CurrentPoint->Properties->IsMiddleButtonPressed, args->CurrentPoint->Properties->IsRightButtonPressed);
 		unsigned int pointerId = args->CurrentPoint->PointerId;

@@ -40,7 +40,8 @@ const ShaderId ShadowModoDN = 24;
 const ShaderId ShadowStatesEnd = 25;
 
 const ShaderId ModoDNB = 26;
-const ShaderId Count = 27;
+const ShaderId Depth2RelaxedCone = 27;
+const ShaderId Count = 28;
 const int RenderTargetCount = 5;
 
 // resource types

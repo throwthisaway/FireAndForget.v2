@@ -679,6 +679,38 @@ void Renderer::EndPrePass() {
 	prePass_.cb = {};
 	prePass_.desc = {};
 }
+TextureIndex Renderer::GenConeMap(TextureIndex id, LPCSTR label) {
+	auto device = m_deviceResources->GetD3DDevice();
+	DXGI_FORMAT fmt = DXGI_FORMAT_R8G8_UNORM;
+	ID3D12Resource* texture = buffers_[id].resource.Get();
+	D3D12_RESOURCE_DESC inDesc = texture->GetDesc();
+	
+	ID3D12GraphicsCommandList* commandList = prePass_.cmdList.Get();
+	RT<1> rt;
+	rt.width = inDesc.Width; rt.height = inDesc.Height;
+	DXGI_FORMAT format = DXGI_FORMAT_R8G8_UNORM;
+	rt.states[0] = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	rt.resources[0] = CreateRenderTarget(format, rt.width, rt.height, *rt.states, nullptr, L"coneMapRT");
+	rt.view = rtvDescAlloc_.Push(1);
+	rtvDescAlloc_.CreateRTV(rt.view.cpuHandle, rt.resources->Get(), format);
+
+	Setup(commandList, Depth2RelaxedCone, rt, L"GenConeMap");
+
+	auto entry = frame_->desc.Push(2);
+	float2 res(rt.width, rt.height);
+	frame_->BindCBV(entry.cpuHandle, res);
+	frame_->BindSRV(entry.cpuHandle, texture);
+	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
+	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	commandList->SetGraphicsRootDescriptorTable(0, entry.gpuHandle);
+
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	commandList->DrawInstanced(4, 1, 0, 0);
+	rt.ResourceTransition(commandList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	PIX(PIXEndEvent(commandList));
+	buffers_.push_back({ rt.resources[0], 0, 0, fmt });
+	return (TextureIndex)buffers_.size() - 1;
+}
 void Renderer::BeforeResize() {
 	m_deviceResources->WaitForGpu();
 	DEBUGUI(ui::BeforeResize());
