@@ -217,6 +217,7 @@
   <ItemGroup>
     <Image Include="..\source\assets\14031-normal.jpg" />
     <Image Include="..\source\assets\7582-normal.png" />
+    <Image Include="..\source\assets\beam.png" />
     <Image Include="..\source\assets\bricks2.jpg" />
     <Image Include="..\source\assets\bricks2_disp.jpg" />
     <Image Include="..\source\assets\bricks2_normal.jpg" />

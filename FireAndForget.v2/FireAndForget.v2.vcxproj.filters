@@ -390,6 +390,9 @@
     <Image Include="..\source\assets\bricks2_disp.jpg">
       <Filter>Assets</Filter>
     </Image>
+    <Image Include="..\source\assets\beam.png">
+      <Filter>Assets</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Content\shaders\PosPS.hlsl">

@@ -34,7 +34,8 @@ namespace assets {
 		std::vector<ModoMesh> meshes;
 		static constexpr size_t RANDOM = 0;
 		static constexpr size_t ENVIRONMENT_MAP = 1;
-		static constexpr size_t STATIC_IMAGE_COUNT = 2;
+		static constexpr size_t BEAM = 2;
+		static constexpr size_t STATIC_IMAGE_COUNT = 3;
 		std::vector<TextureIndex> textures;
 		std::vector<Material> materials;
 		enum class Status { kInitialized, kLoaded, kReady } status;

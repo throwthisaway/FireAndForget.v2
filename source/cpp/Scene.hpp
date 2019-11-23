@@ -55,12 +55,16 @@ private:
 	float r = 0.f;
 	AABB aabb;
 	struct ShadowMap {
-		float4x4 vp;
+		float4x4 v;
 		float3 dir;
-		uint32_t width, height;
+		float dim;
 		RTIndex rt;
 		float factor;
 	}shadowMaps_[MAX_SHADOWMAPS];
+
+	struct Projector {
+
+	}projectors_[MAX_PROJECTORS];
 	Renderer* renderer_;
 	assets::Assets assets_;
 	std::vector<Object> objects_;

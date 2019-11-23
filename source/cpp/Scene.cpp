@@ -150,14 +150,17 @@ void Scene::PrepareScene() {
 	renderer_->EndPrePass();
 
 	{
-		const uint32_t shadowMapDim = 512;
-		shadowMaps_[0].width = shadowMaps_[0].height = shadowMapDim;
+		const float shadowMapDim = 512.f;
+		shadowMaps_[0].dim = shadowMapDim;
 		shadowMaps_[0].dir = glm::normalize(float3(.3, -.5f, 1.f));
 		float dim = r * 1.4f;
 		float f = dim * 2.f;
-		shadowMaps_[0].vp = glm::orthoLH_ZO(-dim, dim, -dim, dim, .1f, f) * glm::lookAtLH(-shadowMaps_[0].dir * dim, float3(0.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
-		shadowMaps_[0].rt = renderer_->CreateShadowRT(shadowMaps_[0].width, shadowMaps_[0].height);
+		shadowMaps_[0].v = glm::orthoLH_ZO(-dim, dim, -dim, dim, .1f, f);
+		shadowMaps_[0].rt = renderer_->CreateShadowRT(shadowMaps_[0].dim, shadowMaps_[0].dim);
 		shadowMaps_[0].factor = .1f;
+	}
+	{
+
 	}
 	state = State::Ready;
 }
@@ -187,12 +190,13 @@ void Scene::Render() {
 		renderer_->Submit(cmd);
 	}
 	for (int i = 0; i < MAX_SHADOWMAPS; ++i) {
+		auto vp = shadowMaps_[i].v * glm::lookAtLH(-shadowMaps_[i].dir * r * 1.4f, float3(0.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
 		renderer_->StartShadowPass(shadowMaps_[i].rt);
 		for (const auto& o : modoObjects_) {
 			const auto& mesh = assets_.meshes[o.mesh];
 			auto m = this->m * glm::translate(RotationMatrix(o.rot.x, o.rot.y, o.rot.z), o.pos);
 			//m[3] += float4(l.pivot, 0.f);
-			auto mvp = shadowMaps_[i].vp * m;
+			auto mvp = vp * m;
 			for (const auto& submesh : mesh.submeshes) {
 				ShaderId shader = SelectShadowShader(submesh.vertexType);
 				ShaderStructures::ShadowCmd cmd{ mvp, submesh, mesh.vb, mesh.ib, shader};
@@ -355,7 +359,7 @@ void Scene::Update(double frame, double total) {
 		t[1] = float4(0.f, -.5f, 0.f, 0.f);
 		t[2] = float4(0., 0.f, 1.f, 0.f);
 		t[3] = float4(.5f, .5f, 0.f, 1.f);
-		deferredCmd_.scene.shadowMaps[i].vpt = t * shadowMaps_[i].vp;
+		deferredCmd_.scene.shadowMaps[i].vpt = t * shadowMaps_[i].v * glm::lookAtLH(-shadowMaps_[i].dir * r * 1.4f, float3(0.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
 		deferredCmd_.scene.shadowMaps[i].factor = shadowMaps_[i].factor;
 	}
 	for (auto& o : objects_) {

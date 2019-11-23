@@ -245,6 +245,7 @@ namespace assets {
 		loadContext.images.resize(STATIC_IMAGE_COUNT);
 		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"random.png", RANDOM));
 		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"Alexs_Apt_2k.hdr", ENVIRONMENT_MAP));
+		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"beam.png", BEAM));
 		loadContextModo.createModelResults.resize(STATIC_MODEL_COUNT);
 		loadContext.createModelResults.resize(STATIC_MODEL_COUNT);
 		std::initializer_list<Concurrency::task<void>> loadMeshTasks{
@@ -263,14 +264,14 @@ namespace assets {
 			//loadContextModo.LoadMesh(L"sphere_modo.mesh", SPHERE),
 			//loadContextModo.LoadMesh(L"test_torus.mesh"),
 			//loadContextModo.LoadMesh(L"checkerboard_modo.mesh"),
-			//loadContextModo.LoadMesh(L"sphere_modo.mesh"),
+			loadContextModo.LoadMesh(L"sphere_modo.mesh"),
 			//loadContextModo.LoadMesh(L"modo_ball_test.mesh"),
 			//loadContextModo.LoadMesh(L"box_normal_map_test.mesh"),
 			//loadContextModo.LoadMesh(L"BEETHOVE_subdivided_twice.mesh"),
 			//loadContextModo.LoadMesh(L"BEETHOVE_merged_subdivided_twice.mesh"),
 			
 			//loadContextModo.LoadMesh(L"shadow_test.mesh"),
-			loadContextModo.LoadMesh(L"parallax_test.mesh"),
+			//loadContextModo.LoadMesh(L"parallax_test.mesh"),
 		};
 		
 		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {

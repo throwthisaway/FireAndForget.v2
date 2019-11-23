@@ -22,12 +22,17 @@ struct ShadowMap {
 	float factor;
 	float3 pad0;
 };
+struct Projector {
+	// TODO::
+};
 #define MAX_LIGHTS 2
 #define MAX_SHADOWMAPS 1
+#define MAX_PROJECTORS 1
 struct SceneCB {
 	ALIGN16 float4x4 ip, ivp;
 	ALIGN16 PointLight light[MAX_LIGHTS];
 	ALIGN16 ShadowMap shadowMaps[MAX_SHADOWMAPS];
+	//ALIGN16 Projector projectors[MAX_PROJECTORS];
 	ALIGN16 float3 eyePos;
 	ALIGN16 float2 nf;
 	ALIGN16 float2 viewport;
