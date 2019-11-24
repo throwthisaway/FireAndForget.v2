@@ -16,6 +16,7 @@ Texture2D<float2> texBRDFLUT : register(t7);
 Texture2D<float> texSSAO : register(t8);
 Texture2D<float4> texSSAODebug : register(t9);
 Texture2D<float> texShadowMaps[MAX_SHADOWMAPS] : register(t10);
+Texture2D<float> texProjectors[MAX_PROJECTORS] : register(t11);
 SamplerState smp : register(s0);
 SamplerState linearSmp : register(s1);
 SamplerState linearClampSmp : register(s2);
@@ -113,6 +114,14 @@ float4 main(PS_UV input) : SV_TARGET{
 		}
 		ds /= 9.f;
 		color = lerp(color, color * scene.shadowMaps[j].factor, 1.f - ds);
+	}
+	for (int l = 0; l < MAX_PROJECTORS; ++l) {
+		float4 clipP = mul(float4(worldPos, 1.f), scene.projectors[l].vpt);
+		float2 uv = clipP.xy / clipP.z;
+		float frag = texProjectors[l].Sample(linearClampSmp, uv);
+		if (saturate(uv.x) == uv.x && saturate(uv.y) == uv.y) {
+			color += frag * scene.projectors[l].factor;
+		}
 	}
 	//float3 p = texShadowMaps[0].Sample(linearClampSmp, input.uv).xxx;
 	//p = (p * (100.f - .1f)) / 100.f + .1f;

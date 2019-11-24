@@ -1333,7 +1333,7 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 #else
 	#define BINDING_COUNT 9
 #endif
-	auto entry = frame_->desc.Push(1 + BINDING_COUNT + MAX_SHADOWMAPS);
+	auto entry = frame_->desc.Push(1 + BINDING_COUNT + MAX_SHADOWMAPS + MAX_PROJECTORS);
 	// Scene
 	frame_->BindCBV(entry.cpuHandle, cmd.scene);
 	// RTs
@@ -1357,6 +1357,10 @@ void Renderer::DoLightingPass(const ShaderStructures::DeferredCmd& cmd) {
 	// Shadow maps
 	for (int i = 0; i < MAX_SHADOWMAPS; ++i) {
 		frame_->BindSRV(entry.cpuHandle, renderTargets_[cmd.shadowMaps[i]].resources->Get());
+	}
+	// Projector textures
+	for (int i = 0; i < MAX_PROJECTORS; ++i) {
+		frame_->BindSRV(entry.cpuHandle, buffers_[cmd.projectors[i]].resource.Get());
 	}
 	ID3D12DescriptorHeap* ppHeaps[] = { entry.heap };
 	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);

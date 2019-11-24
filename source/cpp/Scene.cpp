@@ -155,14 +155,22 @@ void Scene::PrepareScene() {
 		shadowMaps_[0].dir = glm::normalize(float3(.3, -.5f, 1.f));
 		float dim = r * 1.4f;
 		float f = dim * 2.f;
-		shadowMaps_[0].v = glm::orthoLH_ZO(-dim, dim, -dim, dim, .1f, f);
+		shadowMaps_[0].p = glm::orthoLH_ZO(-dim, dim, -dim, dim, .1f, f);
 		shadowMaps_[0].rt = renderer_->CreateShadowRT(shadowMaps_[0].dim, shadowMaps_[0].dim);
 		shadowMaps_[0].factor = .1f;
 	}
 	{
-
+		projectors_[0].from = float3(.3, .5, 1.f);
+		projectors_[0].to = float3(0.f, 0.f, 0.f);
+		projectors_[0].fov = 45.f;
+		projectors_[0].factor = .5f;
+		projectors_[0].tex = assets_.textures[assets::Assets::BEAM];
+		Dim dim = renderer_->GetDimensions(projectors_[0].tex);
+		projectors_[0].p = glm::perspectiveFovLH_ZO(projectors_[0].fov, (float)dim.w, (float)dim.h, 0.1f, r * 1.4f);
 	}
-	state = State::Ready;
+		
+	for (int i = 0; i < MAX_SHADOWMAPS; ++i) deferredCmd_.shadowMaps[i] = shadowMaps_[i].rt;
+	for (int i = 0; i < MAX_PROJECTORS; ++i) deferredCmd_.projectors[i] = projectors_[i].tex;
 }
 void Scene::Init(Renderer* renderer, int width, int height) {
 	state = State::Start;
@@ -190,7 +198,7 @@ void Scene::Render() {
 		renderer_->Submit(cmd);
 	}
 	for (int i = 0; i < MAX_SHADOWMAPS; ++i) {
-		auto vp = shadowMaps_[i].v * glm::lookAtLH(-shadowMaps_[i].dir * r * 1.4f, float3(0.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
+		auto vp = shadowMaps_[i].p * glm::lookAtLH(-shadowMaps_[i].dir * r * 1.4f, float3(0.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
 		renderer_->StartShadowPass(shadowMaps_[i].rt);
 		for (const auto& o : modoObjects_) {
 			const auto& mesh = assets_.meshes[o.mesh];
@@ -325,8 +333,8 @@ void Scene::Update(double frame, double total) {
 	assets_.Update(renderer_);
 	if (state != State::Ready && assets_.status == assets::Assets::Status::kReady && renderer_->Ready()) {
 		state = State::Ready;
-		renderer_->Update(frame, total);
-		return;
+		//renderer_->Update(frame, total);
+		//return;
 	}
 	if (state != State::Ready) return;
 	renderer_->Update(frame, total);
@@ -352,20 +360,23 @@ void Scene::Update(double frame, double total) {
 	deferredCmd_.scene.ivp = camera_.ivp;
 	deferredCmd_.scene.nf.x = camera_.n; deferredCmd_.scene.nf.y = camera_.f;
 	deferredCmd_.scene.viewport = { (float)viewport_.width, (float)viewport_.height };
+	float4x4 t;
+	t[0] = float4(.5f, 0.f, 0.f, 0.f);
+	t[1] = float4(0.f, -.5f, 0.f, 0.f);
+	t[2] = float4(0., 0.f, 1.f, 0.f);
+	t[3] = float4(.5f, .5f, 0.f, 1.f);
 	for (int i = 0; i < MAX_SHADOWMAPS; ++i) {
-		deferredCmd_.shadowMaps[i] = shadowMaps_[i].rt;
-		float4x4 t;
-		t[0] = float4(.5f, 0.f, 0.f, 0.f);
-		t[1] = float4(0.f, -.5f, 0.f, 0.f);
-		t[2] = float4(0., 0.f, 1.f, 0.f);
-		t[3] = float4(.5f, .5f, 0.f, 1.f);
-		deferredCmd_.scene.shadowMaps[i].vpt = t * shadowMaps_[i].v * glm::lookAtLH(-shadowMaps_[i].dir * r * 1.4f, float3(0.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
+		deferredCmd_.scene.shadowMaps[i].vpt = t * shadowMaps_[i].p * glm::lookAtLH(-shadowMaps_[i].dir * r * 1.4f, float3(0.f, 0.f, 0.f), float3(0.f, 1.f, 0.f));
 		deferredCmd_.scene.shadowMaps[i].factor = shadowMaps_[i].factor;
+	}
+	for (int i = 0; i < MAX_PROJECTORS; ++i) {
+		deferredCmd_.scene.projectors[i].vpt = t * projectors_[i].p * glm::lookAtLH(projectors_[i].from, projectors_[i].to, float3(0.f, 1.f, 0.f));
+		deferredCmd_.scene.projectors[i].factor = projectors_[i].factor;
 	}
 	for (auto& o : objects_) {
 		o.Update(frame, total);
 	}
 	// TODO:: update light pos here if neccessay
-	for (int i = 0; i < MAX_LIGHTS; ++i)
-		objects_[lights_[i].placeholder].pos = deferredCmd_.scene.light[i].pos;
+	//for (int i = 0; i < MAX_LIGHTS; ++i)
+	//	objects_[lights_[i].placeholder].pos = deferredCmd_.scene.light[i].pos;
 }

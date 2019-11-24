@@ -125,6 +125,7 @@ struct DeferredCmd {
 		BRDFLUT = InvalidTexture,
 		random = InvalidTexture;
 	RTIndex shadowMaps[MAX_SHADOWMAPS];
+	TextureIndex projectors[MAX_PROJECTORS];
 };
 struct SSAOCmd {
 	float4x4 ip;

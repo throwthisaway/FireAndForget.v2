@@ -55,7 +55,7 @@ private:
 	float r = 0.f;
 	AABB aabb;
 	struct ShadowMap {
-		float4x4 v;
+		float4x4 p;
 		float3 dir;
 		float dim;
 		RTIndex rt;
@@ -63,7 +63,11 @@ private:
 	}shadowMaps_[MAX_SHADOWMAPS];
 
 	struct Projector {
-
+		float4x4 p;
+		float3 from, to;
+		float fov;
+		TextureIndex tex;
+		float factor;
 	}projectors_[MAX_PROJECTORS];
 	Renderer* renderer_;
 	assets::Assets assets_;
