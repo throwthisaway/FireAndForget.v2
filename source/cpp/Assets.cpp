@@ -165,16 +165,6 @@ namespace {
 namespace assets {
 	Assets::~Assets() = default;
 #ifdef PLATFORM_WIN
-	Concurrency::task<void> Assets::LoadContext::LoadMesh(const wchar_t* fname, size_t id) {
-		return DX::ReadDataAsync(fname).then([this, fname, id](std::vector<byte>& data) {
-			createModelResults[id] = CreateModel(fname, data);
-		});
-	}
-	Concurrency::task<void> Assets::LoadContext::LoadImage(const wchar_t* fname, size_t id) {
-		return DX::ReadDataAsync(fname).then([type = GetImageFileType(fname, wcslen(fname)), this, id](std::vector<byte>& data) {
-			images[id] = std::move(DecodeImageFromData(data, type));
-		});
-	}
 	Concurrency::task<void> Assets::ModoLoadContext::LoadImage(const wchar_t* fname, size_t id) {
 		return DX::ReadDataAsync(fname).then([type = GetImageFileType(fname, wcslen(fname)), this, id](std::vector<byte>& data) {
 			images[id] = std::move(DecodeImageFromData(data, type));
@@ -239,23 +229,14 @@ namespace assets {
 
 	void Assets::Init(Renderer* renderer) {
 		status = Status::kInitialized;
-		models.resize(STATIC_MODEL_COUNT);
 		textures.resize(STATIC_IMAGE_COUNT);
 #ifdef PLATFORM_WIN
-		loadContext.images.resize(STATIC_IMAGE_COUNT);
-		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"random.png", RANDOM));
-		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"Alexs_Apt_2k.hdr", ENVIRONMENT_MAP));
-		loadContext.imageLoadTasks.push_back(loadContext.LoadImage(L"beam.png", BEAM));
+		loadContextModo.images.resize(STATIC_IMAGE_COUNT);
+		loadContextModo.imageLoadTasks.push_back(loadContextModo.LoadImage(L"random.png", RANDOM));
+		loadContextModo.imageLoadTasks.push_back(loadContextModo.LoadImage(L"Alexs_Apt_2k.hdr", ENVIRONMENT_MAP));
+		loadContextModo.imageLoadTasks.push_back(loadContextModo.LoadImage(L"beam.png", BEAM));
 		loadContextModo.createModelResults.resize(STATIC_MODEL_COUNT);
-		loadContext.createModelResults.resize(STATIC_MODEL_COUNT);
 		std::initializer_list<Concurrency::task<void>> loadMeshTasks{
-			loadContext.LoadMesh(L"light.mesh", LIGHT),
-			loadContext.LoadMesh(L"box.mesh", PLACEHOLDER),
-			loadContext.LoadMesh(L"checkerboard.mesh", CHECKERBOARD),
-			loadContext.LoadMesh(L"BEETHOVE_object.mesh", BEETHOVEN),
-			loadContext.LoadMesh(L"sphere.mesh", SPHERE),
-			loadContext.LoadMesh(L"textured_unit_cube.mesh", UNITCUBE),
-
 			loadContextModo.LoadMesh(L"textured_unit_cube_modo.mesh", UNITCUBE),
 			//loadContextModo.LoadMesh(L"light_modo.mesh", LIGHT),
 			//loadContextModo.LoadMesh(L"box_modo.mesh", PLACEHOLDER),
@@ -271,29 +252,14 @@ namespace assets {
 			//loadContextModo.LoadMesh(L"BEETHOVE_merged_subdivided_twice.mesh"),
 			
 			loadContextModo.LoadMesh(L"shadow_test.mesh"),
-			//loadContextModo.LoadMesh(L"parallax_test.mesh"),
+			loadContextModo.LoadMesh(L"parallax_test.mesh"),
 		};
 		
 		Concurrency::when_all(std::begin(loadMeshTasks), std::end(loadMeshTasks)).then([this]() {
-			return (Concurrency::when_all(std::begin(loadContext.imageLoadTasks), std::end(loadContext.imageLoadTasks)) && 
-				Concurrency::when_all(std::begin(loadContextModo.imageLoadTasks), std::end(loadContextModo.imageLoadTasks))).then([this]() {
+			return Concurrency::when_all(std::begin(loadContextModo.imageLoadTasks), std::end(loadContextModo.imageLoadTasks)).then([this]() {
 				return status = Status::kLoaded;
 			}); });
 #elif defined(PLATFORM_MAC_OS)
-		loadContext.images.resize(STATIC_IMAGE_COUNT);
-		loadContext.images[RANDOM] = assets::Assets::LoadImage(L"random.png");
-		loadContext.images[ENVIRONMENT_MAP] =  assets::Assets::LoadImage(L"Alexs_Apt_2k.hdr"/*L"Serpentine_Valley_3k.hdr"*/);
-		renderer->BeginUploadResources();
-		LoadMesh(renderer, L"light.mesh", LIGHT);
-		LoadMesh(renderer, L"box.mesh", PLACEHOLDER);
-		LoadMesh(renderer, L"checkerboard.mesh", CHECKERBOARD);
-		LoadMesh(renderer, L"BEETHOVE_object.mesh", BEETHOVEN);
-		LoadMesh(renderer, L"sphere.mesh", SPHERE);
-		LoadMesh(renderer, L"textured_unit_cube.mesh", UNITCUBE);
-		materials = std::move(loadContext.materials);
-		ImagesToTextures(renderer);
-		renderer->EndUploadResources();
-		loadContext = LoadContext{};
 		loadContextModo.meshes.resize(STATIC_MODEL_COUNT);
 		LoadModoMesh(renderer, L"textured_unit_cube_modo.mesh", UNITCUBE);
 //		LoadModoMesh(renderer, L"light_modo.mesh", LIGHT);
@@ -329,31 +295,11 @@ namespace assets {
 		status = Status::kReady;
 #endif
 	}
-	void Assets::ImagesToTextures(Renderer* renderer) {
-		for (int id = 0; id < (int)loadContext.images.size(); ++id) {
-			auto& img = loadContext.images[id];
-			if (textures.size() <= id) textures.resize(id + 1);
-			textures[id] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
-		}
-		// replace image ids with texture ids
-		for (auto& m : models)
-			for (auto& l : m.layers)
-				for (auto& s : l.submeshes) if (s.texAlbedo != InvalidTexture) s.texAlbedo = textures[s.texAlbedo];
-	}
 	void Assets::Update(Renderer* renderer) {
 #if defined(PLATFORM_WIN)
 		if (status == Status::kLoaded) {
-			std::copy(std::begin(loadContext.materials), std::end(loadContext.materials), std::back_inserter(materials));
 			renderer->BeginUploadResources();
-			for (int id = 0; id < (int)loadContext.createModelResults.size(); ++id) {
-				auto& res = loadContext.createModelResults[id];
-				models[id] = std::move(res.mesh);
-				models[id].vb = renderer->CreateBuffer(res.vb.data(), res.vb.size());
-				models[id].ib = renderer->CreateBuffer(res.ib.data(), res.ib.size());
-			}
 			ImagesToTextures(renderer);
-			loadContext = LoadContext();
-
 			loadContextModo.meshes.resize(loadContextModo.createModelResults.size());
 			for (int id = 0; id < (int)loadContextModo.createModelResults.size(); ++id) {
 				auto& res = loadContextModo.createModelResults[id];
@@ -411,94 +357,11 @@ namespace assets {
 			}
 		};
 	}
-	Assets::LoadContext::CreateModelResult Assets::LoadContext::CreateModel(const wchar_t* name, const std::vector<uint8_t>& data) {
-		MeshLoader::Mesh mesh;
-		mesh.data = std::move(data);
-		MeshLoader::LoadMesh(mesh.data.data(), mesh.data.size(), mesh);
-		Mesh result;
-		std::vector<uint8_t> vb, ib;
-		for (const auto& layer : mesh.layers) {
-			result.layers.push_back({});
-			Layer& l = result.layers.back();
-			l.pivot = { layer.pivot.x, layer.pivot.y, layer.pivot.z };
-			for (size_t i = 0; i < layer.poly.count; ++i) {
-				auto section = layer.poly.sections[i];
-				auto surfaceIndex = section.index;
-				auto surf = mesh.surfaces[surfaceIndex];
-				auto colLayers = surf.surface_infos[MeshLoader::COLOR_MAP].layers;
-
-				auto res = materialMap.insert({ std::wstring{ name } +L'_' + std::wstring{ s2ws(surf.name) }, (MaterialIndex)materials.size() });
-				MaterialIndex materialIndex = res.first->second;
-				auto vOffset = (offset_t)vb.size(), iOffset = (offset_t)ib.size();
-				l.submeshes.push_back({ materialIndex, InvalidTexture, vOffset, iOffset, 0/*stride*/, 0/*count*/, VertexType::PN });	
-				if (res.second) {
-					materials.push_back({});
-					Material material{};
-					material.diffuse = { surf.color[0], surf.color[1], surf.color[2] };
-					material.metallic_roughness = { surf.surface_infos[MeshLoader::SPECULARITY_MAP].val,
-						surf.surface_infos[MeshLoader::GLOSSINESS_MAP].val };
-					materials[materialIndex] = material;
-					if (colLayers && colLayers->image && colLayers->image->path) {
-						l.submeshes.back().vertexType = VertexType::PNT;
-						auto inserted = imageMap.insert({ s2ws(colLayers->image->path), (TextureIndex)images.size() });
-						l.submeshes.back().texAlbedo = inserted.first->second;
-						if (inserted.second) {
-							auto path = s2ws(colLayers->image->path);
-							auto pos = path.rfind(L'\\');
-							if (pos == std::wstring::npos) pos = 0;
-							else ++pos;
-							path = path.substr(pos);
-#if defined(PLATFORM_WIN)
-							images.push_back({});
-							imageLoadTasks.push_back(LoadImage(path.c_str(), inserted.first->second));
-#elif defined(PLATFORM_MAC_OS)
-							images.push_back(LoadImage(path.c_str()));
-#endif
-						}
-					}
-				}
-				if (l.submeshes.back().vertexType == VertexType::PN) {
-					MeshGen<VertexPN> pn;
-					l.submeshes.back().stride = sizeof(decltype(pn)::VertexType);
-					for (MeshLoader::index_t i = section.offset, end = section.offset + section.count; i < end; ++i) {
-						auto& p = mesh.polygons[i];
-						auto& n = mesh.normalsPV[i];
-						pn.unindexedVB.push_back({ mesh.vertices[p.v1], n.n[0] });
-						pn.unindexedVB.push_back({ mesh.vertices[p.v2], n.n[1] });
-						pn.unindexedVB.push_back({ mesh.vertices[p.v3], n.n[2] });
-					}
-					pn.Remap();
-					l.submeshes.back().count = (index_t)pn.indices.size();
-					auto vSize = pn.GetVerticesByteSize(), iSize = pn.GetIndicesByteSize();
-					vb.resize(vb.size() + AlignTo<16>(vSize));
-					ib.resize(ib.size() + iSize);
-					memcpy(vb.data() + vOffset, pn.vertices.data(), vSize);
-					memcpy(ib.data() + iOffset, pn.indices.data(), iSize);
-				}
-				else if (l.submeshes.back().vertexType == VertexType::PNT) {
-					MeshGen<VertexPNUV> pnt;
-					l.submeshes.back().stride = sizeof(decltype(pnt)::VertexType);
-					const auto& uv = mesh.uvs.uvmaps[surfaceIndex][colLayers->uvmap];
-					for (MeshLoader::index_t i = section.offset, j = 0, end = section.offset + section.count; i < end; ++i) {
-						auto& p = mesh.polygons[i];
-						auto& n = mesh.normalsPV[i];
-						pnt.unindexedVB.push_back({ mesh.vertices[p.v1], n.n[0], {uv.uv[j++], uv.uv[j++]} });
-						pnt.unindexedVB.push_back({ mesh.vertices[p.v2], n.n[1], {uv.uv[j++], uv.uv[j++]} });
-						pnt.unindexedVB.push_back({ mesh.vertices[p.v3], n.n[2], {uv.uv[j++], uv.uv[j++]} });
-					}
-					pnt.Remap();
-					l.submeshes.back().count = (index_t)pnt.indices.size();
-					auto vSize = pnt.GetVerticesByteSize(), iSize = pnt.GetIndicesByteSize();
-					vb.resize(vb.size() + AlignTo<16>(vSize));
-					ib.resize(ib.size() + iSize);
-					memcpy(vb.data() + vOffset, pnt.vertices.data(), vSize);
-					memcpy(ib.data() + iOffset, pnt.indices.data(), iSize);
-				}
-			}
+	void Assets::ImagesToTextures(Renderer* renderer) {
+		for (int id = 0; id < (int)loadContextModo.images.size(); ++id) {
+			auto& img = loadContextModo.images[id];
+			if (textures.size() <= id) textures.resize(id + 1);
+			textures[id] = renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf);
 		}
-
-		//result.vb = renderer->CreateBuffer(vb.data(), vb.size());
-		//result.ib = renderer->CreateBuffer(ib.data(), ib.size());
-		return { result, std::move(vb), std::move(ib) };
 	}
 }

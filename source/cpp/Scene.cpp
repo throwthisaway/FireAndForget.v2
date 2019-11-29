@@ -68,37 +68,10 @@ namespace {
 void Scene::PrepareScene() {
 	if (prepared_) return;
 	prepared_ = true;
-	objects_.push_back({ deferredCmd_.scene.light[0].pos, {}, assets::Assets::LIGHT });
-	lights_[0].placeholder = index_t(objects_.size() - 1);
-	objects_.push_back({ deferredCmd_.scene.light[1].pos, {}, assets::Assets::LIGHT });
-	lights_[1].placeholder = index_t(objects_.size() - 1);
-	objects_.push_back({ {}, {}, assets::Assets::PLACEHOLDER });
-	objects_.push_back({ {}, {}, assets::Assets::CHECKERBOARD });
-	objects_.push_back({ { 0.f, .5f, 0.f }, {}, assets::Assets::BEETHOVEN });
 	float y = -0.25f;// -.5f * (assets_.meshes.size() >> 1);
 	for (int i = assets::Assets::STATIC_MODEL_COUNT; i < assets_.meshes.size(); ++i) {
-//		auto& mesh = assets_.meshes[i];
 		modoObjects_.push_back({{ 0.f, y, 0.f}, {0.f, glm::pi<float>(), 0.f}, (index_t)i});
 		y += 1.5f;
-	}
-	//objects_.push_back({ { 0.f, .0f, .0f }, {}, assets::Assets::UNITCUBE });
-	const float incX = 2.4f, incY = 2.9f;
-	auto pos = glm::vec3{ -3 * incX, -3 * incY, 2.f };
-	const int count = 7;
-	for (int i = 0; i < count; ++i) {
-		for (int j = 0; j < count; ++j) {
-			auto model = assets_.models[assets::Assets::SPHERE];
-			assets_.models.push_back(model);
-			objects_.push_back({ pos, {}, index_t(assets_.models.size() - 1) });
-			assets_.materials.push_back({ { .5f, .0f, .0f },
-				{glm::clamp((float)j / count, .05f, 1.f), (float)i / count } });
-			pos.x += incX;
-			auto& submesh = assets_.models[objects_.back().mesh].layers.front().submeshes.front();
-			submesh.material = (MaterialIndex)assets_.materials.size() - 1;
-			submesh.texAlbedo = InvalidTexture;
-		}
-		pos.y += incY;
-		pos.x = -3 * incX;
 	}
 
 	// calc scene bounds
@@ -343,9 +316,6 @@ void Scene::Update(double frame, double total) {
 	/*ImGui::Begin("Rot Window");
 	ImGui::Text("%5.5g %5.5g %5.5g", rot.x, rot.y, rot.z);
 	ImGui::End();*/
-	for (const auto& o : objects_) {
-		assert(assets_.models[o.mesh].layers.front().submeshes.size() <= 12);
-	}
 	camera_.Update();
 	ssaoCmd_.ip = camera_.ip;
 	ssaoCmd_.scene.proj = camera_.proj;

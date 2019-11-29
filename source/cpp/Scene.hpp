@@ -48,10 +48,6 @@ private:
 		int width, height;
 	}viewport_;
 	Camera camera_;
-	struct Light {
-		//PointLight pointLight;
-		index_t placeholder;
-	}lights_[MAX_LIGHTS];
 	float r = 0.f;
 	AABB aabb;
 	struct ShadowMap {
