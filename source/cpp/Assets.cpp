@@ -308,10 +308,6 @@ namespace assets {
 					renderer->CreateBuffer(res.indices.data(), res.indices.size()),
 					std::move(res.submeshes) };
 			}
-			auto offset = textures.size();
-			for (auto& img : loadContextModo.images) {
-				textures.push_back(renderer->CreateTexture(img.data.get(), img.width, img.height, img.pf));
-			}
 
 			// replace image ids with texture ids
 			for (auto& mesh : loadContextModo.meshes)
@@ -320,7 +316,7 @@ namespace assets {
 						auto& texture = s.textures[i];
 						if (s.textureMask & (1 << i)) {
 							// texture.image was replaced with an index into the context's images array
-							texture.id = (uint32_t)textures[offset + texture.id];
+							texture.id = (uint32_t)textures[texture.id];
 						} else texture.id = InvalidTexture;
 					}
 			for (auto& mesh : loadContextModo.meshes)
@@ -331,32 +327,7 @@ namespace assets {
 		}
 #endif
 	}
-	namespace {
-		template <typename T>
-		struct MeshGen {
-			using VertexType = T;
-			std::vector<T> unindexedVB;
 
-			std::vector<index_t> indices;
-			std::vector<T> vertices;
-			void Remap() {
-				if (unindexedVB.empty()) return;
-				std::vector<uint32_t> remap(unindexedVB.size());
-				size_t vertexCount = meshopt_generateVertexRemap(remap.data(), nullptr, unindexedVB.size(), unindexedVB.data(), unindexedVB.size(), sizeof(T));
-				indices.resize(unindexedVB.size());
-				meshopt_remapIndexBuffer<index_t>(indices.data(), nullptr, unindexedVB.size(), remap.data());
-				vertices.resize(vertexCount);
-				meshopt_remapVertexBuffer(vertices.data(), unindexedVB.data(), unindexedVB.size(), sizeof(T), remap.data());
-				unindexedVB.clear();
-			}
-			uint32_t GetVerticesByteSize() const { return uint32_t(sizeof(T) * vertices.size()); }
-			uint32_t GetIndicesByteSize() const { return uint32_t(sizeof(index_t) * indices.size()); }
-			void MergeInto(uint8_t* vb, uint8_t* ib) {
-				memcpy(vb, vertices.data(), GetVerticesByteSize());
-				memcpy(ib, indices.data(), GetIndicesByteSize());
-			}
-		};
-	}
 	void Assets::ImagesToTextures(Renderer* renderer) {
 		for (int id = 0; id < (int)loadContextModo.images.size(); ++id) {
 			auto& img = loadContextModo.images[id];
