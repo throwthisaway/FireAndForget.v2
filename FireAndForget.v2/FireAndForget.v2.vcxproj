@@ -255,6 +255,7 @@
     <ClInclude Include="..\source\cpp\Camera.hpp" />
     <ClInclude Include="..\source\cpp\DeferredBindings.h" />
     <ClInclude Include="..\source\cpp\input\Input.hpp" />
+    <ClInclude Include="..\source\cpp\Light.h" />
     <ClInclude Include="..\source\cpp\Mesh.h" />
     <ClInclude Include="..\source\cpp\ModoMesh.h" />
     <ClInclude Include="..\source\cpp\ShaderStructures.h" />
@@ -362,11 +363,16 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </None>
-    <None Include="..\source\assets\BEETHOVE_merged_subdivided_twice.mesh">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
-    </None>
     <None Include="..\source\assets\BEETHOVE_object.mesh">
       <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\source\assets\BEETHOVE_subdivided_twice.mesh">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </None>
     <None Include="..\source\assets\box.mesh">
       <DeploymentContent>true</DeploymentContent>

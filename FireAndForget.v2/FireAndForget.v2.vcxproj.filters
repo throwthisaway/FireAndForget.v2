@@ -234,6 +234,9 @@
     <ClInclude Include="..\Shared\AABB.h">
       <Filter>Shared</Filter>
     </ClInclude>
+    <ClInclude Include="..\source\cpp\Light.h">
+      <Filter>cpp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -328,9 +331,6 @@
     <None Include="..\source\assets\box_normal_map_test.mesh">
       <Filter>Assets</Filter>
     </None>
-    <None Include="..\source\assets\BEETHOVE_merged_subdivided_twice.mesh">
-      <Filter>Assets</Filter>
-    </None>
     <None Include="Content\shaders\ShaderStructs.hlsli">
       <Filter>Content\shaders</Filter>
     </None>
@@ -341,6 +341,9 @@
       <Filter>Assets</Filter>
     </None>
     <None Include="..\source\assets\parallax_test2.mesh">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="..\source\assets\BEETHOVE_subdivided_twice.mesh">
       <Filter>Assets</Filter>
     </None>
   </ItemGroup>

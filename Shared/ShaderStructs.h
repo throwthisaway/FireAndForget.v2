@@ -10,6 +10,7 @@ struct Material {
 	ALIGN16 float3 diffuse;
 	ALIGN16 float2 metallic_roughness;
 };
+
 struct PointLight {
 	ALIGN16 float3 diffuse;
 	ALIGN16 float3 ambient;

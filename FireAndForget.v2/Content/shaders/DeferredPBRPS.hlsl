@@ -65,7 +65,7 @@ float4 main(PS_UV input) : SV_TARGET{
 		float ndotl = max(dot(n, l), 0.f);
 		float G = GF_Smith(ndotv, ndotl, k);
 
-		float3 specular = (NDF * F * G) / max(4.f * ndotv * ndotl, 0.001f);
+		float3 specular = (NDF * F * G) / max(4.f * ndotv * ndotl, 0.001f) * light.specular;
 
 		float3 kS = F;
 		float3 kD = float3(1.f, 1.f, 1.f) - kS;
